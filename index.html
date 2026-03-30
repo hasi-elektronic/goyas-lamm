@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Goya's Lamm — Restaurant in Horrheim</title>
+  <meta name="description" content="Goya's Lamm — Regional, lecker, locker. Steaks vom heißen Stein, Spätzle, Maultaschen & Cocktails in Horrheim bei Vaihingen/Enz.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #C5A55A;
+      --gold-light: #D4BA7A;
+      --dark: #1A1A1A;
+      --darker: #111111;
+      --warm: #2A2420;
+      --cream: #F5F0E8;
+      --text: #E8E2D8;
+      --text-muted: #9A9286;
+      --accent: #8B2E2E;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--darker);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      padding: 1.2rem 2rem;
+      display: flex; justify-content: space-between; align-items: center;
+      transition: background .4s, backdrop-filter .4s;
+    }
+    nav.scrolled {
+      background: rgba(17,17,17,.92);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 2px 20px rgba(0,0,0,.3);
+    }
+    .nav-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem; font-weight: 700; color: var(--gold);
+      text-decoration: none; letter-spacing: .5px;
+    }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      color: var(--text-muted); text-decoration: none; font-size: .85rem;
+      font-weight: 500; letter-spacing: 1px; text-transform: uppercase;
+      transition: color .3s;
+    }
+    .nav-links a:hover { color: var(--gold); }
+
+    .nav-toggle { display: none; background: none; border: none; cursor: pointer; }
+    .nav-toggle span {
+      display: block; width: 24px; height: 2px; background: var(--gold);
+      margin: 5px 0; transition: .3s;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      text-align: center; position: relative;
+      background:
+        linear-gradient(180deg, rgba(17,17,17,.3) 0%, rgba(17,17,17,.7) 60%, var(--darker) 100%),
+        radial-gradient(ellipse at 50% 30%, rgba(197,165,90,.12) 0%, transparent 60%);
+    }
+    .hero::before {
+      content: ''; position: absolute; inset: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r=".4" fill="%23C5A55A" opacity=".15"/></svg>') repeat;
+      background-size: 30px 30px;
+      opacity: .4;
+    }
+    .hero-content { position: relative; z-index: 2; padding: 2rem; }
+    .hero-badge {
+      display: inline-block; padding: .5rem 1.5rem; border: 1px solid var(--gold);
+      font-size: .7rem; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 2rem; border-radius: 2px;
+      animation: fadeDown .8s ease-out;
+    }
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(3rem, 8vw, 6.5rem);
+      font-weight: 700; line-height: 1.05;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--gold) 50%, var(--cream) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: fadeUp .8s ease-out .2s both;
+    }
+    .hero-sub {
+      font-size: 1.15rem; color: var(--text-muted); margin-top: 1.2rem;
+      font-weight: 300; letter-spacing: 2px;
+      animation: fadeUp .8s ease-out .4s both;
+    }
+    .hero-cta {
+      margin-top: 2.5rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+      animation: fadeUp .8s ease-out .6s both;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: .5rem;
+      padding: .9rem 2.2rem; font-size: .85rem; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase;
+      text-decoration: none; border-radius: 3px; transition: all .3s;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--gold); color: var(--dark); border: 2px solid var(--gold);
+    }
+    .btn-primary:hover { background: var(--gold-light); border-color: var(--gold-light); transform: translateY(-2px); }
+    .btn-outline {
+      background: transparent; color: var(--gold); border: 2px solid rgba(197,165,90,.4);
+    }
+    .btn-outline:hover { border-color: var(--gold); background: rgba(197,165,90,.08); }
+
+    .scroll-indicator {
+      position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+      animation: bounce 2s infinite;
+    }
+    .scroll-indicator span {
+      display: block; width: 20px; height: 32px; border: 2px solid var(--gold);
+      border-radius: 10px; position: relative;
+    }
+    .scroll-indicator span::after {
+      content: ''; width: 3px; height: 6px; background: var(--gold);
+      border-radius: 2px; position: absolute; top: 6px; left: 50%;
+      transform: translateX(-50%); animation: scrollDot 2s infinite;
+    }
+
+    /* ── SECTIONS ── */
+    section { padding: 6rem 2rem; }
+    .container { max-width: 1100px; margin: 0 auto; }
+
+    .section-label {
+      font-size: .7rem; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--gold); margin-bottom: .8rem;
+    }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 4vw, 3rem); font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .section-line {
+      width: 50px; height: 2px; background: var(--gold); margin-bottom: 2rem;
+    }
+
+    /* ── ABOUT ── */
+    .about { background: var(--dark); }
+    .about-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;
+    }
+    .about-image {
+      aspect-ratio: 4/5; background: linear-gradient(135deg, var(--warm), var(--darker));
+      border-radius: 6px; position: relative; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .about-image-icon {
+      font-size: 5rem; opacity: .6;
+    }
+    .about-image::after {
+      content: ''; position: absolute; inset: 0;
+      border: 1px solid rgba(197,165,90,.15); border-radius: 6px;
+    }
+    .about p { color: var(--text-muted); line-height: 1.8; margin-bottom: 1.2rem; font-size: .95rem; }
+    .about-highlight {
+      display: flex; gap: 2.5rem; margin-top: 2rem; padding-top: 2rem;
+      border-top: 1px solid rgba(197,165,90,.15);
+    }
+    .about-highlight div { text-align: center; }
+    .about-highlight .num {
+      font-family: 'Playfair Display', serif; font-size: 2.2rem;
+      color: var(--gold); font-weight: 700;
+    }
+    .about-highlight .label {
+      font-size: .7rem; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--text-muted); margin-top: .3rem;
+    }
+
+    /* ── MENU ── */
+    .menu { background: var(--darker); }
+    .menu-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem; margin-top: 2rem;
+    }
+    .menu-card {
+      background: var(--dark); border-radius: 8px; padding: 2.5rem 2rem;
+      border: 1px solid rgba(197,165,90,.08); transition: all .4s;
+      position: relative; overflow: hidden;
+    }
+    .menu-card:hover {
+      border-color: rgba(197,165,90,.25);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,.3);
+    }
+    .menu-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      opacity: 0; transition: opacity .4s;
+    }
+    .menu-card:hover::before { opacity: 1; }
+    .menu-icon { font-size: 2.5rem; margin-bottom: 1.2rem; }
+    .menu-card h3 {
+      font-family: 'Playfair Display', serif; font-size: 1.4rem;
+      margin-bottom: .8rem;
+    }
+    .menu-card p { color: var(--text-muted); font-size: .88rem; line-height: 1.7; }
+
+    /* ── AMBIANCE / FEATURE ── */
+    .ambiance {
+      background: linear-gradient(135deg, var(--warm) 0%, var(--dark) 100%);
+      text-align: center;
+    }
+    .ambiance-features {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 3rem;
+      margin-top: 3rem;
+    }
+    .ambiance-item .icon { font-size: 2.2rem; margin-bottom: 1rem; }
+    .ambiance-item h3 {
+      font-family: 'Playfair Display', serif; font-size: 1.15rem;
+      margin-bottom: .6rem;
+    }
+    .ambiance-item p { color: var(--text-muted); font-size: .85rem; line-height: 1.7; }
+
+    /* ── HOURS ── */
+    .hours { background: var(--darker); }
+    .hours-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; }
+    .hours-table { width: 100%; }
+    .hours-row {
+      display: flex; justify-content: space-between; padding: 1rem 0;
+      border-bottom: 1px solid rgba(197,165,90,.1);
+      font-size: .92rem;
+    }
+    .hours-row .day { color: var(--text); font-weight: 500; }
+    .hours-row .time { color: var(--gold); font-weight: 400; }
+    .hours-row.closed .time { color: var(--text-muted); font-style: italic; }
+    .hours-note {
+      margin-top: 1.5rem; padding: 1.2rem 1.5rem;
+      background: rgba(197,165,90,.06); border-left: 3px solid var(--gold);
+      border-radius: 0 6px 6px 0;
+    }
+    .hours-note p { color: var(--text-muted); font-size: .85rem; line-height: 1.6; }
+
+    .contact-card {
+      background: var(--dark); border-radius: 8px; padding: 2.5rem;
+      border: 1px solid rgba(197,165,90,.1);
+    }
+    .contact-item {
+      display: flex; gap: 1rem; align-items: flex-start;
+      margin-bottom: 1.5rem;
+    }
+    .contact-item:last-child { margin-bottom: 0; }
+    .contact-icon { font-size: 1.3rem; margin-top: .15rem; }
+    .contact-item .label {
+      font-size: .7rem; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: .3rem;
+    }
+    .contact-item .value { color: var(--text); font-size: .95rem; }
+    .contact-item a { color: var(--gold); text-decoration: none; transition: color .3s; }
+    .contact-item a:hover { color: var(--gold-light); }
+
+    /* ── MAP ── */
+    .map-section { padding: 0; }
+    .map-section iframe {
+      width: 100%; height: 400px; border: none; filter: grayscale(.7) contrast(1.1);
+      transition: filter .5s;
+    }
+    .map-section iframe:hover { filter: grayscale(.3) contrast(1); }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--darker); padding: 3rem 2rem;
+      border-top: 1px solid rgba(197,165,90,.1);
+      text-align: center;
+    }
+    .footer-logo {
+      font-family: 'Playfair Display', serif; font-size: 1.3rem;
+      color: var(--gold); margin-bottom: .5rem;
+    }
+    footer p { color: var(--text-muted); font-size: .78rem; }
+    footer a { color: var(--gold); text-decoration: none; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(8px); }
+    }
+    @keyframes scrollDot {
+      0% { opacity: 1; transform: translateX(-50%) translateY(0); }
+      100% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    }
+
+    .reveal {
+      opacity: 0; transform: translateY(40px);
+      transition: opacity .7s ease-out, transform .7s ease-out;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .nav-toggle { display: block; }
+      .nav-links.open {
+        display: flex; flex-direction: column;
+        position: absolute; top: 100%; left: 0; right: 0;
+        background: rgba(17,17,17,.97); padding: 2rem;
+        gap: 1.5rem; text-align: center;
+      }
+      .about-grid, .hours-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+      .about-image { display: none; }
+      .ambiance-features { grid-template-columns: 1fr; gap: 2rem; }
+      section { padding: 4rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav id="navbar">
+    <a href="#" class="nav-logo">Goya's Lamm</a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#ueber">Über uns</a></li>
+      <li><a href="#kueche">Küche</a></li>
+      <li><a href="#erlebnis">Erlebnis</a></li>
+      <li><a href="#zeiten">Öffnungszeiten</a></li>
+      <li><a href="#kontakt">Kontakt</a></li>
+    </ul>
+    <button class="nav-toggle" id="navToggle" aria-label="Menü">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" id="hero">
+    <div class="hero-content">
+      <div class="hero-badge">Restaurant in Horrheim</div>
+      <h1>Goya's Lamm</h1>
+      <p class="hero-sub">Regional &bull; Lecker &bull; Locker</p>
+      <div class="hero-cta">
+        <a href="tel:+497042832282" class="btn btn-primary">Reservieren</a>
+        <a href="#kueche" class="btn btn-outline">Unsere Küche</a>
+      </div>
+    </div>
+    <div class="scroll-indicator"><span></span></div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="about" id="ueber">
+    <div class="container">
+      <div class="about-grid">
+        <div class="about-image reveal">
+          <div class="about-image-icon">🍷</div>
+        </div>
+        <div class="reveal">
+          <div class="section-label">Willkommen</div>
+          <h2 class="section-title">Schwäbische Seele,<br>moderne Küche</h2>
+          <div class="section-line"></div>
+          <p>Küchenchef Goekhan Yavuz — bekannt von der Sonne in Sersheim — bringt frischen Wind in das historische Hotel Lamm in Horrheim. Mit Leidenschaft für regionale Zutaten und handwerkliches Können entstehen Gerichte, die Tradition und Moderne verbinden.</p>
+          <p>In gemütlicher Atmosphäre servieren wir Steaks vom heißen Stein, handgeschabte Spätzle, hausgemachte Maultaschen und kreative Cocktails. Ein Ort zum Genießen, Lachen und Feiern.</p>
+          <div class="about-highlight">
+            <div>
+              <div class="num">100%</div>
+              <div class="label">Regional</div>
+            </div>
+            <div>
+              <div class="num">♨</div>
+              <div class="label">Heißer Stein</div>
+            </div>
+            <div>
+              <div class="num">🍸</div>
+              <div class="label">Cocktails</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MENU HIGHLIGHTS -->
+  <section class="menu" id="kueche">
+    <div class="container">
+      <div class="reveal" style="text-align:center; margin-bottom: 3rem;">
+        <div class="section-label">Unsere Küche</div>
+        <h2 class="section-title">Genuss aus der Region</h2>
+        <div class="section-line" style="margin: 1rem auto;"></div>
+      </div>
+      <div class="menu-grid">
+        <div class="menu-card reveal">
+          <div class="menu-icon">🥩</div>
+          <h3>Steaks vom heißen Stein</h3>
+          <p>Ausgewählte Steaks, direkt am Tisch auf dem heißen Stein zubereitet — genau nach Ihrem Geschmack. Ein Erlebnis für alle Sinne.</p>
+        </div>
+        <div class="menu-card reveal">
+          <div class="menu-icon">🍝</div>
+          <h3>Spätzle &amp; Maultaschen</h3>
+          <p>Handgeschabte Spätzle und hausgemachte Maultaschen — schwäbische Klassiker mit Liebe zum Detail. Dazu frische Pasta-Kreationen.</p>
+        </div>
+        <div class="menu-card reveal">
+          <div class="menu-icon">🍹</div>
+          <h3>Cocktails &amp; Drinks</h3>
+          <p>Eine große Auswahl an handgemixten Cocktails und Longdrinks. Der perfekte Begleiter für einen geselligen Abend im Lamm.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AMBIANCE -->
+  <section class="ambiance" id="erlebnis">
+    <div class="container reveal">
+      <div class="section-label">Das Erlebnis</div>
+      <h2 class="section-title">Mehr als nur ein Restaurant</h2>
+      <div class="section-line" style="margin: 1rem auto;"></div>
+      <div class="ambiance-features">
+        <div class="ambiance-item">
+          <div class="icon">🏨</div>
+          <h3>Historisches Ambiente</h3>
+          <p>Im Herzen des Weindorfs Horrheim, im traditionsreichen Hotel Lamm — seit 1994 auf historischen Grundmauern neu erbaut.</p>
+        </div>
+        <div class="ambiance-item">
+          <div class="icon">🎉</div>
+          <h3>Feiern &amp; Events</h3>
+          <p>Geburtstage, Firmenfeiern oder besondere Anlässe — wir richten Ihre Veranstaltung ab 25 Personen individuell aus.</p>
+        </div>
+        <div class="ambiance-item">
+          <div class="icon">👨‍🍳</div>
+          <h3>Küchenchef Goekhan</h3>
+          <p>Mit Erfahrung aus der Sonne in Sersheim bringt Goekhan Yavuz seine Leidenschaft für schwäbische Küche mit modernem Twist.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOURS + CONTACT -->
+  <section class="hours" id="zeiten">
+    <div class="container">
+      <div class="hours-grid">
+        <div class="reveal">
+          <div class="section-label">Öffnungszeiten</div>
+          <h2 class="section-title">Wann wir für Sie da sind</h2>
+          <div class="section-line"></div>
+          <div class="hours-table">
+            <div class="hours-row"><span class="day">Montag</span><span class="time">17:00 – 22:00</span></div>
+            <div class="hours-row"><span class="day">Dienstag</span><span class="time">17:00 – 22:00</span></div>
+            <div class="hours-row closed"><span class="day">Mittwoch</span><span class="time">Ruhetag</span></div>
+            <div class="hours-row"><span class="day">Donnerstag</span><span class="time">17:00 – 22:00</span></div>
+            <div class="hours-row"><span class="day">Freitag</span><span class="time">17:00 – 22:00</span></div>
+            <div class="hours-row"><span class="day">Samstag</span><span class="time">17:00 – 22:00</span></div>
+            <div class="hours-row"><span class="day">Sonntag</span><span class="time">12:00 – 20:00</span></div>
+          </div>
+          <div class="hours-note">
+            <p>Veranstaltungen ab 25 Personen auch außerhalb der regulären Öffnungszeiten auf Anfrage möglich.</p>
+          </div>
+        </div>
+        <div class="reveal" id="kontakt">
+          <div class="section-label">Kontakt</div>
+          <h2 class="section-title">Reservierung &amp; Anfragen</h2>
+          <div class="section-line"></div>
+          <div class="contact-card">
+            <div class="contact-item">
+              <div class="contact-icon">📍</div>
+              <div>
+                <div class="label">Adresse</div>
+                <div class="value">Klosterbergstraße 45<br>71665 Horrheim — Vaihingen a. d. Enz</div>
+              </div>
+            </div>
+            <div class="contact-item">
+              <div class="contact-icon">📞</div>
+              <div>
+                <div class="label">Telefon</div>
+                <div class="value"><a href="tel:+497042832282">07042 / 832 282</a></div>
+              </div>
+            </div>
+            <div class="contact-item">
+              <div class="contact-icon">✉️</div>
+              <div>
+                <div class="label">E-Mail</div>
+                <div class="value"><a href="mailto:hallo@lammm.de">hallo@lammm.de</a></div>
+              </div>
+            </div>
+            <div class="contact-item">
+              <div class="contact-icon">🌐</div>
+              <div>
+                <div class="label">Online</div>
+                <div class="value"><a href="https://www.instagram.com/goyas.lamm/" target="_blank" rel="noopener">Instagram @goyas.lamm</a></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAP -->
+  <section class="map-section">
+    <iframe
+      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2619.3!2d8.9577!3d48.9298!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sKlosterbergstra%C3%9Fe+45%2C+71665+Vaihingen+an+der+Enz!5e0!3m2!1sde!2sde!4v1"
+      allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+      title="Goya's Lamm Standort"></iframe>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">Goya's Lamm</div>
+    <p>Klosterbergstraße 45, 71665 Horrheim &bull; <a href="tel:+497042832282">07042 / 832 282</a></p>
+    <p style="margin-top:.8rem; font-size:.7rem; opacity:.5;">Website erstellt von <a href="https://www.hasi-elektronik.de" target="_blank" rel="noopener">Hasi Elektronik</a> &bull; &copy; 2026 Goya's Lamm</p>
+  </footer>
+
+  <script>
+    // Navbar scroll
+    const nav = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 60);
+    });
+
+    // Mobile toggle
+    document.getElementById('navToggle').addEventListener('click', () => {
+      document.getElementById('navLinks').classList.toggle('open');
+    });
+    document.querySelectorAll('.nav-links a').forEach(a => {
+      a.addEventListener('click', () => {
+        document.getElementById('navLinks').classList.remove('open');
+      });
+    });
+
+    // Reveal on scroll
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: .15 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
