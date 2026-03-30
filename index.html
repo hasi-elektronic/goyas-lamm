@@ -262,6 +262,27 @@
     .contact-item a { color: var(--gold); text-decoration: none; transition: color .3s; }
     .contact-item a:hover { color: var(--gold-light); }
 
+    /* ── NAV RESERVE BTN ── */
+    .nav-reserve-btn {
+      color: var(--gold) !important; border: 1px solid var(--gold);
+      padding: .4rem 1rem; border-radius: 3px; font-size: .8rem !important;
+    }
+    .nav-reserve-btn:hover { background: rgba(197,165,90,.1); }
+
+    /* ── RESERVATION ── */
+    .reservation { background: var(--dark); }
+    .reservation-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;
+    }
+    .reservation-text p {
+      color: var(--text-muted); line-height: 1.8; margin-bottom: 1rem; font-size: .95rem;
+    }
+    .reservation-text a { color: var(--gold); text-decoration: none; }
+    .reservation-widget {
+      background: var(--cream); border-radius: 8px; padding: 2rem;
+      min-height: 280px; display: flex; align-items: center; justify-content: center;
+    }
+
     /* ── MAP ── */
     .map-section { padding: 0; }
     .map-section iframe {
@@ -317,7 +338,7 @@
         background: rgba(17,17,17,.97); padding: 2rem;
         gap: 1.5rem; text-align: center;
       }
-      .about-grid, .hours-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+      .about-grid, .hours-grid, .reservation-grid { grid-template-columns: 1fr; gap: 2.5rem; }
       .about-image { display: none; }
       .ambiance-features { grid-template-columns: 1fr; gap: 2rem; }
       section { padding: 4rem 1.5rem; }
@@ -335,6 +356,7 @@
       <li><a href="#erlebnis">Erlebnis</a></li>
       <li><a href="#zeiten">Öffnungszeiten</a></li>
       <li><a href="#kontakt">Kontakt</a></li>
+      <li><a href="#reservierung" class="nav-reserve-btn">Reservieren</a></li>
     </ul>
     <button class="nav-toggle" id="navToggle" aria-label="Menü">
       <span></span><span></span><span></span>
@@ -348,7 +370,7 @@
       <h1>Goya's Lamm</h1>
       <p class="hero-sub">Regional &bull; Lecker &bull; Locker</p>
       <div class="hero-cta">
-        <a href="tel:+497042832282" class="btn btn-primary">Reservieren</a>
+        <a href="#reservierung" class="btn btn-primary">Reservieren</a>
         <a href="#kueche" class="btn btn-outline">Unsere Küche</a>
       </div>
     </div>
@@ -501,6 +523,24 @@
     </div>
   </section>
 
+  <!-- RESERVATION -->
+  <section class="reservation" id="reservierung">
+    <div class="container">
+      <div class="reservation-grid reveal">
+        <div class="reservation-text">
+          <div class="section-label">Online Reservierung</div>
+          <h2 class="section-title">Tisch reservieren</h2>
+          <div class="section-line"></div>
+          <p>Sichern Sie sich Ihren Tisch ganz bequem online. Wählen Sie Datum, Uhrzeit und Personenzahl — wir freuen uns auf Ihren Besuch!</p>
+          <p>Für Gruppen ab 25 Personen kontaktieren Sie uns bitte direkt unter <a href="tel:+497042832282">07042 / 832 282</a>.</p>
+        </div>
+        <div class="reservation-widget">
+          <div id="resmio-widget"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- MAP -->
   <section class="map-section">
     <iframe
@@ -538,6 +578,16 @@
       entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
     }, { threshold: .15 });
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  </script>
+
+  <!-- Resmio Reservation Widget -->
+  <script>
+    (function() {
+      var js = document.createElement('script');
+      js.src = "//static.resmio.com/static/de/widget.js#id=landidyll-hotel-lamm&height=220&width=320&fontSize=14px";
+      js.async = true;
+      document.getElementById('resmio-widget').appendChild(js);
+    })();
   </script>
 </body>
 </html>
