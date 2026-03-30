@@ -67,14 +67,12 @@
       min-height: 100vh; display: flex; align-items: center; justify-content: center;
       text-align: center; position: relative;
       background:
-        linear-gradient(180deg, rgba(17,17,17,.3) 0%, rgba(17,17,17,.7) 60%, var(--darker) 100%),
-        radial-gradient(ellipse at 50% 30%, rgba(197,165,90,.12) 0%, transparent 60%);
+        linear-gradient(180deg, rgba(17,17,17,.4) 0%, rgba(17,17,17,.75) 60%, var(--darker) 100%),
+        url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1920&q=80') center/cover no-repeat;
     }
     .hero::before {
       content: ''; position: absolute; inset: 0;
-      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r=".4" fill="%23C5A55A" opacity=".15"/></svg>') repeat;
-      background-size: 30px 30px;
-      opacity: .4;
+      background: rgba(0,0,0,.2);
     }
     .hero-content { position: relative; z-index: 2; padding: 2rem; }
     .hero-badge {
@@ -154,12 +152,9 @@
       display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;
     }
     .about-image {
-      aspect-ratio: 4/5; background: linear-gradient(135deg, var(--warm), var(--darker));
+      aspect-ratio: 4/5;
+      background: url('https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?w=800&q=80') center/cover no-repeat;
       border-radius: 6px; position: relative; overflow: hidden;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .about-image-icon {
-      font-size: 5rem; opacity: .6;
     }
     .about-image::after {
       content: ''; position: absolute; inset: 0;
@@ -203,6 +198,10 @@
     }
     .menu-card:hover::before { opacity: 1; }
     .menu-icon { font-size: 2.5rem; margin-bottom: 1.2rem; }
+    .menu-card-img {
+      width: 100%; height: 200px; object-fit: cover; border-radius: 6px;
+      margin-bottom: 1.2rem;
+    }
     .menu-card h3 {
       font-family: 'Playfair Display', serif; font-size: 1.4rem;
       margin-bottom: .8rem;
@@ -211,7 +210,9 @@
 
     /* ── AMBIANCE / FEATURE ── */
     .ambiance {
-      background: linear-gradient(135deg, var(--warm) 0%, var(--dark) 100%);
+      background:
+        linear-gradient(135deg, rgba(42,36,32,.92) 0%, rgba(26,26,26,.95) 100%),
+        url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1400&q=70') center/cover no-repeat;
       text-align: center;
     }
     .ambiance-features {
@@ -390,9 +391,7 @@
   <section class="about" id="ueber">
     <div class="container">
       <div class="about-grid">
-        <div class="about-image reveal">
-          <div class="about-image-icon">🍷</div>
-        </div>
+        <div class="about-image reveal"></div>
         <div class="reveal">
           <div class="section-label">Willkommen</div>
           <h2 class="section-title">Schwäbische Seele,<br>moderne Küche</h2>
@@ -428,17 +427,17 @@
       </div>
       <div class="menu-grid">
         <div class="menu-card reveal">
-          <div class="menu-icon">🥩</div>
+          <img src="https://images.unsplash.com/photo-1600891964092-4316c288032e?w=600&q=80" alt="Steak vom heißen Stein" class="menu-card-img" loading="lazy">
           <h3>Steaks vom heißen Stein</h3>
           <p>Ausgewählte Steaks, direkt am Tisch auf dem heißen Stein zubereitet — genau nach Ihrem Geschmack. Ein Erlebnis für alle Sinne.</p>
         </div>
         <div class="menu-card reveal">
-          <div class="menu-icon">🍝</div>
+          <img src="https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=600&q=80" alt="Spätzle und Maultaschen" class="menu-card-img" loading="lazy">
           <h3>Spätzle &amp; Maultaschen</h3>
           <p>Handgeschabte Spätzle und hausgemachte Maultaschen — schwäbische Klassiker mit Liebe zum Detail. Dazu frische Pasta-Kreationen.</p>
         </div>
         <div class="menu-card reveal">
-          <div class="menu-icon">🍹</div>
+          <img src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&q=80" alt="Cocktails und Drinks" class="menu-card-img" loading="lazy">
           <h3>Cocktails &amp; Drinks</h3>
           <p>Eine große Auswahl an handgemixten Cocktails und Longdrinks. Der perfekte Begleiter für einen geselligen Abend im Lamm.</p>
         </div>
