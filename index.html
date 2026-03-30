@@ -279,9 +279,18 @@
     }
     .reservation-text a { color: var(--gold); text-decoration: none; }
     .reservation-widget {
-      background: var(--cream); border-radius: 8px; padding: 2rem;
-      min-height: 280px; display: flex; align-items: center; justify-content: center;
+      border-radius: 8px; overflow: hidden;
+      min-height: 420px;
     }
+    .reservation-fallback {
+      text-align: center; margin-top: 1.5rem;
+      padding: 1.5rem; background: rgba(197,165,90,.06);
+      border-radius: 8px;
+    }
+    .reservation-fallback p {
+      color: var(--text-muted); font-size: .85rem; margin-bottom: .5rem;
+    }
+    .reservation-fallback .btn { display: inline-flex; margin: .4rem; }
 
     /* ── MAP ── */
     .map-section { padding: 0; }
@@ -535,16 +544,17 @@
           <p>Für Gruppen ab 25 Personen kontaktieren Sie uns bitte direkt unter <a href="tel:+497042832282">07042 / 832 282</a>.</p>
         </div>
         <div class="reservation-widget">
-          <div id="resmio-button"></div>
-          <script>
-            (function(d, s, id) {
-              var js, fjs = d.getElementsByTagName(s)[0];
-              if (d.getElementById(id)) return;
-              js = d.createElement(s); js.id = id;
-              js.src = "https://static.resmio.com/static/de/widget.js#id=landidyll-hotel-lamm&height=280&width=100%25&fontSize=14px";
-              fjs.parentNode.insertBefore(js, fjs);
-            }(document, 'script', 'resmio-widget'));
-          </script>
+          <iframe
+            src="https://app.resmio.com/landidyll-hotel-lamm/widget?backgroundColor=%231A1A1A&color=%23C5A55A&fontColor=%23E8E2D8&buttonColor=%23C5A55A"
+            style="width:100%; min-height:420px; border:none; border-radius:8px;"
+            title="Online Reservierung"
+            loading="lazy">
+          </iframe>
+          <div class="reservation-fallback">
+            <p>Reservierung auch direkt möglich:</p>
+            <a href="https://app.resmio.com/landidyll-hotel-lamm" target="_blank" rel="noopener" class="btn btn-primary" style="margin-top:.8rem;">Online reservieren</a>
+            <a href="tel:+497042832282" class="btn btn-outline" style="margin-top:.8rem;">Anrufen: 07042 / 832 282</a>
+          </div>
         </div>
       </div>
     </div>
