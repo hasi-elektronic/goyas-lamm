@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Speisekarte — Goya's Lamm</title>
+  <meta name="description" content="Speisekarte von Goya's Lamm in Horrheim. Steaks vom heißen Stein, Spätzle, Maultaschen, Salate, Cocktails und mehr.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #C5A55A;
+      --gold-light: #D4BA7A;
+      --dark: #1A1A1A;
+      --darker: #111111;
+      --warm: #2A2420;
+      --cream: #F5F0E8;
+      --text: #E8E2D8;
+      --text-muted: #9A9286;
+      --accent: #8B2E2E;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--darker);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    .menu-header {
+      text-align: center;
+      padding: 3rem 1.5rem 2rem;
+      background: 
+        linear-gradient(180deg, rgba(17,17,17,.85) 0%, var(--darker) 100%),
+        url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=60') center/cover no-repeat;
+      border-bottom: 1px solid rgba(197,165,90,.15);
+    }
+    .menu-header a.back-link {
+      display: inline-flex; align-items: center; gap: .4rem;
+      color: var(--text-muted); text-decoration: none; font-size: .8rem;
+      letter-spacing: 1px; text-transform: uppercase;
+      margin-bottom: 1.5rem; transition: color .3s;
+    }
+    .menu-header a.back-link:hover { color: var(--gold); }
+    .menu-header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--cream) 0%, var(--gold) 50%, var(--cream) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .menu-header .subtitle {
+      font-size: .85rem; color: var(--text-muted);
+      letter-spacing: 2px; margin-top: .5rem; font-weight: 300;
+    }
+    .menu-header .divider {
+      width: 50px; height: 2px; background: var(--gold);
+      margin: 1.5rem auto 0;
+    }
+
+    /* ── CATEGORY NAV ── */
+    .cat-nav {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(17,17,17,.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(197,165,90,.1);
+      overflow-x: auto; white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .cat-nav::-webkit-scrollbar { display: none; }
+    .cat-nav-inner {
+      display: inline-flex; gap: .5rem;
+      padding: .8rem 1.5rem;
+    }
+    .cat-nav a {
+      display: inline-block;
+      padding: .5rem 1rem;
+      font-size: .72rem; font-weight: 600;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--text-muted); text-decoration: none;
+      border: 1px solid rgba(197,165,90,.12);
+      border-radius: 3px; transition: all .3s;
+      white-space: nowrap;
+    }
+    .cat-nav a:hover, .cat-nav a.active {
+      color: var(--gold); border-color: var(--gold);
+      background: rgba(197,165,90,.08);
+    }
+
+    /* ── CONTAINER ── */
+    .menu-container {
+      max-width: 720px; margin: 0 auto;
+      padding: 1rem 1.5rem 4rem;
+    }
+
+    /* ── CATEGORY ── */
+    .category {
+      margin-top: 2.5rem;
+      padding-top: 1rem;
+    }
+    .category-header {
+      display: flex; align-items: center; gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .category-icon { font-size: 1.6rem; }
+    .category-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem; font-weight: 700;
+      color: var(--cream);
+    }
+    .category-line {
+      flex: 1; height: 1px;
+      background: linear-gradient(90deg, rgba(197,165,90,.3), transparent);
+    }
+
+    /* ── ITEM ── */
+    .menu-item {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 1rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid rgba(197,165,90,.06);
+      transition: background .3s;
+    }
+    .menu-item:last-child { border-bottom: none; }
+    .menu-item:hover {
+      background: rgba(197,165,90,.03);
+      margin: 0 -.8rem; padding: 1rem .8rem;
+      border-radius: 6px;
+    }
+    .item-info { flex: 1; }
+    .item-name {
+      font-weight: 600; font-size: .95rem;
+      color: var(--text); letter-spacing: .3px;
+    }
+    .item-desc {
+      font-size: .82rem; color: var(--text-muted);
+      line-height: 1.5; margin-top: .3rem;
+    }
+    .item-tags {
+      display: flex; gap: .4rem; margin-top: .4rem; flex-wrap: wrap;
+    }
+    .item-tag {
+      font-size: .62rem; letter-spacing: .5px;
+      color: var(--gold); opacity: .7;
+      padding: .15rem .5rem;
+      border: 1px solid rgba(197,165,90,.2);
+      border-radius: 2px; text-transform: uppercase;
+    }
+    .item-price {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem; font-weight: 700;
+      color: var(--gold); white-space: nowrap;
+      min-width: 55px; text-align: right;
+    }
+
+    /* ── HEISSER STEIN HIGHLIGHT ── */
+    .highlight-card {
+      background: linear-gradient(135deg, rgba(139,46,46,.12) 0%, rgba(42,36,32,.5) 100%);
+      border: 1px solid rgba(197,165,90,.15);
+      border-radius: 8px; padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .highlight-card .badge {
+      display: inline-block; padding: .3rem .8rem;
+      font-size: .62rem; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--gold); border: 1px solid var(--gold);
+      border-radius: 2px; margin-bottom: 1rem;
+    }
+    .highlight-card p {
+      color: var(--text-muted); font-size: .82rem; line-height: 1.6;
+      font-style: italic;
+    }
+
+    /* ── ALLERGEN INFO ── */
+    .allergen-section {
+      margin-top: 3rem; padding: 2rem 1.5rem;
+      background: var(--dark); border-radius: 8px;
+      border: 1px solid rgba(197,165,90,.08);
+    }
+    .allergen-section h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem; margin-bottom: 1rem; color: var(--cream);
+    }
+    .allergen-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: .5rem;
+    }
+    .allergen-item {
+      font-size: .72rem; color: var(--text-muted); line-height: 1.4;
+      padding: .3rem 0;
+    }
+    .allergen-item strong { color: var(--gold); font-weight: 600; }
+
+    /* ── FOOTER ── */
+    .menu-footer {
+      text-align: center; padding: 2rem 1.5rem;
+      border-top: 1px solid rgba(197,165,90,.1);
+      margin-top: 2rem;
+    }
+    .menu-footer p {
+      color: var(--text-muted); font-size: .75rem; line-height: 1.6;
+    }
+    .menu-footer a { color: var(--gold); text-decoration: none; }
+    .menu-footer .cta {
+      margin-top: 1.5rem;
+    }
+    .menu-footer .cta a {
+      display: inline-flex; align-items: center; gap: .5rem;
+      padding: .8rem 2rem; font-size: .8rem; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--dark); background: var(--gold);
+      border-radius: 3px; transition: all .3s;
+    }
+    .menu-footer .cta a:hover {
+      background: var(--gold-light); transform: translateY(-2px);
+    }
+
+    /* ── ANIMATIONS ── */
+    .fade-in {
+      opacity: 0; transform: translateY(20px);
+      transition: opacity .6s ease-out, transform .6s ease-out;
+    }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 480px) {
+      .menu-header { padding: 2.5rem 1rem 1.5rem; }
+      .menu-container { padding: 1rem 1rem 3rem; }
+      .category-name { font-size: 1.25rem; }
+      .item-name { font-size: .88rem; }
+      .item-price { font-size: .95rem; }
+      .allergen-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="menu-header">
+    <a href="index.html" class="back-link">← Zurück zur Website</a>
+    <h1>Speisekarte</h1>
+    <p class="subtitle">Goya's Lamm &bull; Horrheim</p>
+    <div class="divider"></div>
+  </header>
+
+  <!-- CATEGORY NAV -->
+  <nav class="cat-nav">
+    <div class="cat-nav-inner">
+      <a href="#vorspeisen">Vorspeisen</a>
+      <a href="#salate">Salate</a>
+      <a href="#heisser-stein">Heißer Stein</a>
+      <a href="#schnitzel">Schnitzel</a>
+      <a href="#spaetzle">Spätzle</a>
+      <a href="#burger">Burger</a>
+      <a href="#kinder">Kinderkarte</a>
+      <a href="#desserts">Desserts</a>
+      <a href="#cocktails">Cocktails</a>
+      <a href="#weine">Weine</a>
+    </div>
+  </nav>
+
+  <!-- MENU CONTENT -->
+  <main class="menu-container">
+
+    <!-- ═══ VORSPEISEN ═══ -->
+    <section class="category fade-in" id="vorspeisen">
+      <div class="category-header">
+        <span class="category-icon">🍽</span>
+        <span class="category-name">Vorspeisen</span>
+        <span class="category-line"></span>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Tagessuppe</div>
+          <div class="item-desc">Frisch zubereitet nach Saison</div>
+        </div>
+        <div class="item-price">5,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Bruschetta Classica</div>
+          <div class="item-desc">Geröstetes Brot mit Tomaten, Knoblauch, Basilikum & Olivenöl</div>
+          <div class="item-tags"><span class="item-tag">Vegetarisch</span></div>
+        </div>
+        <div class="item-price">8,50 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Vitello Tonnato</div>
+          <div class="item-desc">Hauchdünn geschnittenes Kalbfleisch mit Thunfischcreme & Kapern</div>
+        </div>
+        <div class="item-price">13,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Antipasti-Teller für Zwei</div>
+          <div class="item-desc">Gegrilltes Gemüse, Schinken, Käse, Oliven & hausgemachtes Focaccia</div>
+        </div>
+        <div class="item-price">18,90 €</div>
+      </div>
+    </section>
+
+    <!-- ═══ SALATE ═══ -->
+    <section class="category fade-in" id="salate">
+      <div class="category-header">
+        <span class="category-icon">🥗</span>
+        <span class="category-name">Salate</span>
+        <span class="category-line"></span>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Gemischter Beilagensalat</div>
+          <div class="item-desc">Blattsalate der Saison mit Hausdressing</div>
+          <div class="item-tags"><span class="item-tag">Vegetarisch</span></div>
+        </div>
+        <div class="item-price">5,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Caesar Salad</div>
+          <div class="item-desc">Romana, Parmesan, Croutons & Caesar-Dressing — mit gegrillter Hähnchenbrust</div>
+        </div>
+        <div class="item-price">14,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Ziegenkäse-Salat</div>
+          <div class="item-desc">Gratinierter Ziegenkäse auf Feldsalat mit Walnüssen & Honig-Senf-Dressing</div>
+          <div class="item-tags"><span class="item-tag">Vegetarisch</span></div>
+        </div>
+        <div class="item-price">13,90 €</div>
+      </div>
+    </section>
+
+    <!-- ═══ HEISSER STEIN ═══ -->
+    <section class="category fade-in" id="heisser-stein">
+      <div class="category-header">
+        <span class="category-icon">♨️</span>
+        <span class="category-name">Steaks vom heißen Stein</span>
+        <span class="category-line"></span>
+      </div>
+
+      <div class="highlight-card">
+        <div class="badge">Unser Signature</div>
+        <p>Unsere Steaks werden auf einem 400°C heißen Naturstein direkt am Tisch serviert. So bestimmen Sie selbst den gewünschten Gargrad — ein Erlebnis für alle Sinne. Alle Steaks inklusive Beilagensalat und Ofenkartoffel oder Pommes.</p>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Rumpsteak</div>
+          <div class="item-desc">ca. 250g, vom Weiderind — kräftig im Geschmack</div>
+        </div>
+        <div class="item-price">26,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Filetsteak</div>
+          <div class="item-desc">ca. 200g, zartestes Stück vom Rind</div>
+        </div>
+        <div class="item-price">32,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Rib-Eye-Steak</div>
+          <div class="item-desc">ca. 300g, stark marmoriert — besonders saftig</div>
+        </div>
+        <div class="item-price">29,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Duo vom Stein</div>
+          <div class="item-desc">Rumpsteak & Hähnchenbrust auf dem heißen Stein</div>
+        </div>
+        <div class="item-price">27,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Lachs vom Stein</div>
+          <div class="item-desc">Frisches Lachsfilet, ca. 180g — auf dem heißen Stein gegart</div>
+        </div>
+        <div class="item-price">24,90 €</div>
+      </div>
+    </section>
+
+    <!-- ═══ SCHNITZEL ═══ -->
+    <section class="category fade-in" id="schnitzel">
+      <div class="category-header">
+        <span class="category-icon">🥩</span>
+        <span class="category-name">Schnitzel & Klassiker</span>
+        <span class="category-line"></span>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Schwäbisches Schnitzel</div>
+          <div class="item-desc">Paniertes Schweineschnitzel mit Pommes & Salat</div>
+        </div>
+        <div class="item-price">15,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Jägerschnitzel</div>
+          <div class="item-desc">Mit Champignon-Rahmsoße, Spätzle & Salat</div>
+        </div>
+        <div class="item-price">17,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Rahmschnitzel</div>
+          <div class="item-desc">Mit feiner Rahmsoße, Spätzle & Salat</div>
+        </div>
+        <div class="item-price">17,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Cordon Bleu</div>
+          <div class="item-desc">Gefüllt mit Schinken & Käse, dazu Pommes & Salat</div>
+        </div>
+        <div class="item-price">19,90 €</div>
+      </div>
+    </section>
+
+    <!-- ═══ SPÄTZLE & MAULTASCHEN ═══ -->
+    <section class="category fade-in" id="spaetzle">
+      <div class="category-header">
+        <span class="category-icon">🍝</span>
+        <span class="category-name">Spätzle & Maultaschen</span>
+        <span class="category-line"></span>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Käsespätzle</div>
+          <div class="item-desc">Handgeschabte Spätzle mit Bergkäse & Röstzwiebeln</div>
+          <div class="item-tags"><span class="item-tag">Vegetarisch</span></div>
+        </div>
+        <div class="item-price">14,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Linsen mit Spätzle</div>
+          <div class="item-desc">Schwäbischer Klassiker — Alblinsen mit Saitenwürstle & Spätzle</div>
+        </div>
+        <div class="item-price">13,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Maultaschen in der Brühe</div>
+          <div class="item-desc">Hausgemachte Maultaschen in kräftiger Rinderbrühe</div>
+        </div>
+        <div class="item-price">12,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Maultaschen geschmälzt</div>
+          <div class="item-desc">In Butter angebraten mit Röstzwiebeln & Kartoffelsalat</div>
+        </div>
+        <div class="item-price">14,90 €</div>
+      </div>
+    </section>
+
+    <!-- ═══ BURGER ═══ -->
+    <section class="category fade-in" id="burger">
+      <div class="category-header">
+        <span class="category-icon">🍔</span>
+        <span class="category-name">Burger</span>
+        <span class="category-line"></span>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Lamm Classic Burger</div>
+          <div class="item-desc">200g Rindfleisch, Cheddar, Tomaten, Salat, Hausdressing & Pommes</div>
+        </div>
+        <div class="item-price">15,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">BBQ Bacon Burger</div>
+          <div class="item-desc">200g Rindfleisch, Bacon, Cheddar, Röstzwiebeln, BBQ-Soße & Pommes</div>
+        </div>
+        <div class="item-price">17,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Veggie Burger</div>
+          <div class="item-desc">Hausgemachtes Gemüse-Patty, Avocado, Feldsalat & Süßkartoffel-Pommes</div>
+          <div class="item-tags"><span class="item-tag">Vegetarisch</span></div>
+        </div>
+        <div class="item-price">14,90 €</div>
+      </div>
+    </section>
+
+    <!-- ═══ KINDERKARTE ═══ -->
+    <section class="category fade-in" id="kinder">
+      <div class="category-header">
+        <span class="category-icon">👶</span>
+        <span class="category-name">Kinderkarte</span>
+        <span class="category-line"></span>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Kinderschnitzel</div>
+          <div class="item-desc">Kleines paniertes Schnitzel mit Pommes</div>
+        </div>
+        <div class="item-price">8,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Käsespätzle klein</div>
+          <div class="item-desc">Handgeschabte Spätzle mit Bergkäse</div>
+          <div class="item-tags"><span class="item-tag">Vegetarisch</span></div>
+        </div>
+        <div class="item-price">7,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Chicken Nuggets</div>
+          <div class="item-desc">Knusprige Hähnchen-Nuggets mit Pommes & Ketchup</div>
+        </div>
+        <div class="item-price">8,50 €</div>
+      </div>
+    </section>
+
+    <!-- ═══ DESSERTS ═══ -->
+    <section class="category fade-in" id="desserts">
+      <div class="category-header">
+        <span class="category-icon">🍰</span>
+        <span class="category-name">Desserts</span>
+        <span class="category-line"></span>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Panna Cotta</div>
+          <div class="item-desc">Vanille-Panna-Cotta mit Beerenragout</div>
+        </div>
+        <div class="item-price">7,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Warmer Schokoladenkuchen</div>
+          <div class="item-desc">Mit flüssigem Kern & Vanilleeis</div>
+        </div>
+        <div class="item-price">9,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Apfelstrudel</div>
+          <div class="item-desc">Hausgemacht mit Vanillesoße</div>
+        </div>
+        <div class="item-price">8,50 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Eis (3 Kugeln)</div>
+          <div class="item-desc">Vanille, Schokolade, Erdbeere — nach Wahl</div>
+        </div>
+        <div class="item-price">5,90 €</div>
+      </div>
+    </section>
+
+    <!-- ═══ COCKTAILS & DRINKS ═══ -->
+    <section class="category fade-in" id="cocktails">
+      <div class="category-header">
+        <span class="category-icon">🍸</span>
+        <span class="category-name">Cocktails & Drinks</span>
+        <span class="category-line"></span>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Aperol Spritz</div>
+          <div class="item-desc">Aperol, Prosecco, Soda</div>
+        </div>
+        <div class="item-price">8,50 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Hugo</div>
+          <div class="item-desc">Holunderblütensirup, Prosecco, Minze, Limette</div>
+        </div>
+        <div class="item-price">8,50 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Moscow Mule</div>
+          <div class="item-desc">Vodka, Ginger Beer, Limette — serviert im Kupferbecher</div>
+        </div>
+        <div class="item-price">10,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Gin Tonic</div>
+          <div class="item-desc">Premium Gin nach Wahl, Tonic Water, Botanicals</div>
+        </div>
+        <div class="item-price">10,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Virgin Mojito</div>
+          <div class="item-desc">Limette, Minze, Rohrzucker, Soda — alkoholfrei</div>
+          <div class="item-tags"><span class="item-tag">Alkoholfrei</span></div>
+        </div>
+        <div class="item-price">7,50 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Hausgemachte Limonade</div>
+          <div class="item-desc">Zitrone-Ingwer oder Himbeere-Rosmarin</div>
+          <div class="item-tags"><span class="item-tag">Alkoholfrei</span></div>
+        </div>
+        <div class="item-price">5,90 €</div>
+      </div>
+    </section>
+
+    <!-- ═══ WEINE ═══ -->
+    <section class="category fade-in" id="weine">
+      <div class="category-header">
+        <span class="category-icon">🍷</span>
+        <span class="category-name">Weine</span>
+        <span class="category-line"></span>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Trollinger</div>
+          <div class="item-desc">Württemberg, trocken — 0,2l / 0,5l</div>
+          <div class="item-tags"><span class="item-tag">Regional</span></div>
+        </div>
+        <div class="item-price">5,50 / 12,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Lemberger</div>
+          <div class="item-desc">Württemberg, trocken — 0,2l / 0,5l</div>
+          <div class="item-tags"><span class="item-tag">Regional</span></div>
+        </div>
+        <div class="item-price">6,50 / 14,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Grauburgunder</div>
+          <div class="item-desc">Baden, trocken — 0,2l / 0,5l</div>
+        </div>
+        <div class="item-price">6,50 / 14,90 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Riesling</div>
+          <div class="item-desc">Württemberg, halbtrocken — 0,2l / 0,5l</div>
+          <div class="item-tags"><span class="item-tag">Regional</span></div>
+        </div>
+        <div class="item-price">5,90 / 13,50 €</div>
+      </div>
+
+      <div class="menu-item">
+        <div class="item-info">
+          <div class="item-name">Prosecco</div>
+          <div class="item-desc">Frizzante, 0,1l Glas / 0,75l Flasche</div>
+        </div>
+        <div class="item-price">4,90 / 24,90 €</div>
+      </div>
+    </section>
+
+    <!-- ═══ ALLERGEN INFO ═══ -->
+    <div class="allergen-section fade-in">
+      <h3>Allergeninformation</h3>
+      <div class="allergen-grid">
+        <div class="allergen-item"><strong>A</strong> — Glutenhaltiges Getreide</div>
+        <div class="allergen-item"><strong>B</strong> — Krebstiere</div>
+        <div class="allergen-item"><strong>C</strong> — Eier</div>
+        <div class="allergen-item"><strong>D</strong> — Fisch</div>
+        <div class="allergen-item"><strong>E</strong> — Erdnüsse</div>
+        <div class="allergen-item"><strong>F</strong> — Soja</div>
+        <div class="allergen-item"><strong>G</strong> — Milch / Laktose</div>
+        <div class="allergen-item"><strong>H</strong> — Schalenfrüchte</div>
+        <div class="allergen-item"><strong>I</strong> — Sellerie</div>
+        <div class="allergen-item"><strong>J</strong> — Senf</div>
+        <div class="allergen-item"><strong>K</strong> — Sesam</div>
+        <div class="allergen-item"><strong>L</strong> — Sulfite</div>
+        <div class="allergen-item"><strong>M</strong> — Lupinen</div>
+        <div class="allergen-item"><strong>N</strong> — Weichtiere</div>
+      </div>
+      <p style="margin-top:1rem; font-size:.72rem; color:var(--text-muted);">
+        Bitte informieren Sie unser Personal über Allergien oder Unverträglichkeiten. Alle Gerichte können Spuren von Allergenen enthalten.
+      </p>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="menu-footer">
+    <p>Alle Preise in Euro inkl. gesetzlicher MwSt. &bull; Irrtümer und Preisänderungen vorbehalten.</p>
+    <p style="margin-top:.3rem;">Dies ist eine Beispiel-Speisekarte — Änderungen jederzeit möglich.</p>
+    <div class="cta">
+      <a href="https://app.resmio.com/landidyll-hotel-lamm" target="_blank" rel="noopener">Tisch reservieren</a>
+    </div>
+    <p style="margin-top:1.5rem; font-size:.65rem; opacity:.4;">
+      <a href="index.html">goyas-lamm.de</a> &bull; Website von <a href="https://www.hasi-elektronik.de" target="_blank">Hasi Elektronik</a>
+    </p>
+  </footer>
+
+  <script>
+    // Scroll reveal
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: .1 });
+    document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+
+    // Active category nav highlight on scroll
+    const cats = document.querySelectorAll('.category');
+    const navLinks = document.querySelectorAll('.cat-nav a');
+    const catObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          navLinks.forEach(l => l.classList.remove('active'));
+          const active = document.querySelector(`.cat-nav a[href="#${e.target.id}"]`);
+          if (active) {
+            active.classList.add('active');
+            active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          }
+        }
+      });
+    }, { threshold: .3, rootMargin: '-80px 0px -60% 0px' });
+    cats.forEach(c => catObs.observe(c));
+  </script>
+
+</body>
+</html>
