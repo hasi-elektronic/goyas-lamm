@@ -535,7 +535,16 @@
           <p>Für Gruppen ab 25 Personen kontaktieren Sie uns bitte direkt unter <a href="tel:+497042832282">07042 / 832 282</a>.</p>
         </div>
         <div class="reservation-widget">
-          <div id="resmio-widget"></div>
+          <div id="resmio-button"></div>
+          <script>
+            (function(d, s, id) {
+              var js, fjs = d.getElementsByTagName(s)[0];
+              if (d.getElementById(id)) return;
+              js = d.createElement(s); js.id = id;
+              js.src = "https://static.resmio.com/static/de/widget.js#id=landidyll-hotel-lamm&height=280&width=100%25&fontSize=14px";
+              fjs.parentNode.insertBefore(js, fjs);
+            }(document, 'script', 'resmio-widget'));
+          </script>
         </div>
       </div>
     </div>
@@ -580,14 +589,5 @@
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
   </script>
 
-  <!-- Resmio Reservation Widget -->
-  <script>
-    (function() {
-      var js = document.createElement('script');
-      js.src = "//static.resmio.com/static/de/widget.js#id=landidyll-hotel-lamm&height=220&width=320&fontSize=14px";
-      js.async = true;
-      document.getElementById('resmio-widget').appendChild(js);
-    })();
-  </script>
 </body>
 </html>
