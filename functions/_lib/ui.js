@@ -166,8 +166,54 @@ tr.cancelled .trow input,tr.cancelled .trow select{background:var(--cream)}
 .pill.ns{border-color:var(--wine);color:#fff;background:var(--wine)}
 tr.noshow td.nm a{text-decoration:line-through;text-decoration-color:var(--wine)}
 
+/* Untere Leiste (nur Handy) */
+.bnav{display:none}
+.sheet-bg{display:none}
+
 @media(max-width:720px){
-  main{margin-top:1.1rem}
+  nav.tabs{display:none}
+  body{padding-bottom:calc(66px + env(safe-area-inset-bottom))}
+  .bnav{
+    display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:50;
+    background:var(--ink);border-top:1px solid rgba(244,247,234,.14);
+    padding-bottom:env(safe-area-inset-bottom)}
+  .bnav a,.bnav summary{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.22rem;
+    padding:.6rem .2rem .55rem;text-decoration:none;color:rgba(244,247,234,.58);
+    font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;
+    list-style:none;cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:60px}
+  .bnav summary::-webkit-details-marker{display:none}
+  .bnav a.on{color:#fff;box-shadow:inset 0 2px 0 var(--gold)}
+  .bnav a.plus{color:#fff}
+  .bnav a.plus svg{background:var(--wine);border-radius:50%;padding:3px}
+  .bnav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7;
+    stroke-linecap:round;stroke-linejoin:round}
+  details.more{position:static}
+  details.more[open] > summary{color:#fff}
+  details.more .sheet{
+    position:fixed;left:0;right:0;bottom:calc(66px + env(safe-area-inset-bottom));z-index:51;
+    background:var(--paper);border-top:1px solid var(--sand);
+    box-shadow:0 -18px 40px -20px rgba(0,0,0,.5);padding:.4rem 0 .6rem;
+    max-height:66vh;overflow-y:auto}
+  details.more .sheet a{
+    display:flex;flex-direction:row;align-items:center;justify-content:flex-start;
+    gap:.85rem;padding:.9rem 1.1rem;text-decoration:none;min-height:0;
+    text-transform:none;letter-spacing:normal;
+    color:var(--ink);font-size:.98rem;font-weight:600;border-bottom:1px solid var(--sand)}
+  details.more .sheet a:last-child{border-bottom:0}
+  details.more .sheet a.on{color:var(--wine)}
+  details.more .sheet a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;
+    stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto;color:var(--muted)}
+  details.more .sheet a.on svg{color:var(--wine)}
+  details.more .sheet .ab{color:var(--muted);font-weight:400;font-size:.9rem}
+  details.more[open] ~ .sheet-bg,
+  details.more[open] .sheet-bg{display:block;position:fixed;inset:0;z-index:49;
+    background:rgba(20,18,15,.45)}
+  .top .out{display:none}
+}
+
+@media(max-width:720px){
+  main{margin-top:1.1rem;margin-bottom:1.6rem}
   .irow{grid-template-columns:minmax(0,1fr) minmax(0,.6fr);padding:.7rem .7rem .3rem}
   .irow-act{grid-column:1 / -1}
   .irow-act .btn{width:100%}
@@ -193,15 +239,42 @@ tr.noshow td.nm a{text-decoration:line-through;text-decoration-color:var(--wine)
 }
 `;
 
-const TABS = [
-  ['/admin', 'Übersicht'],
-  ['/admin/kalender', 'Kalender'],
-  ['/admin/neu', 'Neue Reservierung'],
-  ['/admin/tische', 'Tische'],
-  ['/admin/karte', 'Speisekarte'],
-  ['/admin/zeiten', 'Schließtage'],
-  ['/admin/suche', 'Suche'],
+/* Kleine Strichzeichnungen — inline, damit kein zusätzlicher Request nötig ist. */
+const IC = {
+  heim:   '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/>',
+  liste:  '<path d="M8 6h13M8 12h13M8 18h13"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>',
+  plus:   '<path d="M12 5v14M5 12h14"/>',
+  karte:  '<path d="M4 4.5h7a2 2 0 0 1 2 2V21a1.7 1.7 0 0 0-1.7-1.7H4z"/><path d="M20 4.5h-7a2 2 0 0 0-2 2V21a1.7 1.7 0 0 1 1.7-1.7H20z"/>',
+  mehr:   '<path d="M5 12h.01M12 12h.01M19 12h.01"/>',
+  kalender:'<rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+  tisch:  '<path d="M3 9h18"/><path d="M6 9v11M18 9v11"/><path d="M5 5h14a2 2 0 0 1 2 2v2H3V7a2 2 0 0 1 2-2z"/>',
+  uhr:    '<circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/>',
+  lupe:   '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
+  druck:  '<path d="M7 9V3.5h10V9"/><rect x="4" y="9" width="16" height="7" rx="1.5"/><path d="M7 14h10v6.5H7z"/>',
+  aus:    '<path d="M15 4.5h3.5A1.5 1.5 0 0 1 20 6v12a1.5 1.5 0 0 1-1.5 1.5H15"/><path d="M10 8.5 6 12l4 3.5M6 12h9"/>',
+};
+const svg = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>`;
+
+/* [Pfad, Beschriftung, Icon, kurze Beschriftung für die untere Leiste] */
+const NAV = [
+  ['/admin',           'Übersicht',         'heim',     'Start'],
+  ['/admin/tag',       'Heute',             'liste',    'Heute'],
+  ['/admin/kalender',  'Kalender',          'kalender', 'Kalender'],
+  ['/admin/neu',       'Neue Reservierung', 'plus',     'Neu'],
+  ['/admin/karte',     'Speisekarte',       'karte',    'Karte'],
+  ['/admin/tische',    'Tische',            'tisch',    'Tische'],
+  ['/admin/zeiten',    'Schließtage',       'uhr',      'Zeiten'],
+  ['/admin/suche',     'Suche',             'lupe',     'Suche'],
+  ['/admin/zettel',    'Küchenzettel',      'druck',    'Zettel'],
 ];
+
+/* Reiterleiste am Rechner — Küchenzettel und Tagesansicht sind dort verlinkt,
+   nicht als eigener Reiter, damit die Leiste kurz bleibt. */
+const TABS = NAV.filter(([h]) =>
+  !['/admin/tag', '/admin/zettel'].includes(h)).map(([h, t]) => [h, t]);
+
+/* Untere Leiste am Handy: vier häufige Ziele plus „Mehr". */
+const UNTEN = ['/admin', '/admin/tag', '/admin/neu', '/admin/karte'];
 
 export function layout({ title, active, body, status = 200 }) {
   return new Response(
@@ -224,6 +297,23 @@ export function layout({ title, active, body, status = 200 }) {
   ${TABS.map(([h, t]) => `<a href="${h}" class="${active === h ? 'on' : ''}">${t}</a>`).join('')}
 </div></nav>
 <main>${body}</main>
+
+<nav class="bnav">
+  ${UNTEN.map(pfad => {
+    const [h, , ic, kurz] = NAV.find(n => n[0] === pfad);
+    return `<a href="${h}" class="${active === h ? 'on' : ''}${h === '/admin/neu' ? ' plus' : ''}">
+      ${svg(ic)}<span>${kurz}</span></a>`;
+  }).join('')}
+  <details class="more">
+    <summary>${svg('mehr')}<span>Mehr</span></summary>
+    <div class="sheet-bg"></div>
+    <div class="sheet">
+      ${NAV.map(([h, t, ic]) =>
+        `<a href="${h}" class="${active === h ? 'on' : ''}">${svg(ic)}<span>${t}</span></a>`).join('')}
+      <a href="/admin/logout" class="ab">${svg('aus')}<span>Abmelden</span></a>
+    </div>
+  </details>
+</nav>
 </body></html>`,
     { status, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } }
   );

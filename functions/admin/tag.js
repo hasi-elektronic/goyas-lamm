@@ -66,5 +66,5 @@ export async function onRequestGet({ request, env }) {
       ${table(rows, { notes })}
     </div>`;
 
-  return layout({ title: formatDateDE(day), active: '/admin/kalender', body });
+  return layout({ title: formatDateDE(day), active: '/admin/tag', body });
 }
