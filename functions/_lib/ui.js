@@ -88,7 +88,7 @@ tr.cancelled td.t,tr.cancelled td.nm{text-decoration:line-through}
 .spacer{flex:1}
 
 /* Formular */
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1rem 1.1rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem 1.1rem}
 .f{min-width:0}
 .f.full{grid-column:1 / -1}
 .f label{display:block;font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;
@@ -99,8 +99,10 @@ tr.cancelled td.t,tr.cancelled td.nm{text-decoration:line-through}
 .f input:focus,.f select:focus,.f textarea:focus{outline:0;border-color:var(--wine);
   box-shadow:0 0 0 3px rgba(109,24,38,.1)}
 .f .hint{font-size:.78rem;color:var(--muted);margin:.3rem 0 0}
-.check{display:flex;align-items:flex-start;gap:.6rem;font-size:.92rem;margin-top:.2rem}
+.f label.check,label.check{display:flex!important;align-items:flex-start;gap:.6rem;margin:.2rem 0 .5rem;
+  font-size:.92rem;font-weight:400;letter-spacing:normal;text-transform:none;color:var(--ink)}
 .check input{width:18px;height:18px;margin-top:.15rem;accent-color:var(--wine);flex:0 0 auto}
+.check span{padding-top:.05rem}
 
 /* Meldungen */
 .msg{padding:.85rem 1.1rem;border-left:3px solid var(--ok);background:#EDF5F0;
