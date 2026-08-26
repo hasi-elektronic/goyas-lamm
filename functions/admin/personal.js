@@ -1,0 +1,203 @@
+/**
+ * Mitarbeiter anlegen und pflegen. Die PIN wird nur als Hash gespeichert und
+ * nach dem Setzen ein einziges Mal im Klartext angezeigt.
+ */
+import { clean, esc, nowBerlin } from '../_lib/core.js';
+import { layout, flash, redirect } from '../_lib/ui.js';
+import { pinHash, summe } from '../_lib/zeit.js';
+
+const ROLLEN = ['Küche', 'Service', 'Bar', 'Aushilfe', 'Leitung'];
+
+export async function onRequestGet({ request, env }) {
+  const url = new URL(request.url);
+  const db = env.DB;
+
+  let leute = [];
+  let fehler = '';
+  try {
+    leute = (await db.prepare(
+      `SELECT id,name,role,pin_hash,active,sort FROM staff ORDER BY active DESC, sort, name`
+    ).all()).results || [];
+  } catch {
+    fehler = 'Die Tabelle „staff" fehlt noch — bitte Migration 0007_zeit.sql einspielen.';
+  }
+
+  /* Wer ist gerade eingestempelt? */
+  let offen = [];
+  try {
+    offen = (await db.prepare(
+      `SELECT staff_id, work_date, start_at FROM shifts WHERE end_at IS NULL`).all()).results || [];
+  } catch { /* egal */ }
+  const laeuft = Object.fromEntries(offen.map(o => [o.staff_id, o]));
+
+  /* Monatssumme je Mitarbeiter, nur als Orientierung */
+  const monat = nowBerlin().date.slice(0, 7);
+  let schichten = [];
+  try {
+    schichten = (await db.prepare(
+      `SELECT staff_id,work_date,start_at,end_at,break_min FROM shifts WHERE work_date LIKE ?`
+    ).bind(monat + '%').all()).results || [];
+  } catch { /* egal */ }
+
+  const rollen = sel => ['', ...ROLLEN]
+    .map(r => `<option value="${esc(r)}"${(sel || '') === r ? ' selected' : ''}>${r || '—'}</option>`).join('');
+
+  const zeile = m => {
+    const s = summe(schichten.filter(x => x.staff_id === m.id));
+    const on = laeuft[m.id];
+    return `<tr class="${m.active ? '' : 'cancelled'}">
+      <td colspan="4" style="padding:0">
+        <form method="post" action="/admin/personal" class="trow">
+          <input type="hidden" name="do" value="save">
+          <input type="hidden" name="id" value="${esc(m.id)}">
+          <div class="f"><label for="n-${esc(m.id)}">Name</label>
+            <input id="n-${esc(m.id)}" name="name" value="${esc(m.name)}" maxlength="60" required></div>
+          <div class="f"><label for="r-${esc(m.id)}">Bereich</label>
+            <select id="r-${esc(m.id)}" name="role">${rollen(m.role)}</select></div>
+          <div class="f"><label for="p-${esc(m.id)}">Neue PIN</label>
+            <input id="p-${esc(m.id)}" name="pin" inputmode="numeric" pattern="[0-9]{4}"
+                   maxlength="4" placeholder="${m.pin_hash ? 'gesetzt' : 'fehlt'}"></div>
+          <div class="f"><label for="s-${esc(m.id)}">Nr.</label>
+            <input id="s-${esc(m.id)}" name="sort" type="number" min="0" max="999" value="${esc(String(m.sort))}"></div>
+          <div class="trow-act"><button class="btn sm" type="submit">Speichern</button></div>
+        </form>
+        <div class="trow-sub">
+          ${on ? `<span class="pill ns">seit ${esc(on.start_at)} Uhr im Dienst</span>` : ''}
+          ${m.pin_hash ? '' : '<span class="pill">ohne PIN — kann nicht stempeln</span>'}
+          <span class="meta">diesen Monat ${(s.arbeit / 60).toFixed(1).replace('.', ',')} h
+            an ${s.tage} ${s.tage === 1 ? 'Tag' : 'Tagen'}</span>
+          <a class="btn sm ghost" href="/admin/arbeitszeit?p=${esc(m.id)}">Zeiten</a>
+          <form method="post" action="/admin/personal" style="display:inline">
+            <input type="hidden" name="do" value="${m.active ? 'off' : 'on'}">
+            <input type="hidden" name="id" value="${esc(m.id)}">
+            <button class="btn sm danger" type="submit">${m.active ? 'Ausgeschieden' : 'Wieder aktiv'}</button>
+          </form>
+        </div>
+      </td></tr>`;
+  };
+
+  const aktive = leute.filter(m => m.active);
+
+  const body = `
+    <h1>Personal</h1>
+    <p class="sub">Wer im Haus arbeitet und mit welcher PIN gestempelt wird.
+       Die Arbeitszeiten stehen unter <a href="/admin/arbeitszeit">Arbeitszeit</a>.</p>
+    ${fehler ? `<div class="msg err">${esc(fehler)}</div>` : ''}
+    ${flash(url)}
+
+    <div class="stats">
+      <div class="stat"><b>${aktive.length}</b><span>im Team</span></div>
+      <div class="stat hot"><b>${offen.length}</b><span>gerade im Dienst</span></div>
+      <div class="stat"><b>${aktive.filter(m => !m.pin_hash).length}</b><span>ohne PIN</span></div>
+    </div>
+
+    <div class="row" style="margin-bottom:1.4rem">
+      <a class="btn" href="/admin/stempel">Stempeluhr öffnen</a>
+      <a class="btn ghost" href="/admin/arbeitszeit">Arbeitszeiten</a>
+    </div>
+
+    <div class="card">
+      <h2>Mitarbeiter anlegen</h2>
+      <div class="body">
+        <form method="post" action="/admin/personal">
+          <input type="hidden" name="do" value="add">
+          <div class="grid">
+            <div class="f"><label for="nn">Name</label>
+              <input id="nn" name="name" maxlength="60" placeholder="Vorname Nachname" required></div>
+            <div class="f"><label for="nr">Bereich</label>
+              <select id="nr" name="role">${rollen('Service')}</select></div>
+            <div class="f"><label for="np">PIN (vier Ziffern)</label>
+              <input id="np" name="pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4"
+                     placeholder="leer = wird erzeugt"></div>
+            <div class="f" style="display:flex;align-items:flex-end">
+              <button class="btn" type="submit">Anlegen</button></div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Team <em>${leute.length} ${leute.length === 1 ? 'Person' : 'Personen'}</em></h2>
+      ${leute.length ? `<table><tbody>${leute.map(zeile).join('')}</tbody></table>`
+        : '<div class="empty">Noch niemand angelegt.</div>'}
+    </div>
+
+    <div class="card">
+      <h2>Wichtig</h2>
+      <div class="body meta">
+        <p style="margin:0 0 .6rem"><b>Aufzeichnungspflicht:</b> In der Gastronomie müssen
+           Beginn, Ende und Dauer der täglichen Arbeitszeit spätestens sieben Tage später
+           festgehalten und zwei Jahre aufbewahrt werden (§ 17 Mindestlohngesetz). Genau dafür
+           ist diese Erfassung da. Bei einer Prüfung durch den Zoll zählt, was hier steht.</p>
+        <p style="margin:0 0 .6rem"><b>„Ausgeschieden"</b> nimmt jemanden aus der Stempeluhr,
+           die bisherigen Zeiten bleiben erhalten — sie müssen aufbewahrt werden. Deshalb gibt
+           es hier bewusst kein Löschen.</p>
+        <p style="margin:0"><b>Die PIN</b> wird nur verschlüsselt gespeichert und lässt sich
+           nicht wieder anzeigen. Vergessen? Einfach eine neue vergeben.</p>
+      </div>
+    </div>`;
+
+  return layout({ title: 'Personal', active: '/admin/personal', body });
+}
+
+export async function onRequestPost({ request, env }) {
+  let d = {};
+  try { d = Object.fromEntries(await request.formData()); } catch { /* leer */ }
+  const db = env.DB;
+  const fehler = m => redirect('/admin/personal?err=' + encodeURIComponent(m));
+  if (!db) return fehler('Keine Datenbankverbindung.');
+
+  const id   = clean(d.id, 40);
+  const name = clean(d.name, 60);
+  const role = ROLLEN.includes(clean(d.role, 20)) ? clean(d.role, 20) : null;
+  const pin  = clean(d.pin, 8).replace(/\D/g, '');
+  const sort = parseInt(d.sort, 10);
+
+  if (pin && pin.length !== 4) return fehler('Die PIN muss aus genau vier Ziffern bestehen.');
+
+  try {
+    if (d.do === 'add') {
+      if (name.length < 2) return fehler('Bitte einen Namen angeben.');
+      const neu = pin || String(Math.floor(1000 + Math.random() * 9000));
+      const max = await db.prepare(`SELECT COALESCE(MAX(sort),0) m FROM staff`).first();
+      await db.prepare(
+        `INSERT INTO staff (id,name,role,pin_hash,active,sort,created_at) VALUES (?,?,?,?,1,?,?)`
+      ).bind(crypto.randomUUID(), name, role, await pinHash(neu, env.IP_SALT),
+             (Number(max?.m) || 0) + 10, new Date().toISOString()).run();
+      return redirect('/admin/personal',
+        `${name} angelegt. PIN: ${neu} — bitte jetzt notieren, sie wird nicht wieder angezeigt.`);
+    }
+
+    if (!id) return fehler('Mitarbeiter nicht gefunden.');
+
+    if (d.do === 'save') {
+      if (name.length < 2) return fehler('Bitte einen Namen angeben.');
+      if (pin) {
+        await db.prepare(`UPDATE staff SET name=?, role=?, sort=?, pin_hash=? WHERE id=?`)
+          .bind(name, role, Number.isFinite(sort) ? sort : 0,
+                await pinHash(pin, env.IP_SALT), id).run();
+        return redirect('/admin/personal', `${name} gespeichert. Neue PIN: ${pin}`);
+      }
+      await db.prepare(`UPDATE staff SET name=?, role=?, sort=? WHERE id=?`)
+        .bind(name, role, Number.isFinite(sort) ? sort : 0, id).run();
+      return redirect('/admin/personal', `${name} gespeichert.`);
+    }
+
+    if (d.do === 'on' || d.do === 'off') {
+      const an = d.do === 'on' ? 1 : 0;
+      const m = await db.prepare(`SELECT name FROM staff WHERE id=?`).bind(id).first();
+      await db.prepare(`UPDATE staff SET active=? WHERE id=?`).bind(an, id).run();
+      if (!an) {
+        await db.prepare(
+          `UPDATE shifts SET end_at=NULL WHERE staff_id=? AND end_at IS NULL AND 1=0`).bind(id).run();
+      }
+      return redirect('/admin/personal', an
+        ? `${m?.name || 'Mitarbeiter'} ist wieder aktiv.`
+        : `${m?.name || 'Mitarbeiter'} ist ausgeschieden. Die Zeiten bleiben gespeichert.`);
+    }
+  } catch {
+    return fehler('Das hat nicht geklappt. Bitte noch einmal versuchen.');
+  }
+
+  return redirect('/admin/personal');
+}

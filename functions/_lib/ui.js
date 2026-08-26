@@ -252,6 +252,9 @@ const IC = {
   lupe:   '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
   druck:  '<path d="M7 9V3.5h10V9"/><rect x="4" y="9" width="16" height="7" rx="1.5"/><path d="M7 14h10v6.5H7z"/>',
   aus:    '<path d="M15 4.5h3.5A1.5 1.5 0 0 1 20 6v12a1.5 1.5 0 0 1-1.5 1.5H15"/><path d="M10 8.5 6 12l4 3.5M6 12h9"/>',
+  stempel:'<circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.5 1.5"/><path d="M9 3h6"/>',
+  sanduhr:'<path d="M7 3h10M7 21h10"/><path d="M17 3v3.5L12 12l5 5.5V21"/><path d="M7 3v3.5L12 12l-5 5.5V21"/>',
+  leute:  '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><path d="M16 5.6a3.2 3.2 0 0 1 0 5.8"/><path d="M17.5 14.9c1.9.6 3 2.4 3 4.6"/>',
 };
 const svg = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>`;
 
@@ -266,12 +269,15 @@ const NAV = [
   ['/admin/zeiten',    'Schließtage',       'uhr',      'Zeiten'],
   ['/admin/suche',     'Suche',             'lupe',     'Suche'],
   ['/admin/zettel',    'Küchenzettel',      'druck',    'Zettel'],
+  ['/admin/stempel',   'Stempeluhr',        'stempel',  'Stempel'],
+  ['/admin/arbeitszeit','Arbeitszeit',      'sanduhr',  'Zeit'],
+  ['/admin/personal',  'Personal',          'leute',    'Team'],
 ];
 
 /* Reiterleiste am Rechner — Küchenzettel und Tagesansicht sind dort verlinkt,
    nicht als eigener Reiter, damit die Leiste kurz bleibt. */
 const TABS = NAV.filter(([h]) =>
-  !['/admin/tag', '/admin/zettel'].includes(h)).map(([h, t]) => [h, t]);
+  !['/admin/tag', '/admin/zettel', '/admin/stempel'].includes(h)).map(([h, t]) => [h, t]);
 
 /* Untere Leiste am Handy: vier häufige Ziele plus „Mehr". */
 const UNTEN = ['/admin', '/admin/tag', '/admin/neu', '/admin/karte'];
