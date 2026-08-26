@@ -1,0 +1,28 @@
+@font-face{font-family:'Inter';font-style:normal;font-weight:400;font-display:swap;src:url(/assets/fonts/inter-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:500;font-display:swap;src:url(/assets/fonts/inter-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:600;font-display:swap;src:url(/assets/fonts/inter-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Playfair Display';font-style:normal;font-weight:600;font-display:swap;src:url(/assets/fonts/playfair-display-latin-600-normal.woff2) format('woff2')}
+:root{--wine:#6D1826;--ink:#14120F;--cream:#F4F7EA;--paper:#FBFAF3;--sand:#E8E2D2;--gold:#C0A062;--muted:#6E675A}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;font-size:16.5px;line-height:1.7;-webkit-font-smoothing:antialiased}
+.wrap{width:min(100% - 2.6rem,760px);margin-inline:auto}
+a{color:var(--wine)}
+h1,h2,h3{font-family:'Playfair Display',Georgia,serif;font-weight:600;line-height:1.15;margin:2.4rem 0 .9rem}
+h1{font-size:clamp(2rem,5vw,3rem);margin-top:0}
+h2{font-size:clamp(1.3rem,3vw,1.75rem)}
+h3{font-size:1.08rem;font-family:'Inter',sans-serif;font-weight:600;margin:1.6rem 0 .4rem}
+p,ul{margin:0 0 1em}
+ul{padding-left:1.2rem}
+li{margin-bottom:.35rem}
+.topbar{background:var(--ink);padding:1.1rem 0}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.topbar img{height:40px;width:auto;display:block}
+.topbar a.back{color:var(--cream);text-decoration:none;font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;font-weight:600}
+.topbar a.back:hover{color:var(--gold)}
+main{padding:clamp(3rem,7vw,5rem) 0 5rem}
+.meta{color:var(--muted);font-size:.9rem}
+.todo{background:#FFF6E5;border-left:3px solid var(--gold);padding:.7rem 1rem;font-size:.9rem;margin:.6rem 0 1.2rem}
+footer{background:var(--ink);color:rgba(244,247,234,.6);padding:2.6rem 0;font-size:.85rem}
+footer a{color:rgba(244,247,234,.75);text-decoration:none}
+footer a:hover{color:var(--gold)}
+.fbar{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}

@@ -1,0 +1,12 @@
+{
+  "name": "Goya´s Lamm Horrheim",
+  "short_name": "Goya´s Lamm",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#14120F",
+  "theme_color": "#6D1826",
+  "icons": [
+    { "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
