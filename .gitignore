@@ -2,3 +2,15 @@ node_modules/
 .wrangler/
 .DS_Store
 *.log
+
+# Geheimnisse gehören nicht ins Repo — sie stehen am Pages-Projekt.
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+
+# Datenbank-Exporte enthalten Gästedaten (Namen, Telefon, E-Mail).
+*.sqlite
+*.db
+goyas-lamm-db*.sql
+backup/
