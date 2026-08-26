@@ -372,6 +372,13 @@ header.solid .burger span{background:var(--ink)}
 
 /* Formular */
 .res-form{display:block}
+.warte-box{border:1px solid var(--sand);background:var(--cream);padding:1.1rem 1.2rem;margin-top:.8rem}
+.warte-box p{font-size:.93rem;color:var(--muted);margin:0 0 .9rem}
+.warte-box .btn{padding:.7rem 1.4rem;font-size:.72rem}
+.linkbtn{background:none;border:0;padding:0;font:inherit;font-size:inherit;color:var(--wine);
+  text-decoration:underline;cursor:pointer}
+.res-form.warte .res-submit{background:var(--ink);border-color:var(--ink)}
+.res-form.warte .res-submit:hover{background:#000;border-color:#000}
 .res-step{margin-bottom:1.5rem}
 .res-lab{
   display:block;font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;font-weight:700;
@@ -1195,6 +1202,17 @@ footer a:hover{color:var(--gold)}
             <span class="res-lab" id="lblTime">Um wie viel Uhr?</span>
             <div class="chips times" id="timeChips" role="group" aria-labelledby="lblTime"></div>
             <p class="res-hint" id="timeHint">Bitte wählen Sie zuerst ein Datum.</p>
+            <div class="warte-box" id="warteBox" hidden>
+              <p><b>Der Abend ist online ausgebucht.</b> Wir setzen Sie gerne auf die Warteliste —
+                 wird ein Tisch frei, rufen wir Sie an. Ein Anruf unter <a href="tel:+497042832282">07042 83 22 82</a>
+                 lohnt sich ebenfalls, oft geht doch noch etwas.</p>
+              <button type="button" class="btn btn-outline" id="warteAn">Auf die Warteliste</button>
+            </div>
+            <p class="res-hint warte-an" id="warteHint" hidden>
+              Warteliste für <b id="warteTag"></b>. Wir melden uns telefonisch — eine Uhrzeit
+              brauchen wir nicht, schreiben Sie einen Wunsch gerne in die Anmerkung.
+              <button type="button" class="linkbtn" id="warteAus">Doch eine Uhrzeit wählen</button>
+            </p>
           </div>
 
           <div class="res-grid">
@@ -1207,7 +1225,7 @@ footer a:hover{color:var(--gold)}
               <input id="resPhone" name="phone" type="tel" autocomplete="tel" required maxlength="40">
             </div>
             <div class="field full">
-              <label for="resMail">E-Mail</label>
+              <label for="resMail">E-Mail <em class="mail-opt" hidden>(optional)</em></label>
               <input id="resMail" name="email" type="email" autocomplete="email" required maxlength="254">
             </div>
             <div class="field full">
@@ -1437,7 +1455,7 @@ footer a:hover{color:var(--gold)}
     var form=document.getElementById('resForm');
     if(!form) return;
     var MAXG=10, PHONE='07042 83 22 82';
-    var state={guests:2,date:'',time:''};
+    var state={guests:2,date:'',time:'',warte:false};
     var gWrap=document.getElementById('guestChips'),
         gHint=document.getElementById('guestHint'),
         dInp =document.getElementById('resDate'),
@@ -1446,7 +1464,9 @@ footer a:hover{color:var(--gold)}
         tWrap=document.getElementById('timeChips'),
         tHint=document.getElementById('timeHint'),
         msg  =document.getElementById('resMsg'),
-        btn  =document.getElementById('resSubmit');
+        btn  =document.getElementById('resSubmit'),
+        wBox =document.getElementById('warteBox'),
+        wHint=document.getElementById('warteHint');
 
     document.getElementById('resTs').value=Date.now();
 
@@ -1512,7 +1532,8 @@ footer a:hover{color:var(--gold)}
     function setTimeHint(txt,warn){ tHint.textContent=txt; tHint.className='res-hint'+(warn?' warn':''); }
 
     function loadSlots(){
-      tWrap.innerHTML=''; state.time='';
+      tWrap.innerHTML=''; state.time=''; wBox.hidden=true;
+      if(state.warte) warteAus();
       if(!state.date){ setTimeHint('Bitte wählen Sie zuerst ein Datum.'); return; }
       setTimeHint('Freie Zeiten werden geladen …');
       fetch('/api/slots?date='+encodeURIComponent(state.date)+'&guests='+state.guests,{headers:{accept:'application/json'}})
@@ -1522,8 +1543,8 @@ footer a:hover{color:var(--gold)}
             ? 'Mittwoch ist unser Ruhetag. Bitte wählen Sie einen anderen Tag.'
             : 'An diesem Tag haben wir geschlossen ('+d.reason+').', true); return; }
           if(!d.slots || !d.slots.length){
-            setTimeHint('Für '+state.guests+' Personen ist an diesem Tag leider nichts mehr frei. '+
-                        'Bitte anderen Tag wählen oder anrufen: '+PHONE, true); return; }
+            setTimeHint('Für '+state.guests+' Personen ist an diesem Tag leider nichts mehr frei.', true);
+            wBox.hidden=false; return; }
           setTimeHint('');
           d.slots.forEach(function(sl){
             var b=document.createElement('button');
@@ -1542,6 +1563,33 @@ footer a:hover{color:var(--gold)}
         });
     }
 
+    /* --- Warteliste --- */
+    function warteAn(){
+      state.warte=true;
+      wBox.hidden=true; tWrap.innerHTML=''; setTimeHint('');
+      wHint.hidden=false; document.getElementById('warteTag').textContent=dLabel(state.date);
+      form.classList.add('warte');
+      [].forEach.call(document.querySelectorAll('.mail-opt'),function(e){e.hidden=false});
+      document.getElementById('resMail').required=false;
+      btn.textContent='Auf die Warteliste setzen';
+      wHint.scrollIntoView({block:'center'});
+    }
+    function warteAus(){
+      state.warte=false;
+      wHint.hidden=true; form.classList.remove('warte');
+      [].forEach.call(document.querySelectorAll('.mail-opt'),function(e){e.hidden=true});
+      document.getElementById('resMail').required=true;
+      btn.textContent='Tisch verbindlich reservieren';
+    }
+    function dLabel(iso){
+      if(!iso) return '';
+      var t=iso.split('-');
+      return WT[new Date(Date.UTC(+t[0],+t[1]-1,+t[2])).getUTCDay()]+', '+(+t[2])+'.'+(+t[1])+'.'+t[0];
+    }
+    var WT=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+    document.getElementById('warteAn').addEventListener('click',warteAn);
+    document.getElementById('warteAus').addEventListener('click',function(){ warteAus(); loadSlots(); });
+
     /* --- Absenden --- */
     function invalid(el,on){ el.setAttribute('aria-invalid', on?'true':'false'); }
 
@@ -1554,11 +1602,13 @@ footer a:hover{color:var(--gold)}
       [name,mail,tel].forEach(function(el){invalid(el,false)});
 
       if(!state.date){ msg.className='res-msg err'; msg.textContent='Bitte wählen Sie ein Datum.'; dInp.focus(); return; }
-      if(!state.time){ msg.className='res-msg err'; msg.textContent='Bitte wählen Sie eine Uhrzeit.'; tWrap.scrollIntoView({block:'center'}); return; }
+      if(!state.warte && !state.time){ msg.className='res-msg err'; msg.textContent='Bitte wählen Sie eine Uhrzeit.'; tWrap.scrollIntoView({block:'center'}); return; }
       if(name.value.trim().length<2){ invalid(name,true); msg.className='res-msg err'; msg.textContent='Bitte geben Sie Ihren Namen an.'; name.focus(); return; }
-      if(!/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(mail.value.trim())){ invalid(mail,true); msg.className='res-msg err'; msg.textContent='Bitte prüfen Sie Ihre E-Mail-Adresse.'; mail.focus(); return; }
+      if((!state.warte || mail.value.trim()) &&
+         !/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(mail.value.trim())){ invalid(mail,true); msg.className='res-msg err'; msg.textContent='Bitte prüfen Sie Ihre E-Mail-Adresse.'; mail.focus(); return; }
       if(tel.value.replace(/[^\d]/g,'').length<6){ invalid(tel,true); msg.className='res-msg err'; msg.textContent='Bitte geben Sie eine Telefonnummer an.'; tel.focus(); return; }
 
+      var zurueck = state.warte ? 'Auf die Warteliste setzen' : 'Tisch verbindlich reservieren';
       btn.disabled=true; btn.textContent='Wird gesendet …';
       var payload={
         date:state.date, time:state.time, guests:state.guests,
@@ -1566,24 +1616,44 @@ footer a:hover{color:var(--gold)}
         note:document.getElementById('resNote').value.trim(),
         website:form.website.value, ts:document.getElementById('resTs').value
       };
-      fetch('/api/reservierung',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)})
+      fetch(state.warte ? '/api/warteliste' : '/api/reservierung',
+            {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)})
         .then(function(r){ return r.json().then(function(j){ return {ok:r.ok,j:j}; }); })
         .then(function(res){
           if(!res.ok || !res.j.ok){
-            btn.disabled=false; btn.textContent='Tisch verbindlich reservieren';
+            btn.disabled=false; btn.textContent=zurueck;
             msg.className='res-msg err';
             msg.textContent=(res.j && res.j.message) || 'Das hat nicht geklappt. Bitte rufen Sie uns an: '+PHONE;
             if(res.j && (res.j.error==='slot_taken')) loadSlots();
             return;
           }
+          if(state.warte){ wartefertig(res.j, payload); return; }
           done(res.j, payload);
         })
         .catch(function(){
-          btn.disabled=false; btn.textContent='Tisch verbindlich reservieren';
+          btn.disabled=false; btn.textContent=zurueck;
           msg.className='res-msg err';
           msg.textContent='Verbindung fehlgeschlagen. Bitte rufen Sie uns an: '+PHONE;
         });
     });
+
+    function wartefertig(d,p){
+      var wrap=document.getElementById('resDone');
+      wrap.querySelector('h3').textContent = d.doppelt
+        ? 'Sie stehen schon auf der Liste.' : 'Sie stehen auf der Warteliste.';
+      document.getElementById('doneLead').textContent = d.doppelt
+        ? 'Für diesen Abend haben wir Ihre Nummer bereits.'
+        : 'Danke, '+p.name.split(' ')[0]+'. Wird ein Tisch frei, rufen wir Sie an.';
+      document.getElementById('doneDl').innerHTML =
+        '<div><span>Wunschtag</span><span>'+dLabel(p.date)+'</span></div>'+
+        '<div><span>Personen</span><span>'+p.guests+'</span></div>'+
+        '<div><span>Rückruf an</span><span>'+p.phone.replace(/</g,'')+'</span></div>';
+      document.getElementById('doneNote').innerHTML =
+        '<b>Das ist noch keine Reservierung.</b> Ein Tisch ist erst sicher, wenn wir uns bei Ihnen '+
+        'gemeldet haben. Sie können uns auch direkt anrufen: '+PHONE+'.';
+      form.hidden=true; wrap.hidden=false;
+      wrap.scrollIntoView({behavior:'smooth',block:'center'});
+    }
 
     function done(d,p){
       var wrap=document.getElementById('resDone');

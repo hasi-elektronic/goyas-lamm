@@ -126,8 +126,31 @@ export async function createReservation(db, env, input, opts = {}) {
   return { ...rec, dateLabel: formatDateDE(date), mailed: okGuest, mailedHouse: okHouse };
 }
 
-/** Alte Reservierungen aufräumen (Speicherbegrenzung laut Datenschutzerklärung). */
+/**
+ * Aufräumen — die Datenschutzerklärung verspricht sechs Monate, also muss auch
+ * wirklich alles weg, was dann noch an einem Gast hängt.
+ *
+ *  1. Reservierungen älter als `beforeDate`
+ *  2. Gästenotizen, zu denen es danach keine Reservierung mehr gibt. Ohne diesen
+ *     Schritt bliebe der Name samt Notiz für immer stehen, obwohl der Anlass gelöscht ist.
+ *  3. Fehlversuchszähler der Anmeldung, sobald die Sperrfrist lange vorbei ist.
+ *
+ * Läuft beiläufig bei jeder Online-Reservierung — Pages Functions kennen keine
+ * Zeitpläne, und ein eigener Cron-Worker wäre für diese Menge übertrieben.
+ */
 export async function purgeOld(db, beforeDate) {
-  try { await db.prepare(`DELETE FROM reservations WHERE res_date < ?`).bind(beforeDate).run(); }
-  catch { /* nicht kritisch */ }
+  try {
+    await db.prepare(`DELETE FROM reservations WHERE res_date < ?`).bind(beforeDate).run();
+  } catch { /* nicht kritisch */ }
+
+  try {
+    await db.prepare(
+      `DELETE FROM guests WHERE phone_key NOT IN (SELECT phone_key FROM reservations
+        WHERE phone_key IS NOT NULL)`).run();
+  } catch { /* Tabelle fehlt noch */ }
+
+  try {
+    const grenze = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    await db.prepare(`DELETE FROM login_attempts WHERE last_at < ?`).bind(grenze).run();
+  } catch { /* nicht kritisch */ }
 }

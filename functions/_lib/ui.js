@@ -35,13 +35,30 @@ img{display:block;max-width:100%}
   color:var(--ink);background:var(--gold);padding:.16rem .4rem;border-radius:2px;white-space:nowrap}
 .demobar{background:var(--gold);color:var(--ink);text-align:center;font-size:.72rem;
   letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:.45rem .8rem}
-nav.tabs{background:var(--ink-2);position:sticky;top:47px;z-index:39;overflow-x:auto;scrollbar-width:none}
+/* kein overflow — sonst schneidet die Leiste das Klappmenü ab; bei sehr schmalen
+   Fenstern bricht sie stattdessen um (unter 720px ist sie ohnehin ausgeblendet) */
+nav.tabs{background:var(--ink-2);position:sticky;top:47px;z-index:39}
 nav.tabs::-webkit-scrollbar{display:none}
-nav.tabs .in{width:min(100% - 1.6rem,1180px);margin-inline:auto;display:flex;gap:.15rem}
+nav.tabs .in{width:min(100% - 1.6rem,1180px);margin-inline:auto;display:flex;gap:.15rem;flex-wrap:wrap}
 nav.tabs a{color:rgba(244,247,234,.62);text-decoration:none;padding:.85rem 1rem;white-space:nowrap;
   font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;border-bottom:2px solid transparent}
 nav.tabs a:hover{color:#fff}
 nav.tabs a.on{color:#fff;border-bottom-color:var(--gold)}
+nav.tabs details.tmehr{position:relative}
+nav.tabs details.tmehr summary{list-style:none;cursor:pointer;color:rgba(244,247,234,.62);
+  padding:.85rem 1rem;white-space:nowrap;font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;
+  font-weight:600;border-bottom:2px solid transparent}
+nav.tabs details.tmehr summary::-webkit-details-marker{display:none}
+nav.tabs details.tmehr summary::after{content:" ▾";font-size:.7em}
+nav.tabs details.tmehr summary:hover{color:#fff}
+nav.tabs details.tmehr summary.on{color:#fff;border-bottom-color:var(--gold)}
+nav.tabs details.tmehr .tliste{position:absolute;top:100%;left:0;z-index:60;min-width:210px;
+  background:var(--paper);border:1px solid var(--sand);box-shadow:0 14px 30px -16px rgba(0,0,0,.5)}
+nav.tabs details.tmehr .tliste a{display:block;color:var(--ink);padding:.7rem 1rem;
+  border-bottom:1px solid var(--sand);text-transform:none;letter-spacing:normal;font-size:.9rem}
+nav.tabs details.tmehr .tliste a:last-child{border-bottom:0}
+nav.tabs details.tmehr .tliste a:hover{background:var(--cream);color:var(--wine)}
+nav.tabs details.tmehr .tliste a.on{color:var(--wine)}
 
 main{width:min(100% - 1.6rem,1180px);margin:1.6rem auto 5rem}
 h1{font-size:1.45rem;margin:0 0 .2rem;letter-spacing:-.01em}
@@ -261,6 +278,7 @@ const IC = {
   lupe:   '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
   druck:  '<path d="M7 9V3.5h10V9"/><rect x="4" y="9" width="16" height="7" rx="1.5"/><path d="M7 14h10v6.5H7z"/>',
   aus:    '<path d="M15 4.5h3.5A1.5 1.5 0 0 1 20 6v12a1.5 1.5 0 0 1-1.5 1.5H15"/><path d="M10 8.5 6 12l4 3.5M6 12h9"/>',
+  warte:  '<path d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5"/><path d="M3.5 8 3.5 12 7.5 12"/><path d="M12 8v4.2l3 1.8"/>',
   stempel:'<circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.5 1.5"/><path d="M9 3h6"/>',
   sanduhr:'<path d="M7 3h10M7 21h10"/><path d="M17 3v3.5L12 12l5 5.5V21"/><path d="M7 3v3.5L12 12l-5 5.5V21"/>',
   schluessel:'<circle cx="8" cy="15" r="3.5"/><path d="m10.5 12.5 7-7"/><path d="m14.5 8.5 2 2"/><path d="m16.5 6.5 2 2"/>',
@@ -273,6 +291,7 @@ const NAV = [
   ['/admin',           'Übersicht',         'heim',     'Start'],
   ['/admin/tag',       'Heute',             'liste',    'Heute'],
   ['/admin/kalender',  'Kalender',          'kalender', 'Kalender'],
+  ['/admin/warteliste','Warteliste',        'warte',    'Warte'],
   ['/admin/neu',       'Neue Reservierung', 'plus',     'Neu'],
   ['/admin/karte',     'Speisekarte',       'karte',    'Karte'],
   ['/admin/tische',    'Tische',            'tisch',    'Tische'],
@@ -285,10 +304,15 @@ const NAV = [
   ['/admin/benutzer',  'Benutzer',          'schluessel','Zugang'],
 ];
 
-/* Reiterleiste am Rechner — Küchenzettel und Tagesansicht sind dort verlinkt,
-   nicht als eigener Reiter, damit die Leiste kurz bleibt. */
-const TABS = NAV.filter(([h]) =>
-  !['/admin/tag', '/admin/zettel', '/admin/stempel'].includes(h)).map(([h, t]) => [h, t]);
+/* Reiterleiste am Rechner: vorne das Tagesgeschäft, der Rest im Klappmenü „Mehr".
+   Elf Reiter nebeneinander waren schlicht zu viele. */
+const HAUPT = ['/admin', '/admin/warteliste', '/admin/kalender', '/admin/neu',
+               '/admin/karte', '/admin/suche'];
+const TABS  = NAV.filter(([h]) => HAUPT.includes(h))
+                 .sort((a, b) => HAUPT.indexOf(a[0]) - HAUPT.indexOf(b[0]))
+                 .map(([h, t]) => [h, t]);
+const TABS_MEHR = NAV.filter(([h]) => !HAUPT.includes(h) && h !== '/admin/tag')
+                     .map(([h, t]) => [h, t]);
 
 /* Untere Leiste am Handy: vier häufige Ziele plus „Mehr". */
 const UNTEN = ['/admin', '/admin/tag', '/admin/neu', '/admin/karte'];
@@ -296,6 +320,7 @@ const UNTEN = ['/admin', '/admin/tag', '/admin/neu', '/admin/karte'];
 export function layout({ title, active, body, status = 200, user = null }) {
   const rolle = user?.role || 'chef';
   const tabs = TABS.filter(([h]) => darfSeite(rolle, h));
+  const tabsMehr = TABS_MEHR.filter(([h]) => darfSeite(rolle, h));
   const unten = UNTEN.filter(h => darfSeite(rolle, h));
   const nav = NAV.filter(([h]) => darfSeite(rolle, h));
   return new Response(
@@ -322,6 +347,12 @@ ${rolle === 'demo' ? `<div class="demobar">Demo-Zugang · nur ansehen ·
   Gastdaten sind abgekürzt</div>` : ''}
 <nav class="tabs"><div class="in">
   ${tabs.map(([h, t]) => `<a href="${h}" class="${active === h ? 'on' : ''}">${t}</a>`).join('')}
+  ${tabsMehr.length ? `<details class="tmehr">
+    <summary class="${tabsMehr.some(([h]) => h === active) ? 'on' : ''}">Mehr</summary>
+    <div class="tliste">
+      ${tabsMehr.map(([h, t]) =>
+        `<a href="${h}" class="${active === h ? 'on' : ''}">${t}</a>`).join('')}
+    </div></details>` : ''}
 </div></nav>
 <main>${body}</main>
 

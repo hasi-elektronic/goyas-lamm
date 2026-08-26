@@ -197,7 +197,7 @@ const GESPERRT = {
   chef: [],
   service: ['/admin/karte', '/admin/tische', '/admin/personal', '/admin/arbeitszeit',
             '/admin/zeitzettel', '/admin/stempel', '/admin/benutzer'],
-  demo: ['/admin/suche', '/admin/zettel', '/admin/neu', '/admin/r',
+  demo: ['/admin/suche', '/admin/zettel', '/admin/neu', '/admin/r', '/admin/warteliste',
          '/admin/personal', '/admin/arbeitszeit', '/admin/zeitzettel', '/admin/stempel',
          '/admin/benutzer'],
 };
