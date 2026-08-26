@@ -1,4 +1,4 @@
-import { nowBerlin, addDays, formatDateDE, slotsForDate, esc, seatsPerSlot } from '../_lib/core.js';
+import { nowBerlin, addDays, formatDateDE, slotsForDate, esc, capacityFor } from '../_lib/core.js';
 import { layout, flash, table, dayHeading } from '../_lib/ui.js';
 import { mailReady } from '../_lib/mail.js';
 
@@ -32,7 +32,13 @@ export async function onRequestGet({ request, env }) {
   for (const r of rows) if (r.res_date > now.date) (byDay[r.res_date] ||= []).push(r);
 
   const ruhetag = !slotsForDate(now.date).length;
-  const cap = seatsPerSlot(env);
+  const kap = await capacityFor(db, env, now.date);
+  const cap = kap.seats;
+
+  const tischWarn = kap.source === 'tische' ? '' : `<div class="msg warn">
+    <b>Es sind noch keine Tische angelegt.</b> Das System rechnet solange mit ${cap} Plätzen
+    je Zeitfenster. Unter <a href="/admin/tische">Tische</a> eintragen, wie viele Tische es gibt
+    und für wie viele Personen jeder ist — dann stimmt die Auslastung.</div>`;
 
   const mailWarn = mailReady(env) ? '' : `<div class="msg warn">
     <b>E-Mail-Versand ist noch nicht aktiv.</b> Gäste bekommen keine Bestätigung und die Küche
@@ -50,6 +56,7 @@ export async function onRequestGet({ request, env }) {
     <p class="sub">${esc(formatDateDE(now.date))} · ${esc(now.time)} Uhr${ruhetag ? ' · heute Ruhetag' : ''}
        · ${cap} Plätze je Zeitfenster</p>
     ${flash(url)}
+    ${tischWarn}
     ${mailWarn}
 
     <div class="stats">

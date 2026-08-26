@@ -1,5 +1,5 @@
 import {
-  nowBerlin, addDays, formatDateDE, slotsForDate, isValidDate, esc, seatsPerSlot, weekday, WEEKDAY_DE,
+  nowBerlin, addDays, formatDateDE, slotsForDate, isValidDate, esc, capacityFor, weekday, WEEKDAY_DE,
 } from '../_lib/core.js';
 import { layout, flash, table } from '../_lib/ui.js';
 
@@ -18,8 +18,8 @@ export async function onRequestGet({ request, env }) {
   const sum = active.reduce((s, r) => s + r.guests, 0);
 
   const closed = db ? await db.prepare('SELECT reason FROM closures WHERE day=?').bind(day).first() : null;
-  const ovr = db ? await db.prepare('SELECT seats_slot FROM capacity_overrides WHERE day=?').bind(day).first() : null;
-  const cap = ovr?.seats_slot ?? seatsPerSlot(env);
+  const kap = await capacityFor(db, env, day);
+  const cap = kap.seats;
 
   const load = {};
   for (const r of active) load[r.res_time] = (load[r.res_time] || 0) + r.guests;
@@ -39,7 +39,8 @@ export async function onRequestGet({ request, env }) {
     <h1>${esc(formatDateDE(day))}${day === now.date ? ' · heute' : ''}</h1>
     <p class="sub">${sum} ${sum === 1 ? 'Gast' : 'Gäste'} · ${active.length}
        ${active.length === 1 ? 'Reservierung' : 'Reservierungen'} · ${cap} Plätze je Zeitfenster
-       ${ovr ? '(für diesen Tag angepasst)' : ''}</p>
+       ${kap.source === 'tag' ? '(für diesen Tag angepasst)'
+         : kap.source === 'tische' ? `(aus ${kap.tables.count} Tischen)` : ''}</p>
     ${flash(url)}
     ${closed ? `<div class="msg warn"><b>Schließtag:</b> ${esc(closed.reason || 'geschlossen')} —
         online kann für diesen Tag nicht reserviert werden.</div>` : ''}

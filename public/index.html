@@ -205,6 +205,32 @@ header.solid .burger span{background:var(--ink)}
 }
 .sig-note span{color:var(--gold)}
 
+/* ---------- küchenchef ---------- */
+.chef{background:var(--cream);border-top:1px solid var(--sand);border-bottom:1px solid var(--sand)}
+.chef .figure img{aspect-ratio:4/5}
+.chef .caption{background:var(--ink);color:var(--cream)}
+.chef h2{margin-bottom:.4rem}
+.chef .role{
+  font-size:.74rem;letter-spacing:.26em;text-transform:uppercase;color:var(--muted);
+  margin:0 0 1.5rem;font-weight:600
+}
+.vita{list-style:none;margin:2rem 0 0;padding:0;position:relative}
+.vita::before{content:"";position:absolute;left:5px;top:.55rem;bottom:.9rem;width:1px;background:var(--sand)}
+.vita li{position:relative;padding:0 0 1.5rem 2.1rem}
+.vita li:last-child{padding-bottom:0}
+.vita li::before{
+  content:"";position:absolute;left:0;top:.5rem;width:11px;height:11px;border-radius:50%;
+  background:var(--paper);border:2px solid var(--gold)
+}
+.vita li:first-child::before{background:var(--wine);border-color:var(--wine)}
+.vita .st{
+  display:block;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--wine);font-weight:700;margin-bottom:.25rem
+}
+.vita b{display:block;font-family:'Playfair Display',Georgia,serif;font-weight:600;
+  font-size:1.12rem;line-height:1.25;margin-bottom:.3rem}
+.vita p{margin:0;color:var(--muted);font-size:.95rem}
+
 /* ---------- split ---------- */
 .split{display:grid;grid-template-columns:1.05fr 1fr;gap:clamp(2.5rem,6vw,5.5rem);align-items:center}
 .split.rev>*:first-child{order:2}
@@ -528,6 +554,7 @@ footer a:hover{color:var(--gold)}
     <nav>
       <ul class="navlinks">
         <li><a href="#konzept">Restaurant</a></li>
+        <li><a href="#kuechenchef">Küchenchef</a></li>
         <li><a href="#steak">Steak</a></li>
         <li><a href="#karte">Speisekarte</a></li>
         <li><a href="#galerie">Galerie</a></li>
@@ -542,6 +569,7 @@ footer a:hover{color:var(--gold)}
 <div class="mobilemenu" id="mmenu">
   <button class="close" id="mclose" aria-label="Menü schließen">&times;</button>
   <a href="#konzept">Restaurant</a>
+  <a href="#kuechenchef">Der Küchenchef</a>
   <a href="#steak">Steak vom heißen Stein</a>
   <a href="#karte">Speisekarte</a>
   <a href="#galerie">Galerie</a>
@@ -646,6 +674,62 @@ footer a:hover{color:var(--gold)}
     <div class="figure reveal">
       <img src="/assets/img/klassiker.jpg" alt="Rostbraten mit Maultasche, Lemberger-Jus und handgeschabten Spätzle" width="1200" height="1500" loading="lazy">
       <div class="caption">Rostbraten &amp; Maultasche</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= KÜCHENCHEF =================
+     HINWEIS für Hasi Elektronic: Hier stehen bewusst nur Angaben, die belegbar sind
+     (Sonne Sersheim, Wechsel ins Lamm, heutige Küche). Sobald Gökhan die genauen
+     Jahreszahlen und Stationen seiner Laufbahn nennt — Ausbildung, Lehrjahre,
+     Stationen vor Sersheim —, gehören sie in die Liste <ul class="vita">.
+     Und: das Foto unten ist ein Stimmungsbild. Ein echtes Porträt von Gökhan
+     gehört an diese Stelle, sobald eines vorliegt. -->
+<section class="chef" id="kuechenchef">
+  <div class="wrap split rev">
+    <div class="reveal">
+      <p class="eyebrow">Der Küchenchef</p>
+      <div class="rule"></div>
+      <h2>Gökhan Yavuz.</h2>
+      <p class="role">Küchenchef &amp; Gastgeber</p>
+      <p class="lead" style="margin-bottom:1.4rem">
+        Wer rund um Vaihingen an der Enz essen geht, kennt den Namen. Über Jahre stand
+        Gökhan Yavuz in Sersheim am Herd der <strong>Sonne</strong> — und machte dort etwas
+        bekannt, das man in der Gegend sonst kaum bekam: Steak, das auf einem glühenden Stein
+        am eigenen Tisch fertig gebraten wird.
+      </p>
+      <p style="color:var(--muted)">
+        Seine Gäste sind ihm über die Jahre treu geblieben. Als sich die Gelegenheit ergab,
+        das historische Lamm in Horrheim zu übernehmen, nahm er sie an — mit seiner Küche und
+        dem heißen Stein im Gepäck. Aus der Sonne wurde Goya´s Lamm.
+      </p>
+
+      <ul class="vita reveal">
+        <li>
+          <span class="st">Heute</span>
+          <b>Goya´s Lamm, Horrheim</b>
+          <p>Küchenchef im historischen Lamm. Schwäbische Klassiker und mediterrane Küche
+             nebeneinander — und der heiße Stein als Spezialität des Hauses.</p>
+        </li>
+        <li>
+          <span class="st">Der Wechsel</span>
+          <b>Aus der Sonne wird Goya´s Lamm</b>
+          <p>Der Umzug nach Horrheim. Gleiche Handschrift, größeres Haus: Gastraum,
+             Nebenzimmer und Bar unter einem Dach.</p>
+        </li>
+        <li>
+          <span class="st">Davor</span>
+          <b>Restaurant Sonne, Sersheim</b>
+          <p>Eigenes Haus, eigene Karte. Bewusst überschaubar gehalten — dafür jeder Teller
+             so, wie er sein soll. Das Braten auf dem heißen Stein war schon dort das,
+             wofür die Gäste kamen.</p>
+        </li>
+      </ul>
+    </div>
+
+    <div class="figure reveal">
+      <img src="/assets/img/kuechenchef.jpg" alt="Am Pass in der Küche des Goya´s Lamm" width="1200" height="1500" loading="lazy">
+      <div class="caption">Am Pass</div>
     </div>
   </div>
 </section>
@@ -1216,6 +1300,7 @@ footer a:hover{color:var(--gold)}
         <h4>Restaurant</h4>
         <ul>
           <li><a href="#konzept">Über uns</a></li>
+          <li><a href="#kuechenchef">Der Küchenchef</a></li>
           <li><a href="#steak">Steak vom heißen Stein</a></li>
           <li><a href="#karte">Speisekarte</a></li>
           <li><a href="#galerie">Galerie</a></li>

@@ -133,6 +133,14 @@ tr.cancelled td.t,tr.cancelled td.nm{text-decoration:line-through}
 .cal .off{background:var(--cream);opacity:.55}
 .cal .today{border-color:var(--wine);box-shadow:inset 0 0 0 1px var(--wine)}
 
+/* Tischzeile */
+.trow{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,.7fr) minmax(0,1fr) minmax(0,.7fr) auto;
+  gap:.7rem;align-items:end;padding:.9rem 1.1rem .5rem}
+.trow .f label{margin-bottom:.2rem}
+.trow-act{display:flex;align-items:flex-end;padding-bottom:.05rem}
+.trow-sub{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;padding:0 1.1rem .9rem}
+tr.cancelled .trow input,tr.cancelled .trow select{background:var(--cream)}
+
 .pill{display:inline-block;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;
   font-weight:700;padding:.18rem .45rem;border:1px solid var(--sand);color:var(--muted)}
 .pill.web{border-color:#cfd8d0;color:#3d6b52}
@@ -141,6 +149,10 @@ tr.cancelled td.t,tr.cancelled td.nm{text-decoration:line-through}
 
 @media(max-width:720px){
   main{margin-top:1.1rem}
+  .trow{grid-template-columns:minmax(0,1fr) minmax(0,.8fr);padding:.8rem .7rem .4rem}
+  .trow-act{grid-column:1 / -1}
+  .trow-act .btn{width:100%}
+  .trow-sub{padding:0 .7rem .8rem}
   th,td{padding:.6rem .7rem}
   .hide-s{display:none}
   .show-s{display:block}
@@ -162,6 +174,7 @@ const TABS = [
   ['/admin', 'Übersicht'],
   ['/admin/kalender', 'Kalender'],
   ['/admin/neu', 'Neue Reservierung'],
+  ['/admin/tische', 'Tische'],
   ['/admin/zeiten', 'Schließtage'],
   ['/admin/suche', 'Suche'],
 ];

@@ -1,5 +1,5 @@
 import {
-  nowBerlin, addDays, formatDateDE, slotsForDate, availability, esc, isValidDate, seatsPerSlot,
+  nowBerlin, addDays, formatDateDE, slotsForDate, availability, esc, isValidDate, capacityFor,
 } from '../_lib/core.js';
 import { layout, flash, redirect } from '../_lib/ui.js';
 import { createReservation, BookError } from '../_lib/book.js';
@@ -17,7 +17,7 @@ async function form({ env, url, values = {}, error = null }) {
     ).bind(date).all()).results || [];
     load = Object.fromEntries(rows.map(r => [r.res_time, Number(r.t) || 0]));
   }
-  const cap = seatsPerSlot(env);
+  const cap = (await capacityFor(env.DB, env, date)).seats;
   const closed = env.DB ? await env.DB.prepare('SELECT reason FROM closures WHERE day=?').bind(date).first() : null;
 
   const preTime = values.time || url.searchParams.get('t') || '';

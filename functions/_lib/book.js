@@ -5,7 +5,7 @@
  */
 import {
   availability, isValidDate, nowBerlin, diffDays, clean, isEmail, isPhone,
-  token, formatDateDE, seatsPerSlot,
+  token, formatDateDE, capacityFor,
   MAX_DAYS_AHEAD, MAX_GUESTS_ONLINE, HOUSE,
 } from './core.js';
 import { guestMail, houseMail, send } from './mail.js';
@@ -89,8 +89,7 @@ export async function createReservation(db, env, input, opts = {}) {
     const after = await db.prepare(
       `SELECT SUM(guests) AS taken FROM reservations WHERE res_date=? AND res_time=? AND status='confirmed'`
     ).bind(date, time).first();
-    const ovr = await db.prepare('SELECT seats_slot FROM capacity_overrides WHERE day=?').bind(date).first();
-    const cap = ovr?.seats_slot ?? seatsPerSlot(env);
+    const cap = (await capacityFor(db, env, date)).seats;
     if ((after?.taken || 0) > cap) {
       await db.prepare(`UPDATE reservations SET status='cancelled', cancelled_at=? WHERE id=?`)
         .bind(new Date().toISOString(), rec.id).run();

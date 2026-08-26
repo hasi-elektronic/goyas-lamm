@@ -1,4 +1,4 @@
-import { nowBerlin, formatDateDE, isValidDate, clean, esc, seatsPerSlot, HOURS, WEEKDAY_DE } from '../_lib/core.js';
+import { nowBerlin, formatDateDE, isValidDate, clean, esc, capacityFor, HOURS, WEEKDAY_DE } from '../_lib/core.js';
 import { layout, flash, redirect } from '../_lib/ui.js';
 
 export async function onRequestGet({ request, env }) {
@@ -14,7 +14,11 @@ export async function onRequestGet({ request, env }) {
     `SELECT day, seats_slot FROM capacity_overrides WHERE day >= ? ORDER BY day`
   ).bind(now.date).all()).results || [] : [];
 
-  const cap = seatsPerSlot(env);
+  const kap = await capacityFor(db, env, null);
+  const cap = kap.seats;
+  const capHerkunft = kap.source === 'tische'
+    ? `Summe aus ${kap.tables.count} aktiven Tischen`
+    : 'Rückfallwert, es sind noch keine Tische angelegt';
 
   const hoursRows = [1, 2, 3, 4, 5, 6, 0].map(d => {
     const h = HOURS[d];
@@ -59,7 +63,7 @@ export async function onRequestGet({ request, env }) {
     </div>
 
     <div class="card">
-      <h2>Platzzahl für einen einzelnen Tag <em>Standard: ${cap} Plätze je Zeitfenster</em></h2>
+      <h2>Platzzahl für einen einzelnen Tag <em>Standard: ${cap} Plätze — ${capHerkunft}</em></h2>
       <div class="body">
         <form method="post" action="/admin/zeiten">
           <input type="hidden" name="do" value="cap">
@@ -68,7 +72,8 @@ export async function onRequestGet({ request, env }) {
               <input id="kd" name="day" type="date" min="${now.date}" required></div>
             <div class="f"><label for="ks">Plätze je Zeitfenster</label>
               <input id="ks" name="seats" type="number" min="0" max="500" value="${cap}" required>
-              <p class="hint">0 = online komplett dicht, ohne Schließtag-Hinweis.</p></div>
+              <p class="hint">0 = online komplett dicht, ohne Schließtag-Hinweis.
+                 Ein Eintrag hier sticht die <a href="/admin/tische">Tischliste</a> für diesen einen Tag.</p></div>
             <div class="f" style="display:flex;align-items:flex-end">
               <button class="btn" type="submit">Speichern</button></div>
           </div>

@@ -141,9 +141,49 @@ export const esc = s => String(s ?? '')
 /* Kapazität                                                           */
 /* ------------------------------------------------------------------ */
 
+/** Rückfallwert, wenn noch keine Tische angelegt sind. */
 export function seatsPerSlot(env) {
   const n = parseInt(env?.RES_SEATS_PER_SLOT ?? '', 10);
   return Number.isFinite(n) && n > 0 ? n : DEFAULT_SEATS_SLOT;
+}
+
+/**
+ * Summe der Plätze aller aktiven Tische.
+ * @returns {Promise<{seats:number, count:number, max:number}|null>} null = keine Tische gepflegt
+ */
+export async function tableSeats(db) {
+  if (!db) return null;
+  try {
+    const r = await db.prepare(
+      `SELECT COUNT(*) AS n, COALESCE(SUM(seats),0) AS s, COALESCE(MAX(seats),0) AS m
+         FROM tables WHERE active = 1`).first();
+    if (!r || !r.n) return null;
+    return { seats: Number(r.s) || 0, count: Number(r.n) || 0, max: Number(r.m) || 0 };
+  } catch {
+    return null;   // Tabelle noch nicht migriert
+  }
+}
+
+/**
+ * Plätze je Zeitfenster — in dieser Reihenfolge:
+ *   1. Ausnahme für genau diesen Tag (capacity_overrides)
+ *   2. Summe der aktiven Tische
+ *   3. Rückfallwert aus der Umgebung
+ * @returns {Promise<{seats:number, source:'tag'|'tische'|'standard', tables?:object}>}
+ */
+export async function capacityFor(db, env, dateStr) {
+  if (db && dateStr) {
+    try {
+      const ovr = await db.prepare('SELECT seats_slot FROM capacity_overrides WHERE day = ?')
+        .bind(dateStr).first();
+      if (ovr && ovr.seats_slot != null) {
+        return { seats: Number(ovr.seats_slot), source: 'tag' };
+      }
+    } catch { /* Tabelle fehlt noch — Rückfall auf Tische bzw. Standardwert */ }
+  }
+  const t = await tableSeats(db);
+  if (t && t.seats > 0) return { seats: t.seats, source: 'tische', tables: t };
+  return { seats: seatsPerSlot(env), source: 'standard' };
 }
 
 /**
@@ -162,9 +202,7 @@ export async function availability(db, env, dateStr, guests = 2) {
     return { date: dateStr, closed: true, reason: closed.reason || 'Geschlossen', slots: [] };
   }
 
-  const ovr = await db.prepare('SELECT seats_slot FROM capacity_overrides WHERE day = ?')
-    .bind(dateStr).first();
-  const cap = ovr?.seats_slot ?? seatsPerSlot(env);
+  const cap = (await capacityFor(db, env, dateStr)).seats;
 
   const rows = await db.prepare(
     `SELECT res_time, SUM(guests) AS taken FROM reservations
