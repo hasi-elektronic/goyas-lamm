@@ -65,6 +65,7 @@ td.t{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 td.g{font-weight:700;color:var(--wine);white-space:nowrap}
 td.act{text-align:right;white-space:nowrap}
 tr.cancelled{opacity:.5}
+.gastnote{color:var(--warn);font-size:.82rem}
 tr.cancelled td.t,tr.cancelled td.nm{text-decoration:line-through}
 .nm a{text-decoration:none;color:inherit;font-weight:600}
 .nm a:hover{color:var(--wine)}
@@ -133,6 +134,22 @@ tr.cancelled td.t,tr.cancelled td.nm{text-decoration:line-through}
 .cal .off{background:var(--cream);opacity:.55}
 .cal .today{border-color:var(--wine);box-shadow:inset 0 0 0 1px var(--wine)}
 
+/* Speisekarte */
+.ktabs{display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:1.3rem}
+.ktabs .ktab{display:inline-flex;align-items:center;gap:.5rem;text-decoration:none;color:var(--ink);
+  background:var(--paper);border:1px solid var(--sand);padding:.6rem .9rem;border-radius:2px;
+  font-size:.8rem;font-weight:600}
+.ktabs .ktab span{font-size:.68rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.ktabs .ktab:hover{border-color:var(--wine)}
+.ktabs .ktab.on{background:var(--wine);border-color:var(--wine);color:#fff}
+.ktabs .ktab.on span{color:rgba(255,255,255,.7)}
+.irow{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.7fr) minmax(0,.8fr) minmax(0,.4fr) auto;
+  gap:.6rem;align-items:end;padding:.8rem 1.1rem .4rem}
+.irow .f label{margin-bottom:.2rem}
+.irow-act{display:flex;align-items:flex-end;padding-bottom:.05rem}
+.irow-sub{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;padding:0 1.1rem .8rem}
+tr.cancelled .irow input{background:var(--cream)}
+
 /* Tischzeile */
 .trow{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,.7fr) minmax(0,1fr) minmax(0,.7fr) auto;
   gap:.7rem;align-items:end;padding:.9rem 1.1rem .5rem}
@@ -146,9 +163,15 @@ tr.cancelled .trow input,tr.cancelled .trow select{background:var(--cream)}
 .pill.web{border-color:#cfd8d0;color:#3d6b52}
 .pill.tel{border-color:#e0cfa8;color:#8a6b1f}
 .pill.walk{border-color:#d9c9cc;color:var(--wine)}
+.pill.ns{border-color:var(--wine);color:#fff;background:var(--wine)}
+tr.noshow td.nm a{text-decoration:line-through;text-decoration-color:var(--wine)}
 
 @media(max-width:720px){
   main{margin-top:1.1rem}
+  .irow{grid-template-columns:minmax(0,1fr) minmax(0,.6fr);padding:.7rem .7rem .3rem}
+  .irow-act{grid-column:1 / -1}
+  .irow-act .btn{width:100%}
+  .irow-sub{padding:0 .7rem .7rem}
   .trow{grid-template-columns:minmax(0,1fr) minmax(0,.8fr);padding:.8rem .7rem .4rem}
   .trow-act{grid-column:1 / -1}
   .trow-act .btn{width:100%}
@@ -175,6 +198,7 @@ const TABS = [
   ['/admin/kalender', 'Kalender'],
   ['/admin/neu', 'Neue Reservierung'],
   ['/admin/tische', 'Tische'],
+  ['/admin/karte', 'Speisekarte'],
   ['/admin/zeiten', 'Schließtage'],
   ['/admin/suche', 'Suche'],
 ];
@@ -221,18 +245,21 @@ export const sourcePill = s =>
   : s === 'walk' ? '<span class="pill walk">Vor Ort</span>'
   : '<span class="pill web">Online</span>';
 
-/** Reservierungs-Tabelle. */
-export function table(rows, { showDate = false } = {}) {
+/** Reservierungs-Tabelle. `notes` = { phone_key: Gastnotiz } aus notesFor(). */
+export function table(rows, { showDate = false, notes = {} } = {}) {
+  const key = v => String(v ?? '').replace(/\D/g, '');
   if (!rows.length) return '<div class="empty">Keine Reservierungen.</div>';
   return `<table class="stack"><thead><tr>
     <th>Zeit</th><th>${showDate ? 'Datum / Name' : 'Name'}</th><th>P.</th>
     <th class="hide-s">Kontakt</th><th class="hide-s">Anmerkung</th><th></th>
   </tr></thead><tbody>
-  ${rows.map(r => `<tr class="${r.status === 'cancelled' ? 'cancelled' : ''}">
+  ${rows.map(r => `<tr class="${r.status === 'cancelled' ? 'cancelled' : ''}${r.no_show ? ' noshow' : ''}">
     <td class="t">${esc(r.res_time)}</td>
     <td class="nm"><a href="/admin/r/${esc(r.id)}">${esc(r.name)}</a>
       ${showDate ? `<div class="meta">${esc(formatDateDE(r.res_date))}</div>` : ''}
-      ${r.status === 'cancelled' ? '<div class="meta">storniert</div>' : ''}</td>
+      ${r.status === 'cancelled' ? '<div class="meta">storniert</div>' : ''}
+      ${r.no_show ? '<div class="meta"><span class="pill ns">nicht erschienen</span></div>' : ''}
+      ${notes[key(r.phone)] ? `<div class="meta gastnote">${esc(notes[key(r.phone)])}</div>` : ''}</td>
     <td class="g">${esc(String(r.guests))}</td>
     <td class="hide-s"><a href="tel:${esc(r.phone)}">${esc(r.phone)}</a>
       ${r.email ? `<div class="meta">${esc(r.email)}</div>` : ''}</td>

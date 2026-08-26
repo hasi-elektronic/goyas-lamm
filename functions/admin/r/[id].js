@@ -1,8 +1,10 @@
 import {
-  formatDateDE, slotsForDate, isValidDate, clean, isEmail, isPhone, esc, nowBerlin, HOUSE,
+  formatDateDE, slotsForDate, isValidDate, clean, isEmail, isPhone, esc, nowBerlin,
+  phoneKey, diffDays, HOUSE,
 } from '../../_lib/core.js';
 import { layout, flash, redirect, sourcePill } from '../../_lib/ui.js';
 import { cancelMailGuest, guestMail, send } from '../../_lib/mail.js';
+import { history, saveNote } from '../../_lib/gaeste.js';
 
 async function load(env, id) {
   if (!env.DB || !/^[0-9a-f-]{8,36}$/i.test(id)) return null;
@@ -20,13 +22,56 @@ export async function onRequestGet({ request, env, params }) {
     .map(t => `<option value="${t}" ${t === r.res_time ? 'selected' : ''}>${t} Uhr</option>`).join('');
 
   const cancelled = r.status === 'cancelled';
+  const h = await history(env.DB, r.phone, r.id);
+  const vergangen = diffDays(nowBerlin().date, r.res_date) < 0;
+
+  const histRows = h && h.letzte.length
+    ? `<table class="stack"><tbody>${h.letzte.map(x => `<tr>
+         <td class="t">${esc(formatDateDE(x.res_date).replace(/^\w+, /, ''))}</td>
+         <td class="nm"><a href="/admin/r/${esc(x.id)}">${esc(x.res_time)} Uhr</a></td>
+         <td class="g">${esc(String(x.guests))}</td>
+         <td class="hide-s meta">${x.no_show ? '<span class="pill ns">nicht erschienen</span>'
+             : x.status === 'cancelled' ? '<span class="pill">storniert</span>'
+             : '<span class="pill web">war da</span>'}
+           ${x.note ? ' · ' + esc(x.note) : ''}</td>
+         <td class="act"></td></tr>`).join('')}</tbody></table>`
+    : '<div class="empty">Erster Besuch — zu dieser Telefonnummer gibt es noch nichts.</div>';
+
+  const gastKarte = `
+    <div class="card">
+      <h2>Gast <em>${h ? `${h.total} weitere ${h.total === 1 ? 'Reservierung' : 'Reservierungen'}` : ''}</em></h2>
+      ${h && h.total ? `<div class="body" style="padding-bottom:.2rem">
+        <div class="stats" style="margin-bottom:.8rem">
+          <div class="stat"><b>${h.kommt}</b><span>war da</span></div>
+          <div class="stat ${h.noShow ? 'hot' : ''}"><b>${h.noShow}</b><span>nicht erschienen</span></div>
+          <div class="stat"><b>${h.storno}</b><span>storniert</span></div>
+        </div>
+      </div>` : ''}
+      ${histRows}
+      <div class="body">
+        <form method="post" action="/admin/r/${esc(r.id)}">
+          <input type="hidden" name="do" value="gastnotiz">
+          <div class="f"><label for="gn">Dauerhafte Notiz zu diesem Gast</label>
+            <textarea id="gn" name="gastnote" maxlength="500"
+              placeholder="Stammgast · sitzt gern am Fenster · Nussallergie">${esc(h?.note || '')}</textarea>
+            <p class="hint">Erscheint bei jeder künftigen Reservierung dieser Telefonnummer und
+               auf dem Küchenzettel. Nichts eintragen, was der Gast nicht lesen dürfte.</p></div>
+          <div class="row end"><button class="btn ghost" type="submit">Notiz speichern</button></div>
+        </form>
+      </div>
+    </div>`;
 
   const body = `
     <h1>${esc(r.name)}</h1>
     <p class="sub">${esc(formatDateDE(r.res_date))} · ${esc(r.res_time)} Uhr ·
        ${r.guests} ${r.guests === 1 ? 'Person' : 'Personen'} ${sourcePill(r.source)}
-       ${cancelled ? ' · <b style="color:var(--wine)">storniert</b>' : ''}</p>
+       ${cancelled ? ' · <b style="color:var(--wine)">storniert</b>' : ''}
+       ${r.no_show ? ' · <b style="color:var(--wine)">nicht erschienen</b>' : ''}</p>
     ${flash(url)}
+    ${h?.note ? `<div class="msg warn"><b>Notiz zum Gast:</b> ${esc(h.note)}</div>` : ''}
+    ${h && h.noShow >= 2 && !r.no_show ? `<div class="msg warn">
+       Dieser Gast ist bereits <b>${h.noShow}-mal</b> nicht erschienen. Vielleicht am Tag
+       vorher kurz anrufen.</div>` : ''}
 
     <div class="row" style="margin-bottom:1.4rem">
       <a class="btn ghost" href="/admin/tag?d=${esc(r.res_date)}">&larr; Tagesansicht</a>
@@ -67,6 +112,14 @@ export async function onRequestGet({ request, env, params }) {
           ${esc(new Date(r.created_at).toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }))} ·
           Nummer ${esc(r.id.slice(0, 8))} ·
           Bestätigungsmail ${r.mail_guest ? 'verschickt' : 'nicht verschickt'}</p>
+        <div class="row" style="margin-bottom:1rem">
+          ${r.no_show
+            ? `<form method="post" action="/admin/r/${esc(r.id)}"><input type="hidden" name="do" value="show">
+                 <button class="btn ghost" type="submit">War doch da</button></form>`
+            : `<form method="post" action="/admin/r/${esc(r.id)}"><input type="hidden" name="do" value="noshow">
+                 <button class="btn ghost" type="submit" ${cancelled ? 'disabled' : ''}>
+                   Nicht erschienen${vergangen ? '' : ' (No-Show)'}</button></form>`}
+        </div>
         <div class="row">
           ${cancelled
             ? `<form method="post" action="/admin/r/${esc(r.id)}"><input type="hidden" name="do" value="restore">
@@ -81,6 +134,8 @@ export async function onRequestGet({ request, env, params }) {
         </div>
       </div>
     </div>
+
+    ${gastKarte}
 
     ${r.email ? `<div class="card">
       <h2>Bestätigung erneut senden</h2>
@@ -116,6 +171,25 @@ export async function onRequestPost({ request, env, params }) {
       note = ok ? ' Der Gast wurde informiert.' : ' Die E-Mail konnte nicht verschickt werden.';
     }
     return redirect(back, 'Reservierung storniert.' + note);
+  }
+
+  if (d.do === 'noshow' || d.do === 'show') {
+    const v = d.do === 'noshow' ? 1 : 0;
+    try {
+      await env.DB.prepare(`UPDATE reservations SET no_show=? WHERE id=?`).bind(v, r.id).run();
+    } catch {
+      return redirect(back + '?err=' + encodeURIComponent(
+        'Dafür fehlt noch die Datenbank-Erweiterung (Migration 0004).'));
+    }
+    return redirect(back, v ? 'Als „nicht erschienen" vermerkt.' : 'Vermerk wieder entfernt.');
+  }
+
+  if (d.do === 'gastnotiz') {
+    const note = clean(d.gastnote, 500);
+    const ok = await saveNote(env.DB, r.phone, r.name, note).catch(() => false);
+    if (!ok) return redirect(back + '?err=' + encodeURIComponent(
+      'Notiz konnte nicht gespeichert werden — Telefonnummer zu kurz oder Migration 0004 fehlt.'));
+    return redirect(back, note ? 'Notiz zum Gast gespeichert.' : 'Notiz zum Gast gelöscht.');
   }
 
   if (d.do === 'restore') {
@@ -155,9 +229,16 @@ export async function onRequestPost({ request, env, params }) {
       return redirect(back + '?err=' + encodeURIComponent('Die E-Mail-Adresse sieht nicht richtig aus.'));
     }
 
-    await env.DB.prepare(
-      `UPDATE reservations SET res_date=?, res_time=?, guests=?, name=?, email=?, phone=?, note=? WHERE id=?`
-    ).bind(date, time, guests, name, email, phone, note || null, r.id).run();
+    try {
+      await env.DB.prepare(
+        `UPDATE reservations SET res_date=?, res_time=?, guests=?, name=?, email=?, phone=?,
+                                 phone_key=?, note=? WHERE id=?`
+      ).bind(date, time, guests, name, email, phone, phoneKey(phone), note || null, r.id).run();
+    } catch {
+      await env.DB.prepare(
+        `UPDATE reservations SET res_date=?, res_time=?, guests=?, name=?, email=?, phone=?, note=? WHERE id=?`
+      ).bind(date, time, guests, name, email, phone, note || null, r.id).run();
+    }
     return redirect(back, 'Änderungen gespeichert.');
   }
 

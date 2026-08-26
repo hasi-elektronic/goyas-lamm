@@ -110,6 +110,13 @@ export const isPhone = v => {
   return digits.length >= 6 && digits.length <= 20;
 };
 
+/**
+ * Telefonnummer auf reine Ziffern reduziert — der Schlüssel für die Gästekartei.
+ * „07042 83 22 82", „07042/832282" und „+49 7042 832282" liefern nicht alle
+ * denselben Wert; für Stammgäste, die immer gleich schreiben, reicht das.
+ */
+export const phoneKey = v => String(v ?? '').replace(/\D/g, '');
+
 /** SHA-256 der IP + Salt → wir speichern nie die Klartext-IP. */
 export async function hashIp(ip, salt) {
   const data = new TextEncoder().encode(`${salt || 'goyas'}|${ip || ''}`);

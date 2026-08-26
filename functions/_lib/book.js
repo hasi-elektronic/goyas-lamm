@@ -5,7 +5,7 @@
  */
 import {
   availability, isValidDate, nowBerlin, diffDays, clean, isEmail, isPhone,
-  token, formatDateDE, capacityFor,
+  token, formatDateDE, capacityFor, phoneKey,
   MAX_DAYS_AHEAD, MAX_GUESTS_ONLINE, HOUSE,
 } from './core.js';
 import { guestMail, houseMail, send } from './mail.js';
@@ -77,12 +77,22 @@ export async function createReservation(db, env, input, opts = {}) {
     source: opts.source || 'web',
   };
 
-  await db.prepare(
-    `INSERT INTO reservations
-      (id, token, created_at, res_date, res_time, guests, name, email, phone, note, status, source, ip_hash)
-     VALUES (?,?,?,?,?,?,?,?,?,?,'confirmed',?,?)`
-  ).bind(rec.id, rec.token, rec.created_at, date, time, guests, name, rec.email, phone, rec.note,
-         rec.source, opts.ipHash || null).run();
+  try {
+    await db.prepare(
+      `INSERT INTO reservations
+        (id, token, created_at, res_date, res_time, guests, name, email, phone, phone_key, note, status, source, ip_hash)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,'confirmed',?,?)`
+    ).bind(rec.id, rec.token, rec.created_at, date, time, guests, name, rec.email, phone,
+           phoneKey(phone), rec.note, rec.source, opts.ipHash || null).run();
+  } catch {
+    /* Migration 0004 noch nicht eingespielt — ohne phone_key eintragen */
+    await db.prepare(
+      `INSERT INTO reservations
+        (id, token, created_at, res_date, res_time, guests, name, email, phone, note, status, source, ip_hash)
+       VALUES (?,?,?,?,?,?,?,?,?,?,'confirmed',?,?)`
+    ).bind(rec.id, rec.token, rec.created_at, date, time, guests, name, rec.email, phone, rec.note,
+           rec.source, opts.ipHash || null).run();
+  }
 
   /* Kapazität gegen gleichzeitige Buchungen nachprüfen */
   if (!opts.override) {

@@ -1,6 +1,7 @@
 import { nowBerlin, addDays, formatDateDE, slotsForDate, esc, capacityFor } from '../_lib/core.js';
 import { layout, flash, table, dayHeading } from '../_lib/ui.js';
 import { mailReady } from '../_lib/mail.js';
+import { notesFor } from '../_lib/gaeste.js';
 
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
@@ -11,7 +12,7 @@ export async function onRequestGet({ request, env }) {
   const until = addDays(now.date, 13);
 
   const rows = (await db.prepare(
-    `SELECT id,res_date,res_time,guests,name,email,phone,note,status,source
+    `SELECT id,res_date,res_time,guests,name,email,phone,note,status,source,no_show
        FROM reservations
       WHERE res_date >= ? AND res_date <= ? AND status='confirmed'
       ORDER BY res_date, res_time, created_at`
@@ -32,6 +33,7 @@ export async function onRequestGet({ request, env }) {
   for (const r of rows) if (r.res_date > now.date) (byDay[r.res_date] ||= []).push(r);
 
   const ruhetag = !slotsForDate(now.date).length;
+  const notes = await notesFor(db, rows.map(r => r.phone));
   const kap = await capacityFor(db, env, now.date);
   const cap = kap.seats;
 
@@ -48,7 +50,7 @@ export async function onRequestGet({ request, env }) {
 
   const upcoming = Object.keys(byDay).length
     ? Object.entries(byDay).slice(0, 8).map(([day, rs]) =>
-        `<div class="card">${dayHeading(day, sum(rs), rs.length)}${table(rs)}</div>`).join('')
+        `<div class="card">${dayHeading(day, sum(rs), rs.length)}${table(rs, { notes })}</div>`).join('')
     : '<div class="card"><div class="empty">Für die nächsten Tage liegen noch keine Reservierungen vor.</div></div>';
 
   const body = `
@@ -71,13 +73,14 @@ export async function onRequestGet({ request, env }) {
       <a class="btn" href="/admin/neu">+ Neue Reservierung</a>
       <a class="btn ghost" href="/admin/tag?d=${now.date}">Tagesansicht heute</a>
       <a class="btn ghost" href="/admin/kalender">Kalender</a>
+      <a class="btn ghost" href="/admin/zettel?d=${now.date}">Küchenzettel drucken</a>
     </div>
 
     <div class="card">
       ${dayHeading(now.date, sum(today), today.length)}
       ${ruhetag && !today.length
         ? '<div class="empty">Heute ist Ruhetag.</div>'
-        : table(today)}
+        : table(today, { notes })}
     </div>
 
     <h2 style="margin:2rem 0 .9rem">Nächste Tage</h2>

@@ -2,6 +2,7 @@ import {
   nowBerlin, addDays, formatDateDE, slotsForDate, isValidDate, esc, capacityFor, weekday, WEEKDAY_DE,
 } from '../_lib/core.js';
 import { layout, flash, table } from '../_lib/ui.js';
+import { notesFor } from '../_lib/gaeste.js';
 
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
@@ -10,7 +11,7 @@ export async function onRequestGet({ request, env }) {
   const db = env.DB;
 
   const rows = db ? (await db.prepare(
-    `SELECT id,res_date,res_time,guests,name,email,phone,note,status,source
+    `SELECT id,res_date,res_time,guests,name,email,phone,note,status,source,no_show
        FROM reservations WHERE res_date=? ORDER BY res_time, created_at`
   ).bind(day).all()).results || [] : [];
 
@@ -20,6 +21,7 @@ export async function onRequestGet({ request, env }) {
   const closed = db ? await db.prepare('SELECT reason FROM closures WHERE day=?').bind(day).first() : null;
   const kap = await capacityFor(db, env, day);
   const cap = kap.seats;
+  const notes = await notesFor(db, rows.map(r => r.phone));
 
   const load = {};
   for (const r of active) load[r.res_time] = (load[r.res_time] || 0) + r.guests;
@@ -50,6 +52,7 @@ export async function onRequestGet({ request, env }) {
       <a class="btn ghost" href="/admin/tag?d=${now.date}">Heute</a>
       <a class="btn ghost" href="/admin/tag?d=${addDays(day, 1)}">Folgetag &rarr;</a>
       <span class="spacer"></span>
+      <a class="btn ghost" href="/admin/zettel?d=${day}">Küchenzettel</a>
       <a class="btn" href="/admin/neu?d=${day}">+ Reservierung</a>
     </div>
 
@@ -60,7 +63,7 @@ export async function onRequestGet({ request, env }) {
 
     <div class="card">
       <h2>Reservierungen</h2>
-      ${table(rows)}
+      ${table(rows, { notes })}
     </div>`;
 
   return layout({ title: formatDateDE(day), active: '/admin/kalender', body });

@@ -812,7 +812,7 @@ footer a:hover{color:var(--gold)}
       </p>
     </div>
 
-    <div class="menu-nav reveal" role="tablist">
+    <div class="menu-nav reveal" role="tablist" id="karte-nav">
       <button class="active" data-tab="vorspeisen" role="tab">Vorspeisen &amp; Salate</button>
       <button data-tab="teigwaren" role="tab">Teigwaren</button>
       <button data-tab="steak" role="tab">Steak &amp; Burger</button>
@@ -821,8 +821,9 @@ footer a:hover{color:var(--gold)}
       <button data-tab="getraenke" role="tab">Getränke</button>
     </div>
 
+    <div id="karte-panels">
     <!-- VORSPEISEN -->
-    <div class="menu-panel active" id="vorspeisen">
+    <div class="menu-panel active" id="menu-vorspeisen">
       <div class="menu-group">
         <h3>Suppen</h3>
         <div class="dishes">
@@ -856,7 +857,7 @@ footer a:hover{color:var(--gold)}
     </div>
 
     <!-- TEIGWAREN -->
-    <div class="menu-panel" id="teigwaren">
+    <div class="menu-panel" id="menu-teigwaren">
       <div class="menu-group">
         <h3>Pasta</h3>
         <p class="note">Pasta wählbar zwischen Spaghetti, Penne und Rigatoni.</p>
@@ -881,7 +882,7 @@ footer a:hover{color:var(--gold)}
     </div>
 
     <!-- STEAK & BURGER -->
-    <div class="menu-panel" id="steak-panel">
+    <div class="menu-panel" id="menu-steak">
       <div class="menu-group">
         <h3>Steak auf heißem Stein</h3>
         <div class="dishes">
@@ -914,7 +915,7 @@ footer a:hover{color:var(--gold)}
     </div>
 
     <!-- KLASSIKER -->
-    <div class="menu-panel" id="klassiker">
+    <div class="menu-panel" id="menu-klassiker">
       <div class="menu-group">
         <h3>Klassiker</h3>
         <div class="dishes">
@@ -931,7 +932,7 @@ footer a:hover{color:var(--gold)}
     </div>
 
     <!-- SÜSSES -->
-    <div class="menu-panel" id="suesses">
+    <div class="menu-panel" id="menu-suesses">
       <div class="menu-group">
         <h3>Süßes</h3>
         <div class="dishes">
@@ -945,7 +946,7 @@ footer a:hover{color:var(--gold)}
     </div>
 
     <!-- GETRÄNKE -->
-    <div class="menu-panel" id="getraenke">
+    <div class="menu-panel" id="menu-getraenke">
       <div class="drinks">
         <div class="menu-group">
           <h3>Cocktails</h3>
@@ -1090,9 +1091,10 @@ footer a:hover{color:var(--gold)}
         </div>
       </div>
     </div>
+    </div>
 
     <p class="note" style="text-align:center;margin-top:2rem">
-      Änderungen und Druckfehler vorbehalten. Stand der Karte: August 2026.
+      Änderungen und Druckfehler vorbehalten. Stand der Karte: <span id="karte-stand">August 2026</span>.
     </p>
   </div>
 </section>
@@ -1414,13 +1416,13 @@ footer a:hover{color:var(--gold)}
   m.querySelectorAll('a').forEach(function(a){ a.addEventListener('click',close); });
 
   var tabs=document.querySelectorAll('.menu-nav button');
-  var map={vorspeisen:'vorspeisen',teigwaren:'teigwaren',steak:'steak-panel',klassiker:'klassiker',suesses:'suesses',getraenke:'getraenke'};
+
   tabs.forEach(function(t){
     t.addEventListener('click',function(){
       tabs.forEach(function(x){x.classList.remove('active')});
       t.classList.add('active');
       document.querySelectorAll('.menu-panel').forEach(function(p){p.classList.remove('active')});
-      var el=document.getElementById(map[t.dataset.tab]);
+      var el=document.getElementById('menu-'+t.dataset.tab);
       if(el) el.classList.add('active');
     });
   });
