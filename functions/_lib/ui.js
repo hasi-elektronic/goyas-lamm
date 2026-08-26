@@ -168,6 +168,26 @@ tr.cancelled td.t,tr.cancelled td.nm{text-decoration:line-through}
 .cal .off{background:var(--cream);opacity:.55}
 .cal .today{border-color:var(--wine);box-shadow:inset 0 0 0 1px var(--wine)}
 
+/* Balken — bewusst eine einzige Farbe je Diagramm: es ist jeweils eine Messreihe,
+   da braucht es weder Legende noch Farbcodierung. */
+.bars{display:flex;flex-direction:column;gap:.45rem}
+.bar{display:grid;grid-template-columns:6.4rem 1fr auto;align-items:center;gap:.7rem}
+.bar .bl{font-size:.82rem;color:var(--muted);text-align:right;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.bar .bt{background:var(--sand);border-radius:2px;height:20px;position:relative;overflow:hidden}
+.bar .bt i{position:absolute;inset:0 auto 0 0;background:var(--wine);
+  border-radius:0 4px 4px 0;transition:width .4s cubic-bezier(.2,.6,.2,1)}
+.bar .bv{font-size:.9rem;font-weight:700;font-variant-numeric:tabular-nums;
+  min-width:3.2rem;text-align:right;color:var(--ink)}
+.bar .bv em{display:block;font-style:normal;font-size:.72rem;font-weight:400;color:var(--muted)}
+.bar.aus .bt i{background:var(--sand)}
+.bar.aus .bl,.bar.aus .bv{opacity:.5}
+@media(max-width:560px){
+  .bar{grid-template-columns:5.2rem 1fr auto;gap:.5rem}
+  .bar .bl{font-size:.76rem}
+  .bar .bv{min-width:2.8rem;font-size:.84rem}
+}
+
 /* Speisekarte */
 .ktabs{display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:1.3rem}
 .ktabs .ktab{display:inline-flex;align-items:center;gap:.5rem;text-decoration:none;color:var(--ink);
@@ -287,6 +307,7 @@ const IC = {
   lupe:   '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
   druck:  '<path d="M7 9V3.5h10V9"/><rect x="4" y="9" width="16" height="7" rx="1.5"/><path d="M7 14h10v6.5H7z"/>',
   aus:    '<path d="M15 4.5h3.5A1.5 1.5 0 0 1 20 6v12a1.5 1.5 0 0 1-1.5 1.5H15"/><path d="M10 8.5 6 12l4 3.5M6 12h9"/>',
+  kurve:  '<path d="M3.5 19.5h17"/><path d="M6.5 19.5V13M11 19.5V8.5M15.5 19.5v-4M20 19.5V4.5"/>',
   warte:  '<path d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5"/><path d="M3.5 8 3.5 12 7.5 12"/><path d="M12 8v4.2l3 1.8"/>',
   stempel:'<circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.5 1.5"/><path d="M9 3h6"/>',
   sanduhr:'<path d="M7 3h10M7 21h10"/><path d="M17 3v3.5L12 12l5 5.5V21"/><path d="M7 3v3.5L12 12l-5 5.5V21"/>',
@@ -301,6 +322,7 @@ const NAV = [
   ['/admin/tag',       'Heute',             'liste',    'Heute'],
   ['/admin/kalender',  'Kalender',          'kalender', 'Kalender'],
   ['/admin/warteliste','Warteliste',        'warte',    'Warte'],
+  ['/admin/auswertung','Auswertung',        'kurve',    'Zahlen'],
   ['/admin/neu',       'Neue Reservierung', 'plus',     'Neu'],
   ['/admin/karte',     'Speisekarte',       'karte',    'Karte'],
   ['/admin/tische',    'Tische',            'tisch',    'Tische'],
@@ -316,7 +338,7 @@ const NAV = [
 /* Reiterleiste am Rechner: vorne das Tagesgeschäft, der Rest im Klappmenü „Mehr".
    Elf Reiter nebeneinander waren schlicht zu viele. */
 const HAUPT = ['/admin', '/admin/warteliste', '/admin/kalender', '/admin/neu',
-               '/admin/karte', '/admin/suche'];
+               '/admin/karte', '/admin/auswertung'];
 const TABS  = NAV.filter(([h]) => HAUPT.includes(h))
                  .sort((a, b) => HAUPT.indexOf(a[0]) - HAUPT.indexOf(b[0]))
                  .map(([h, t]) => [h, t]);
