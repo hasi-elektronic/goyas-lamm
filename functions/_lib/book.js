@@ -133,7 +133,8 @@ export async function createReservation(db, env, input, opts = {}) {
  *  1. Reservierungen älter als `beforeDate`
  *  2. Gästenotizen, zu denen es danach keine Reservierung mehr gibt. Ohne diesen
  *     Schritt bliebe der Name samt Notiz für immer stehen, obwohl der Anlass gelöscht ist.
- *  3. Fehlversuchszähler der Anmeldung, sobald die Sperrfrist lange vorbei ist.
+ *  3. Wartelisten-Einträge, deren Wunschtermin gleich alt ist.
+ *  4. Fehlversuchszähler der Anmeldung, sobald die Sperrfrist lange vorbei ist.
  *
  * Läuft beiläufig bei jeder Online-Reservierung — Pages Functions kennen keine
  * Zeitpläne, und ein eigener Cron-Worker wäre für diese Menge übertrieben.
@@ -147,6 +148,10 @@ export async function purgeOld(db, beforeDate) {
     await db.prepare(
       `DELETE FROM guests WHERE phone_key NOT IN (SELECT phone_key FROM reservations
         WHERE phone_key IS NOT NULL)`).run();
+  } catch { /* Tabelle fehlt noch */ }
+
+  try {
+    await db.prepare(`DELETE FROM waitlist WHERE res_date < ?`).bind(beforeDate).run();
   } catch { /* Tabelle fehlt noch */ }
 
   try {
