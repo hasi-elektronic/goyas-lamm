@@ -19,6 +19,11 @@ body{background:var(--ink);display:grid;place-items:center;min-height:100svh;pad
 .box .f{margin-bottom:1rem}
 .box .btn{width:100%;padding:.9rem}
 .box input{font-size:16px}
+.f label.showpw,label.showpw{display:flex;align-items:center;gap:.6rem;margin:.6rem 0 0;
+  font-size:.9rem;font-weight:400;letter-spacing:normal;text-transform:none;
+  color:var(--muted);cursor:pointer;user-select:none}
+.showpw input{width:18px;height:18px;margin:0;accent-color:var(--wine);flex:0 0 auto}
+.hint-login{font-size:.8rem;color:var(--muted);margin:.9rem 0 0;line-height:1.5;text-align:center}
 </style></head><body>
 <form class="box" method="post" action="/admin/login">
   <img src="/assets/logo-dark.png" alt="Goya´s Lamm Horrheim">
@@ -31,9 +36,22 @@ body{background:var(--ink);display:grid;place-items:center;min-height:100svh;pad
            autocorrect="off" spellcheck="false" required ${locked ? 'disabled' : ''}></div>
   <div class="f"><label for="p">Passwort</label>
     <input id="p" name="pass" type="password" autocomplete="current-password"
-           autocapitalize="none" autocorrect="off" spellcheck="false" required ${locked ? 'disabled' : ''}></div>
+           autocapitalize="none" autocorrect="off" spellcheck="false" required ${locked ? 'disabled' : ''}>
+    <label class="showpw" for="eye">
+      <input type="checkbox" id="eye" ${locked ? 'disabled' : ''}><span>Passwort anzeigen</span></label>
+  </div>
   <button class="btn" type="submit" ${locked ? 'disabled' : ''}>Anmelden</button>
-</form></body></html>`,
+  <p class="hint-login">Benutzername und Passwort genau wie auf dem Zettel —
+     Groß- und Kleinschreibung zählt beim Passwort.</p>
+</form>
+<script>
+(function(){
+  var i=document.getElementById('p'), e=document.getElementById('eye');
+  if(!i||!e) return;
+  e.addEventListener('change',function(){ i.type = e.checked ? 'text' : 'password'; });
+})();
+</script>
+</body></html>`,
   { status: error ? (locked ? 429 : 401) : 200,
     headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } }
 );

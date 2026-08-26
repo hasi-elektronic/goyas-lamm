@@ -39,7 +39,21 @@ export async function verifySession(request, env) {
   return safeEqual(sig, await hmac(env, exp));
 }
 
+/**
+ * Räumt Eingaben auf, ohne die Sicherheit zu senken:
+ * geschützte Leerzeichen, Rand-Leerzeichen und „schöne" Striche, die
+ * Tastaturen und Messenger gern aus einem normalen Bindestrich machen.
+ */
+function normalize(v) {
+  return String(v ?? '')
+    .replace(/[\u00A0\u2007\u202F]/g, ' ')          // geschützte Leerzeichen
+    .replace(/[\u2010-\u2015\u2212\uFE58\uFE63\uFF0D]/g, '-') // Gedankenstriche → Bindestrich
+    .trim();
+}
+
 export function checkCredentials(env, user, pass) {
-  return safeEqual(String(user || ''), String(env.ADMIN_USER || ' ')) &&
-         safeEqual(String(pass || ''), String(env.ADMIN_PASS || ' '));
+  const u = normalize(user).toLowerCase();          // Benutzername ist kein Geheimnis
+  const soll = normalize(env.ADMIN_USER || ' ').toLowerCase();
+  return safeEqual(u, soll) &&
+         safeEqual(normalize(pass), normalize(env.ADMIN_PASS || ' '));
 }
