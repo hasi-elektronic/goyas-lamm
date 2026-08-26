@@ -1,6 +1,6 @@
 import {
-  availability, isValidDate, nowBerlin, addDays, diffDays,
-  MAX_DAYS_AHEAD, MAX_GUESTS_ONLINE, json, slotsForDate,
+  availability, isValidDate, nowBerlin, addDays, diffDays, capacityFor,
+  MAX_DAYS_AHEAD, MAX_GUESTS_ONLINE, LEAD_MINUTES, json, slotsForDate,
 } from '../_lib/core.js';
 
 /** GET /api/slots?date=YYYY-MM-DD&guests=2  → freie Zeiten
@@ -21,25 +21,50 @@ export async function onRequestGet({ request, env }) {
     if (m < 1 || m > 12) return json({ error: 'bad_month' }, 400);
     const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
 
+    const von = `${month}-01`;
+    const bis = `${month}-${String(daysInMonth).padStart(2, '0')}`;
+
+    /* Drei Abfragen für den ganzen Monat statt einer je Tag — sonst wären es
+       bis zu 31 Datenbankrunden für ein einziges Kalenderblatt. */
     const closures = await db.prepare(
-      `SELECT day, reason FROM closures WHERE day >= ? AND day <= ?`
-    ).bind(`${month}-01`, `${month}-${String(daysInMonth).padStart(2, '0')}`).all();
+      `SELECT day, reason FROM closures WHERE day >= ? AND day <= ?`).bind(von, bis).all();
     const closedMap = Object.fromEntries((closures.results || []).map(r => [r.day, r.reason || 'Geschlossen']));
+
+    const ovr = await db.prepare(
+      `SELECT day, seats_slot FROM capacity_overrides WHERE day >= ? AND day <= ?`)
+      .bind(von, bis).all();
+    const ovrMap = Object.fromEntries((ovr.results || []).map(r => [r.day, Number(r.seats_slot)]));
+
+    const belegt = await db.prepare(
+      `SELECT res_date, res_time, SUM(guests) AS n FROM reservations
+        WHERE res_date >= ? AND res_date <= ? AND status = 'confirmed'
+        GROUP BY res_date, res_time`).bind(von, bis).all();
+    const belegtMap = {};
+    for (const r of belegt.results || []) {
+      (belegtMap[r.res_date] ||= {})[r.res_time] = Number(r.n) || 0;
+    }
+
+    const standard = (await capacityFor(db, env, null)).seats;
+    const minute = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+    const frueheste = minute(now.time) + LEAD_MINUTES;
 
     const days = {};
     for (let d = 1; d <= daysInMonth; d++) {
       const day = `${month}-${String(d).padStart(2, '0')}`;
-      if (diffDays(now.date, day) < 0 || diffDays(now.date, day) > MAX_DAYS_AHEAD) { days[day] = 'past'; continue; }
-      if (!slotsForDate(day).length) { days[day] = 'ruhetag'; continue; }
+      const abstand = diffDays(now.date, day);
+      if (abstand < 0 || abstand > MAX_DAYS_AHEAD) { days[day] = 'past'; continue; }
+
+      const zeiten = slotsForDate(day);
+      if (!zeiten.length) { days[day] = 'ruhetag'; continue; }
       if (closedMap[day]) { days[day] = 'closed'; continue; }
-      days[day] = 'open';
+
+      const cap = ovrMap[day] ?? standard;
+      const heute = day === now.date;
+      const frei = zeiten.some(t =>
+        (!heute || minute(t) >= frueheste) && cap - ((belegtMap[day] || {})[t] || 0) >= guests);
+      days[day] = frei ? 'open' : 'full';
     }
-    // Für heute prüfen, ob überhaupt noch etwas frei ist
-    if (days[now.date] === 'open') {
-      const a = await availability(db, env, now.date, guests);
-      if (!a.slots.length) days[now.date] = 'full';
-    }
-    return json({ month, days, today: now.date, max: maxDate });
+    return json({ month, days, today: now.date, max: maxDate, guests });
   }
 
   const date = url.searchParams.get('date') || now.date;
