@@ -77,6 +77,18 @@ export function houseMail(r) {
   return { subject: `Reservierung ${formatDateDE(r.res_date)} ${r.res_time} · ${r.guests} P. · ${r.name}`, html: shell('Neue Reservierung', body) };
 }
 
+export function cancelMailGuest(r) {
+  const body = `
+    <p style="margin:0 0 14px;">Guten Tag ${esc(r.name.split(' ')[0] || r.name)},</p>
+    <p style="margin:0 0 4px;">Ihre Reservierung wurde aufgehoben:</p>
+    ${details(r)}
+    <p style="margin:0 0 18px;">Falls das ein Versehen war oder Sie einen neuen Termin möchten,
+       rufen Sie uns einfach an: <a href="tel:${HOUSE.tel}" style="color:${WINE};">${esc(HOUSE.phone)}</a>.</p>
+    <p style="margin:0;color:#6e675a;font-size:13px;">Bis zum nächsten Mal.<br>Goya und Team</p>`;
+  return { subject: `Ihre Reservierung am ${formatDateDE(r.res_date)} wurde storniert`,
+           html: shell('Stornierung', body) };
+}
+
 export function cancelMailHouse(r) {
   const body = `
     <p style="margin:0 0 4px;font-size:17px;font-weight:700;">Reservierung storniert</p>

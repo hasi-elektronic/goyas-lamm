@@ -28,7 +28,16 @@ functions/              # Cloudflare Pages Functions (Server-Code)
   api/slots.js          # GET  /api/slots?date=…&guests=…  bzw. ?month=YYYY-MM
   api/reservierung.js   # POST /api/reservierung
   storno.js             # GET/POST /storno?token=…   (Gast storniert selbst)
-  admin.js              # GET/POST /admin            (Basic-Auth, Übersicht + Stornieren)
+  admin/                # Admin-Panel (Cookie-Login)
+    _middleware.js      #   Sitzungsprüfung für /admin/*
+    login.js · logout.js
+    index.js            #   Übersicht mit Kennzahlen
+    neu.js              #   Reservierung von Hand anlegen
+    tag.js              #   Tagesansicht mit Auslastung je Zeitfenster
+    kalender.js         #   Monatskalender
+    zeiten.js           #   Schließtage und Platzzahl
+    suche.js            #   Suche nach Name, Telefon, E-Mail
+    r/[id].js           #   Detail: bearbeiten, stornieren, Mail erneut senden
 migrations/0001_init.sql
 ```
 
@@ -72,7 +81,7 @@ Gesetzt am Cloudflare-Pages-Projekt (Settings → Environment variables):
 
 | Variable | Zweck |
 |---|---|
-| `ADMIN_USER` / `ADMIN_PASS` | Zugang zu `/admin` (Basic-Auth) — **secret** |
+| `ADMIN_USER` / `ADMIN_PASS` | Zugang zu `/admin` (Anmeldeformular) — **secret** |
 | `IP_SALT` | Salt für den IP-Hash — **secret** |
 | `RESEND_API_KEY` | E-Mail-Versand über Resend — **secret**, noch nicht gesetzt |
 | `RES_FROM` | Absender, z. B. `Goya´s Lamm <reservierung@lammm.de>` |
@@ -81,7 +90,25 @@ Gesetzt am Cloudflare-Pages-Projekt (Settings → Environment variables):
 | `SITE_URL` | optional; ohne Angabe wird die aufgerufene Domain verwendet |
 
 Ohne `RESEND_API_KEY` funktioniert alles weiter — es gehen nur keine E-Mails raus,
-die Reservierung steht trotzdem in `/admin`.
+die Reservierung steht trotzdem in `/admin`. Das Panel weist oben darauf hin.
+
+## Admin-Panel
+
+`/admin` — Anmeldung über Formular, die Sitzung hält 30 Tage (signiertes HttpOnly-Cookie,
+kein Passwort im Browser gespeichert). Für Küche und Service auf dem Tablet gebaut.
+
+| Seite | Wofür |
+|---|---|
+| Übersicht | Kennzahlen heute / morgen / 7 Tage, Liste für heute und die nächsten Tage |
+| Kalender | Monatsraster mit Gästezahl je Tag, Ruhetage und Schließtage markiert |
+| Tagesansicht | Auslastung je Zeitfenster als Balken; Klick legt dort eine Reservierung an |
+| Neue Reservierung | Telefon- und Laufkundschaft eintragen, E-Mail optional, Bestätigung wahlweise |
+| Schließtage | Urlaub und Feiertage sperren, Platzzahl für einzelne Tage abweichend setzen |
+| Suche | Name, Telefonnummer oder E-Mail, auch vergangene Termine |
+| Detailseite | Bearbeiten, stornieren (wahlweise mit Gastbenachrichtigung), reaktivieren, Bestätigung erneut senden |
+
+Mit der Option **„Über die Kapazität hinaus"** lassen sich Zusatztische, Schließtage und sogar
+Ruhetage buchen — für geschlossene Gesellschaften und Sonderöffnungen.
 
 ## Deployment
 
