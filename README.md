@@ -38,7 +38,7 @@ functions/              # Cloudflare Pages Functions (Server-Code)
     zeiten.js           #   Schließtage und Platzzahl
     suche.js            #   Suche nach Name, Telefon, E-Mail
     r/[id].js           #   Detail: bearbeiten, stornieren, Mail erneut senden
-migrations/0001_init.sql
+migrations/0001_init.sql · 0002_login_attempts.sql
 ```
 
 ## Reservierungssystem
@@ -106,6 +106,10 @@ die Reservierung steht trotzdem in `/admin`. Das Panel weist oben darauf hin.
 
 `/admin` — Anmeldung über Formular, die Sitzung hält 30 Tage (signiertes HttpOnly-Cookie,
 kein Passwort im Browser gespeichert). Für Küche und Service auf dem Tablet gebaut.
+
+Nach **8 Fehlversuchen je IP-Adresse** ist die Anmeldung **15 Minuten gesperrt**
+(Tabelle `login_attempts`, gespeichert wird nur der gesalzene IP-Hash). Eine erfolgreiche
+Anmeldung setzt den Zähler zurück.
 
 | Seite | Wofür |
 |---|---|
