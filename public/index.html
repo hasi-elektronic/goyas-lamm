@@ -8,6 +8,10 @@
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://lammm.de/">
 <meta name="theme-color" content="#14120F">
+<script>
+/* Beim Neuladen soll die Seite oben beginnen — nicht dort, wo zuletzt gescrollt wurde. */
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+</script>
 
 <meta property="og:type" content="restaurant">
 <meta property="og:locale" content="de_DE">
@@ -1218,6 +1222,16 @@ footer a:hover{color:var(--gold)}
 
 <script>
 (function(){
+  /* Ohne Sprungmarke immer oben starten (auch nach Reload oder Zurück-Taste). */
+  function toTop(){
+    if (location.hash) return;
+    try { window.scrollTo({ top:0, left:0, behavior:'instant' }); }
+    catch(e){ window.scrollTo(0,0); }
+  }
+  toTop();
+  window.addEventListener('load', toTop);
+  window.addEventListener('pageshow', function(e){ if(e.persisted) toTop(); });
+
   var hdr=document.getElementById('hdr');
   function onScroll(){ hdr.classList.toggle('solid', window.scrollY>60); }
   onScroll(); window.addEventListener('scroll',onScroll,{passive:true});
