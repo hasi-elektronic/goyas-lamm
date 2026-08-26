@@ -33,14 +33,14 @@ async function schichtenIm(db, monat, staffId) {
 
 /* ------------------------------------------------------------------ */
 
-export async function onRequestGet({ request, env }) {
+export async function onRequestGet({ request, env, data }) {
   const url = new URL(request.url);
   const db = env.DB;
   const now = nowBerlin();
 
   const leute = await team(db);
   if (leute === null) {
-    return layout({ title: 'Arbeitszeit', active: '/admin/arbeitszeit',
+    return layout({ user: data?.user, title: 'Arbeitszeit', active: '/admin/arbeitszeit',
       body: `<h1>Arbeitszeit</h1>
         <div class="msg err">Die Arbeitszeiterfassung ist noch nicht eingerichtet — bitte
         Migration <code>0007_zeit.sql</code> einspielen.</div>` });
@@ -216,7 +216,7 @@ export async function onRequestGet({ request, env }) {
       </div>
     </div>`;
 
-  return layout({ title: 'Arbeitszeit', active: '/admin/arbeitszeit', body });
+  return layout({ user: data?.user, title: 'Arbeitszeit', active: '/admin/arbeitszeit', body });
 }
 
 /* ------------------------------------------------------------------ */

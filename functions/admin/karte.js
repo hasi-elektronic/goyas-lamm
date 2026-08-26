@@ -105,14 +105,14 @@ function gruppeCard(g) {
   </div>`;
 }
 
-export async function onRequestGet({ request, env }) {
+export async function onRequestGet({ request, env, data }) {
   const url = new URL(request.url);
   const db = env.DB;
   const karte = await loadKarte(db, { nurAktive: false });
 
   if (!karte) {
     return layout({
-      title: 'Speisekarte', active: '/admin/karte',
+      user: data?.user, title: 'Speisekarte', active: '/admin/karte',
       body: `<h1>Speisekarte</h1>
         <div class="msg err">Die Karte liegt noch nicht in der Datenbank.
         Bitte die Migrationen <code>0005_karte.sql</code> und <code>0006_karte_seed.sql</code>
@@ -217,7 +217,7 @@ export async function onRequestGet({ request, env }) {
       </div>
     </div>`;
 
-  return layout({ title: 'Speisekarte', active: '/admin/karte', body });
+  return layout({ user: data?.user, title: 'Speisekarte', active: '/admin/karte', body });
 }
 
 /* ------------------------------------------------------------------ */

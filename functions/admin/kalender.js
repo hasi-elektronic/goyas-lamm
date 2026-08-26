@@ -3,7 +3,7 @@ import { layout, flash } from '../_lib/ui.js';
 
 const MONTH_DE = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 
-export async function onRequestGet({ request, env }) {
+export async function onRequestGet({ request, env, data }) {
   const url = new URL(request.url);
   const now = nowBerlin();
   const m = /^\d{4}-\d{2}$/.test(url.searchParams.get('m') || '')
@@ -68,5 +68,5 @@ export async function onRequestGet({ request, env }) {
       </div>
     </div></div>`;
 
-  return layout({ title: `${MONTH_DE[mo - 1]} ${y}`, active: '/admin/kalender', body });
+  return layout({ user: data?.user, title: `${MONTH_DE[mo - 1]} ${y}`, active: '/admin/kalender', body });
 }

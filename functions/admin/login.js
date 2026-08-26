@@ -1,6 +1,6 @@
 import { esc, hashIp } from '../_lib/core.js';
 import { CSS } from '../_lib/ui.js';
-import { checkCredentials, createSession, verifySession } from '../_lib/auth.js';
+import { anmelden, createSession, verifySession } from '../_lib/auth.js';
 
 const MAX_FAILS = 8;          // danach gesperrt
 const LOCK_MINUTES = 15;      // Sperrdauer
@@ -109,15 +109,18 @@ export async function onRequestPost({ request, env }) {
       true);
   }
 
-  if (!checkCredentials(env, data.user, data.pass)) {
+  const wer = await anmelden(env, data.user, data.pass);
+  if (!wer) {
     await noteFail(env, ipHash);
     await new Promise(r => setTimeout(r, 600));
     return page(next, 'Benutzer oder Passwort stimmt nicht.');
   }
 
   await clearFails(env, ipHash);
+  /* Demo-Zugänge landen auf der Übersicht — die meisten Unterseiten sind für sie gesperrt. */
+  const ziel = wer.role === 'demo' ? '/admin' : next;
   return new Response(null, {
     status: 303,
-    headers: { location: next, 'set-cookie': await createSession(env), 'cache-control': 'no-store' },
+    headers: { location: ziel, 'set-cookie': await createSession(env, wer.uid), 'cache-control': 'no-store' },
   });
 }

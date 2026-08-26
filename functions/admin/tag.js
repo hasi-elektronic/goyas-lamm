@@ -4,7 +4,7 @@ import {
 import { layout, flash, table } from '../_lib/ui.js';
 import { notesFor } from '../_lib/gaeste.js';
 
-export async function onRequestGet({ request, env }) {
+export async function onRequestGet({ request, env, data }) {
   const url = new URL(request.url);
   const now = nowBerlin();
   const day = isValidDate(url.searchParams.get('d') || '') ? url.searchParams.get('d') : now.date;
@@ -63,8 +63,8 @@ export async function onRequestGet({ request, env }) {
 
     <div class="card">
       <h2>Reservierungen</h2>
-      ${table(rows, { notes })}
+      ${table(rows, { notes, user: data?.user })}
     </div>`;
 
-  return layout({ title: formatDateDE(day), active: '/admin/tag', body });
+  return layout({ user: data?.user, title: formatDateDE(day), active: '/admin/tag', body });
 }

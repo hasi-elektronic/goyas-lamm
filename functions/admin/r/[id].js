@@ -11,10 +11,10 @@ async function load(env, id) {
   return env.DB.prepare(`SELECT * FROM reservations WHERE id=?`).bind(id).first();
 }
 
-export async function onRequestGet({ request, env, params }) {
+export async function onRequestGet({ request, env, params, data }) {
   const url = new URL(request.url);
   const r = await load(env, params.id);
-  if (!r) return layout({ title: 'Nicht gefunden', active: '', status: 404,
+  if (!r) return layout({ user: data?.user, title: 'Nicht gefunden', active: '', status: 404,
     body: '<div class="msg err">Diese Reservierung gibt es nicht (mehr).</div><a class="btn ghost" href="/admin">Zur Übersicht</a>' });
 
   const slots = slotsForDate(r.res_date);
@@ -148,7 +148,7 @@ export async function onRequestGet({ request, env, params }) {
         </form>
       </div></div>` : ''}`;
 
-  return layout({ title: r.name, active: '', body });
+  return layout({ user: data?.user, title: r.name, active: '', body });
 }
 
 export async function onRequestPost({ request, env, params }) {

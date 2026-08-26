@@ -2,7 +2,7 @@ import { clean, esc } from '../_lib/core.js';
 import { layout, table } from '../_lib/ui.js';
 import { notesFor } from '../_lib/gaeste.js';
 
-export async function onRequestGet({ request, env }) {
+export async function onRequestGet({ request, env, data }) {
   const url = new URL(request.url);
   const q = clean(url.searchParams.get('q') || '', 60);
 
@@ -18,7 +18,7 @@ export async function onRequestGet({ request, env }) {
     const notes = await notesFor(env.DB, rows.map(r => r.phone));
     result = `<div class="card">
       <h2>Treffer <em>${rows.length}${rows.length === 100 ? '+ (gekürzt)' : ''}</em></h2>
-      ${table(rows, { showDate: true, notes })}</div>`;
+      ${table(rows, { showDate: true, notes, user: data?.user })}</div>`;
   } else if (q) {
     result = '<div class="msg warn">Bitte mindestens zwei Zeichen eingeben.</div>';
   }
@@ -37,5 +37,5 @@ export async function onRequestGet({ request, env }) {
     </div></div>
     ${result}`;
 
-  return layout({ title: 'Suche', active: '/admin/suche', body });
+  return layout({ user: data?.user, title: 'Suche', active: '/admin/suche', body });
 }

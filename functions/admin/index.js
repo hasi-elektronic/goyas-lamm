@@ -3,10 +3,10 @@ import { layout, flash, table, dayHeading } from '../_lib/ui.js';
 import { mailReady } from '../_lib/mail.js';
 import { notesFor } from '../_lib/gaeste.js';
 
-export async function onRequestGet({ request, env }) {
+export async function onRequestGet({ request, env, data }) {
   const url = new URL(request.url);
   const db = env.DB;
-  if (!db) return layout({ title: 'Übersicht', active: '/admin', body: '<div class="msg err">Datenbank nicht verbunden.</div>' });
+  if (!db) return layout({ user: data?.user, title: 'Übersicht', active: '/admin', body: '<div class="msg err">Datenbank nicht verbunden.</div>' });
 
   const now = nowBerlin();
   const until = addDays(now.date, 13);
@@ -50,7 +50,7 @@ export async function onRequestGet({ request, env }) {
 
   const upcoming = Object.keys(byDay).length
     ? Object.entries(byDay).slice(0, 8).map(([day, rs]) =>
-        `<div class="card">${dayHeading(day, sum(rs), rs.length)}${table(rs, { notes })}</div>`).join('')
+        `<div class="card">${dayHeading(day, sum(rs), rs.length)}${table(rs, { notes, user: data?.user })}</div>`).join('')
     : '<div class="card"><div class="empty">Für die nächsten Tage liegen noch keine Reservierungen vor.</div></div>';
 
   const body = `
@@ -80,12 +80,12 @@ export async function onRequestGet({ request, env }) {
       ${dayHeading(now.date, sum(today), today.length)}
       ${ruhetag && !today.length
         ? '<div class="empty">Heute ist Ruhetag.</div>'
-        : table(today, { notes })}
+        : table(today, { notes, user: data?.user })}
     </div>
 
     <h2 style="margin:2rem 0 .9rem">Nächste Tage</h2>
     ${upcoming}
   `;
 
-  return layout({ title: 'Übersicht', active: '/admin', body });
+  return layout({ user: data?.user, title: 'Übersicht', active: '/admin', body });
 }

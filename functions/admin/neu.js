@@ -4,7 +4,7 @@ import {
 import { layout, flash, redirect } from '../_lib/ui.js';
 import { createReservation, BookError } from '../_lib/book.js';
 
-async function form({ env, url, values = {}, error = null }) {
+async function form({ env, url, user = null, values = {}, error = null }) {
   const now = nowBerlin();
   const date = isValidDate(values.date || '') ? values.date : (url.searchParams.get('d') || now.date);
   const slots = slotsForDate(date);
@@ -98,13 +98,13 @@ async function form({ env, url, values = {}, error = null }) {
       </div>
     </form>`;
 
-  return layout({ title: 'Neue Reservierung', active: '/admin/neu', body, status: error ? 400 : 200 });
+  return layout({ user, title: 'Neue Reservierung', active: '/admin/neu', body, status: error ? 400 : 200 });
 }
 
-export const onRequestGet = ({ request, env }) =>
-  form({ env, url: new URL(request.url) });
+export const onRequestGet = ({ request, env, data }) =>
+  form({ env, url: new URL(request.url), user: data?.user });
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost({ request, env, data }) {
   const url = new URL(request.url);
   let d = {};
   try { d = Object.fromEntries(await request.formData()); } catch { /* leer */ }
@@ -123,6 +123,6 @@ export async function onRequestPost({ request, env }) {
       `${rec.name}, ${rec.res_time} Uhr, ${rec.guests} ${rec.guests === 1 ? 'Person' : 'Personen'} eingetragen.${mailNote}`);
   } catch (e) {
     const msg = e instanceof BookError ? e.message : 'Die Reservierung konnte nicht gespeichert werden.';
-    return form({ env, url, values: d, error: msg });
+    return form({ env, url, user: data?.user, values: d, error: msg });
   }
 }

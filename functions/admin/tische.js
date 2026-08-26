@@ -21,7 +21,7 @@ async function loadTables(db) {
   return r.results || [];
 }
 
-export async function onRequestGet({ request, env }) {
+export async function onRequestGet({ request, env, data }) {
   const url = new URL(request.url);
   const db = env.DB;
 
@@ -156,7 +156,7 @@ export async function onRequestGet({ request, env }) {
       </div>
     </div>`;
 
-  return layout({ title: 'Tische', active: '/admin/tische', body });
+  return layout({ user: data?.user, title: 'Tische', active: '/admin/tische', body });
 }
 
 export async function onRequestPost({ request, env }) {

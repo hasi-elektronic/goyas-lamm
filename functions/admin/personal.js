@@ -8,7 +8,7 @@ import { pinHash, summe } from '../_lib/zeit.js';
 
 const ROLLEN = ['Küche', 'Service', 'Bar', 'Aushilfe', 'Leitung'];
 
-export async function onRequestGet({ request, env }) {
+export async function onRequestGet({ request, env, data }) {
   const url = new URL(request.url);
   const db = env.DB;
 
@@ -137,7 +137,7 @@ export async function onRequestGet({ request, env }) {
       </div>
     </div>`;
 
-  return layout({ title: 'Personal', active: '/admin/personal', body });
+  return layout({ user: data?.user, title: 'Personal', active: '/admin/personal', body });
 }
 
 export async function onRequestPost({ request, env }) {

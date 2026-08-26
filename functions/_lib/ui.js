@@ -1,5 +1,6 @@
 /** Gemeinsames Layout und Bausteine für den Admin-Bereich. */
 import { esc, formatDateDE, nowBerlin, WEEKDAY_DE, weekday } from './core.js';
+import { darfSeite, darfPersonendaten, kuerzeName, ROLLEN } from './auth.js';
 
 export const CSS = `
 :root{
@@ -27,6 +28,13 @@ img{display:block;max-width:100%}
 .top .out{color:rgba(244,247,234,.6);text-decoration:none;font-size:.72rem;letter-spacing:.14em;
   text-transform:uppercase;border:1px solid rgba(244,247,234,.22);padding:.45rem .8rem}
 .top .out:hover{background:rgba(244,247,234,.1);color:#fff}
+.top .wer{display:flex;align-items:center;gap:.7rem;min-width:0}
+.top .wer .nm{font-size:.82rem;color:rgba(244,247,234,.72);white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;max-width:34vw}
+.top .wer .ro{font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;
+  color:var(--ink);background:var(--gold);padding:.16rem .4rem;border-radius:2px;white-space:nowrap}
+.demobar{background:var(--gold);color:var(--ink);text-align:center;font-size:.72rem;
+  letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:.45rem .8rem}
 nav.tabs{background:var(--ink-2);position:sticky;top:47px;z-index:39;overflow-x:auto;scrollbar-width:none}
 nav.tabs::-webkit-scrollbar{display:none}
 nav.tabs .in{width:min(100% - 1.6rem,1180px);margin-inline:auto;display:flex;gap:.15rem}
@@ -226,6 +234,7 @@ tr.noshow td.nm a{text-decoration:line-through;text-decoration-color:var(--wine)
   .hide-s{display:none}
   .show-s{display:block}
   .top .brand b{display:none}
+  .top .wer .nm{display:none}
   nav.tabs{top:45px}
   table.stack thead{display:none}
   table.stack tbody tr{display:grid;grid-template-columns:auto 1fr auto;gap:.15rem .6rem;
@@ -254,6 +263,7 @@ const IC = {
   aus:    '<path d="M15 4.5h3.5A1.5 1.5 0 0 1 20 6v12a1.5 1.5 0 0 1-1.5 1.5H15"/><path d="M10 8.5 6 12l4 3.5M6 12h9"/>',
   stempel:'<circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.5 1.5"/><path d="M9 3h6"/>',
   sanduhr:'<path d="M7 3h10M7 21h10"/><path d="M17 3v3.5L12 12l5 5.5V21"/><path d="M7 3v3.5L12 12l-5 5.5V21"/>',
+  schluessel:'<circle cx="8" cy="15" r="3.5"/><path d="m10.5 12.5 7-7"/><path d="m14.5 8.5 2 2"/><path d="m16.5 6.5 2 2"/>',
   leute:  '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><path d="M16 5.6a3.2 3.2 0 0 1 0 5.8"/><path d="M17.5 14.9c1.9.6 3 2.4 3 4.6"/>',
 };
 const svg = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>`;
@@ -272,6 +282,7 @@ const NAV = [
   ['/admin/stempel',   'Stempeluhr',        'stempel',  'Stempel'],
   ['/admin/arbeitszeit','Arbeitszeit',      'sanduhr',  'Zeit'],
   ['/admin/personal',  'Personal',          'leute',    'Team'],
+  ['/admin/benutzer',  'Benutzer',          'schluessel','Zugang'],
 ];
 
 /* Reiterleiste am Rechner — Küchenzettel und Tagesansicht sind dort verlinkt,
@@ -282,7 +293,11 @@ const TABS = NAV.filter(([h]) =>
 /* Untere Leiste am Handy: vier häufige Ziele plus „Mehr". */
 const UNTEN = ['/admin', '/admin/tag', '/admin/neu', '/admin/karte'];
 
-export function layout({ title, active, body, status = 200 }) {
+export function layout({ title, active, body, status = 200, user = null }) {
+  const rolle = user?.role || 'chef';
+  const tabs = TABS.filter(([h]) => darfSeite(rolle, h));
+  const unten = UNTEN.filter(h => darfSeite(rolle, h));
+  const nav = NAV.filter(([h]) => darfSeite(rolle, h));
   return new Response(
 `<!DOCTYPE html><html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -297,15 +312,21 @@ export function layout({ title, active, body, status = 200 }) {
     <img src="/assets/logo-white.png" alt="Goya´s Lamm">
     <b>Reservierungen</b>
   </a>
-  <a class="out" href="/admin/logout">Abmelden</a>
+  <div class="wer">
+    ${user ? `<span class="nm">${esc(user.name)}</span>
+      ${rolle !== 'chef' ? `<span class="ro">${esc(ROLLEN[rolle]?.label || rolle)}</span>` : ''}` : ''}
+    <a class="out" href="/admin/logout">Abmelden</a>
+  </div>
 </div></header>
+${rolle === 'demo' ? `<div class="demobar">Demo-Zugang · nur ansehen ·
+  Gastdaten sind abgekürzt</div>` : ''}
 <nav class="tabs"><div class="in">
-  ${TABS.map(([h, t]) => `<a href="${h}" class="${active === h ? 'on' : ''}">${t}</a>`).join('')}
+  ${tabs.map(([h, t]) => `<a href="${h}" class="${active === h ? 'on' : ''}">${t}</a>`).join('')}
 </div></nav>
 <main>${body}</main>
 
 <nav class="bnav">
-  ${UNTEN.map(pfad => {
+  ${unten.map(pfad => {
     const [h, , ic, kurz] = NAV.find(n => n[0] === pfad);
     return `<a href="${h}" class="${active === h ? 'on' : ''}${h === '/admin/neu' ? ' plus' : ''}">
       ${svg(ic)}<span>${kurz}</span></a>`;
@@ -314,7 +335,7 @@ export function layout({ title, active, body, status = 200 }) {
     <summary>${svg('mehr')}<span>Mehr</span></summary>
     <div class="sheet-bg"></div>
     <div class="sheet">
-      ${NAV.map(([h, t, ic]) =>
+      ${nav.map(([h, t, ic]) =>
         `<a href="${h}" class="${active === h ? 'on' : ''}">${svg(ic)}<span>${t}</span></a>`).join('')}
       <a href="/admin/logout" class="ab">${svg('aus')}<span>Abmelden</span></a>
     </div>
@@ -342,8 +363,10 @@ export const sourcePill = s =>
   : '<span class="pill web">Online</span>';
 
 /** Reservierungs-Tabelle. `notes` = { phone_key: Gastnotiz } aus notesFor(). */
-export function table(rows, { showDate = false, notes = {} } = {}) {
+export function table(rows, { showDate = false, notes = {}, user = null } = {}) {
   const key = v => String(v ?? '').replace(/\D/g, '');
+  const offen = darfPersonendaten(user?.role || 'chef');
+  const nm = v => offen ? esc(v) : esc(kuerzeName(v));
   if (!rows.length) return '<div class="empty">Keine Reservierungen.</div>';
   return `<table class="stack"><thead><tr>
     <th>Zeit</th><th>${showDate ? 'Datum / Name' : 'Name'}</th><th>P.</th>
@@ -351,17 +374,22 @@ export function table(rows, { showDate = false, notes = {} } = {}) {
   </tr></thead><tbody>
   ${rows.map(r => `<tr class="${r.status === 'cancelled' ? 'cancelled' : ''}${r.no_show ? ' noshow' : ''}">
     <td class="t">${esc(r.res_time)}</td>
-    <td class="nm"><a href="/admin/r/${esc(r.id)}">${esc(r.name)}</a>
+    <td class="nm">${offen ? `<a href="/admin/r/${esc(r.id)}">${esc(r.name)}</a>` : nm(r.name)}
       ${showDate ? `<div class="meta">${esc(formatDateDE(r.res_date))}</div>` : ''}
       ${r.status === 'cancelled' ? '<div class="meta">storniert</div>' : ''}
       ${r.no_show ? '<div class="meta"><span class="pill ns">nicht erschienen</span></div>' : ''}
-      ${notes[key(r.phone)] ? `<div class="meta gastnote">${esc(notes[key(r.phone)])}</div>` : ''}</td>
+      ${offen && notes[key(r.phone)] ? `<div class="meta gastnote">${esc(notes[key(r.phone)])}</div>` : ''}</td>
     <td class="g">${esc(String(r.guests))}</td>
-    <td class="hide-s"><a href="tel:${esc(r.phone)}">${esc(r.phone)}</a>
-      ${r.email ? `<div class="meta">${esc(r.email)}</div>` : ''}</td>
-    <td class="hide-s meta">${esc(r.note || '—')} ${sourcePill(r.source)}</td>
-    <td class="det meta show-s"><a href="tel:${esc(r.phone)}">${esc(r.phone)}</a>${r.note ? ' · ' + esc(r.note) : ''}</td>
-    <td class="act"><a class="btn sm ghost" href="/admin/r/${esc(r.id)}">Öffnen</a></td>
+    <td class="hide-s">${offen
+      ? `<a href="tel:${esc(r.phone)}">${esc(r.phone)}</a>
+         ${r.email ? `<div class="meta">${esc(r.email)}</div>` : ''}`
+      : '<span class="meta">—</span>'}</td>
+    <td class="hide-s meta">${offen ? esc(r.note || '—') : '—'} ${sourcePill(r.source)}</td>
+    <td class="det meta show-s">${offen
+      ? `<a href="tel:${esc(r.phone)}">${esc(r.phone)}</a>${r.note ? ' · ' + esc(r.note) : ''}`
+      : ''}</td>
+    <td class="act">${offen
+      ? `<a class="btn sm ghost" href="/admin/r/${esc(r.id)}">Öffnen</a>` : ''}</td>
   </tr>`).join('')}
   </tbody></table>`;
 }

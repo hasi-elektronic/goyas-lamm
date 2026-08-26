@@ -1,7 +1,7 @@
 import { nowBerlin, formatDateDE, isValidDate, clean, esc, capacityFor, HOURS, WEEKDAY_DE } from '../_lib/core.js';
 import { layout, flash, redirect } from '../_lib/ui.js';
 
-export async function onRequestGet({ request, env }) {
+export async function onRequestGet({ request, env, data }) {
   const url = new URL(request.url);
   const now = nowBerlin();
   const db = env.DB;
@@ -99,7 +99,7 @@ export async function onRequestGet({ request, env }) {
         das steht im Programmcode, nicht in der Datenbank.</div>
     </div>`;
 
-  return layout({ title: 'Schließtage', active: '/admin/zeiten', body });
+  return layout({ user: data?.user, title: 'Schließtage', active: '/admin/zeiten', body });
 }
 
 export async function onRequestPost({ request, env }) {
