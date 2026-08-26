@@ -2,12 +2,14 @@ import { nowBerlin, addDays, formatDateDE, slotsForDate, esc, capacityFor } from
 import { layout, flash, table, dayHeading } from '../_lib/ui.js';
 import { mailReady } from '../_lib/mail.js';
 import { notesFor } from '../_lib/gaeste.js';
+import { darfSeite } from '../_lib/auth.js';
 
 export async function onRequestGet({ request, env, data }) {
   const url = new URL(request.url);
   const db = env.DB;
   if (!db) return layout({ user: data?.user, title: 'Übersicht', active: '/admin', body: '<div class="msg err">Datenbank nicht verbunden.</div>' });
 
+  const rolle = data?.user?.role || 'chef';
   const now = nowBerlin();
   const until = addDays(now.date, 13);
 
@@ -70,10 +72,12 @@ export async function onRequestGet({ request, env, data }) {
     </div>
 
     <div class="row" style="margin-bottom:1.4rem">
-      <a class="btn" href="/admin/neu">+ Neue Reservierung</a>
-      <a class="btn ghost" href="/admin/tag?d=${now.date}">Tagesansicht heute</a>
-      <a class="btn ghost" href="/admin/kalender">Kalender</a>
-      <a class="btn ghost" href="/admin/zettel?d=${now.date}">Küchenzettel drucken</a>
+      ${[['/admin/neu', '+ Neue Reservierung', ''],
+         ['/admin/tag?d=' + now.date, 'Tagesansicht heute', ' ghost'],
+         ['/admin/kalender', 'Kalender', ' ghost'],
+         ['/admin/zettel?d=' + now.date, 'Küchenzettel drucken', ' ghost']]
+        .filter(([h]) => darfSeite(rolle, h.split('?')[0]))
+        .map(([h, t, k]) => `<a class="btn${k}" href="${h}">${t}</a>`).join('')}
     </div>
 
     <div class="card">
