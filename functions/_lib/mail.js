@@ -1,13 +1,24 @@
 /**
- * E-Mail-Versand über Resend.
- * Ohne gesetzten RESEND_API_KEY wird still übersprungen — die Reservierung
- * liegt dann trotzdem in der Datenbank und im Admin-Bereich.
+ * E-Mail-Versand über den **Cloudflare Email Service** (Email Sending).
+ *
+ * Zwei Wege, in dieser Reihenfolge:
+ *   1. Workers-Binding  env.EMAIL.send({...})        — falls ein send_email-Binding existiert
+ *   2. REST-API         POST /accounts/{id}/email/sending/send
+ *
+ * Ist keiner davon eingerichtet, wird still übersprungen: die Reservierung liegt
+ * trotzdem in der Datenbank und im Admin-Bereich.
+ *
+ * Kein Drittanbieter — derselbe Auftragsverarbeiter wie das Hosting.
  */
 import { HOUSE, formatDateDE, esc } from './core.js';
 
 const WINE = '#6D1826';
 const INK  = '#14120F';
 const SAND = '#E8E2D2';
+
+/* ------------------------------------------------------------------ */
+/* Vorlagen                                                            */
+/* ------------------------------------------------------------------ */
 
 function shell(title, bodyHtml) {
   return `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">
@@ -44,10 +55,26 @@ function details(r) {
   </table>`;
 }
 
+const detailsText = r =>
+  `Datum:    ${formatDateDE(r.res_date)}\n` +
+  `Uhrzeit:  ${r.res_time} Uhr\n` +
+  `Personen: ${r.guests}\n` +
+  `Name:     ${r.name}\n` +
+  (r.note ? `Hinweis:  ${r.note}\n` : '');
+
+const foot = `\n--\n${HOUSE.name} · ${HOUSE.addr}\nTelefon ${HOUSE.phone} · ${HOUSE.mail}\n`;
+const TITLES = ['familie', 'fam.', 'fam', 'herr', 'frau', 'dr.', 'prof.'];
+/** „Familie Bauer" → „Familie Bauer", „Petra Schmidt" → „Petra". */
+const firstName = n => {
+  const parts = String(n || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return String(n || '');
+  return TITLES.includes(parts[0].toLowerCase()) ? parts.slice(0, 2).join(' ') : parts[0];
+};
+
 export function guestMail(r, site) {
   const stornoUrl = `${site}/storno?token=${encodeURIComponent(r.token)}`;
-  const body = `
-    <p style="margin:0 0 14px;">Guten Tag ${esc(r.name.split(' ')[0] || r.name)},</p>
+  const html = shell('Reservierungsbestätigung', `
+    <p style="margin:0 0 14px;">Guten Tag ${esc(firstName(r.name))},</p>
     <p style="margin:0 0 4px;">Ihr Tisch ist reserviert. Wir freuen uns auf Ihren Besuch.</p>
     ${details(r)}
     <p style="margin:0 0 20px;">Sollten sich Ihre Pläne ändern, sagen Sie uns bitte kurz Bescheid —
@@ -58,62 +85,120 @@ export function guestMail(r, site) {
          text-decoration:none;padding:13px 26px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;">
          Reservierung stornieren</a>
     </p>
-    <p style="margin:0;color:#6e675a;font-size:13px;">
-      Bis bald in Horrheim.<br>Goya und Team</p>`;
-  return { subject: `Ihre Reservierung am ${formatDateDE(r.res_date)}, ${r.res_time} Uhr`, html: shell('Reservierungsbestätigung', body) };
+    <p style="margin:0;color:#6e675a;font-size:13px;">Bis bald in Horrheim.<br>Goya und Team</p>`);
+  const text =
+    `Guten Tag ${firstName(r.name)},\n\nIhr Tisch ist reserviert. Wir freuen uns auf Ihren Besuch.\n\n` +
+    detailsText(r) +
+    `\nStornieren: ${stornoUrl}\nOder rufen Sie uns an: ${HOUSE.phone}\n\nBis bald in Horrheim.\nGoya und Team\n` + foot;
+  return { subject: `Ihre Reservierung am ${formatDateDE(r.res_date)}, ${r.res_time} Uhr`, html, text };
 }
 
 export function houseMail(r) {
-  const body = `
+  const html = shell('Neue Reservierung', `
     <p style="margin:0 0 4px;font-size:17px;font-weight:700;">Neue Online-Reservierung</p>
     ${details(r)}
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 18px;">
       <tr><td style="padding:6px 0;color:#6e675a;font-size:12px;letter-spacing:.14em;text-transform:uppercase;width:130px;">Telefon</td>
           <td style="padding:6px 0;font-weight:600;"><a href="tel:${esc(r.phone)}" style="color:${WINE};text-decoration:none;">${esc(r.phone)}</a></td></tr>
-      <tr><td style="padding:6px 0;color:#6e675a;font-size:12px;letter-spacing:.14em;text-transform:uppercase;">E-Mail</td>
-          <td style="padding:6px 0;font-weight:600;"><a href="mailto:${esc(r.email)}" style="color:${WINE};text-decoration:none;">${esc(r.email)}</a></td></tr>
+      ${r.email ? `<tr><td style="padding:6px 0;color:#6e675a;font-size:12px;letter-spacing:.14em;text-transform:uppercase;">E-Mail</td>
+          <td style="padding:6px 0;font-weight:600;"><a href="mailto:${esc(r.email)}" style="color:${WINE};text-decoration:none;">${esc(r.email)}</a></td></tr>` : ''}
     </table>
-    <p style="margin:0;color:#6e675a;font-size:13px;">Eingegangen über lammm.de · Reservierungsnummer ${esc(r.id.slice(0, 8))}</p>`;
-  return { subject: `Reservierung ${formatDateDE(r.res_date)} ${r.res_time} · ${r.guests} P. · ${r.name}`, html: shell('Neue Reservierung', body) };
+    <p style="margin:0;color:#6e675a;font-size:13px;">Eingegangen über lammm.de · Reservierungsnummer ${esc(r.id.slice(0, 8))}</p>`);
+  const text = `Neue Reservierung\n\n${detailsText(r)}Telefon:  ${r.phone}\n` +
+    (r.email ? `E-Mail:   ${r.email}\n` : '') +
+    `Nummer:   ${r.id.slice(0, 8)}\n` + foot;
+  return { subject: `Reservierung ${formatDateDE(r.res_date)} ${r.res_time} · ${r.guests} P. · ${r.name}`, html, text };
 }
 
 export function cancelMailGuest(r) {
-  const body = `
-    <p style="margin:0 0 14px;">Guten Tag ${esc(r.name.split(' ')[0] || r.name)},</p>
+  const html = shell('Stornierung', `
+    <p style="margin:0 0 14px;">Guten Tag ${esc(firstName(r.name))},</p>
     <p style="margin:0 0 4px;">Ihre Reservierung wurde aufgehoben:</p>
     ${details(r)}
     <p style="margin:0 0 18px;">Falls das ein Versehen war oder Sie einen neuen Termin möchten,
        rufen Sie uns einfach an: <a href="tel:${HOUSE.tel}" style="color:${WINE};">${esc(HOUSE.phone)}</a>.</p>
-    <p style="margin:0;color:#6e675a;font-size:13px;">Bis zum nächsten Mal.<br>Goya und Team</p>`;
-  return { subject: `Ihre Reservierung am ${formatDateDE(r.res_date)} wurde storniert`,
-           html: shell('Stornierung', body) };
+    <p style="margin:0;color:#6e675a;font-size:13px;">Bis zum nächsten Mal.<br>Goya und Team</p>`);
+  const text = `Guten Tag ${firstName(r.name)},\n\nIhre Reservierung wurde aufgehoben:\n\n` +
+    detailsText(r) + `\nNeuer Termin? Rufen Sie uns an: ${HOUSE.phone}\n` + foot;
+  return { subject: `Ihre Reservierung am ${formatDateDE(r.res_date)} wurde storniert`, html, text };
 }
 
 export function cancelMailHouse(r) {
-  const body = `
+  const html = shell('Stornierung', `
     <p style="margin:0 0 4px;font-size:17px;font-weight:700;">Reservierung storniert</p>
     ${details(r)}
-    <p style="margin:0;color:#6e675a;font-size:13px;">Der Gast hat online storniert · Nummer ${esc(r.id.slice(0, 8))}</p>`;
-  return { subject: `Storniert: ${formatDateDE(r.res_date)} ${r.res_time} · ${r.guests} P. · ${r.name}`, html: shell('Stornierung', body) };
+    <p style="margin:0;color:#6e675a;font-size:13px;">Der Gast hat online storniert · Nummer ${esc(r.id.slice(0, 8))}</p>`);
+  const text = `Reservierung storniert (Gast hat online storniert)\n\n${detailsText(r)}Nummer: ${r.id.slice(0, 8)}\n` + foot;
+  return { subject: `Storniert: ${formatDateDE(r.res_date)} ${r.res_time} · ${r.guests} P. · ${r.name}`, html, text };
 }
 
-/** @returns {Promise<boolean>} true, wenn Resend die Mail angenommen hat. */
-export async function send(env, to, subject, html, replyTo) {
-  if (!env?.RESEND_API_KEY) return false;
-  const from = env.RES_FROM || `Goya´s Lamm <reservierung@lammm.de>`;
+/* ------------------------------------------------------------------ */
+/* Versand                                                             */
+/* ------------------------------------------------------------------ */
+
+/** `Name <adresse@x.de>` oder `adresse@x.de` → { address, name } */
+export function parseAddress(v) {
+  const s = String(v || '').trim();
+  const m = s.match(/^\s*(.*?)\s*<\s*([^>]+)\s*>\s*$/);
+  if (m) return { address: m[2].trim(), name: m[1].replace(/^"|"$/g, '').trim() || undefined };
+  return { address: s };
+}
+
+const fromOf = env => parseAddress(
+  env.MAIL_FROM || env.RES_FROM || `Goya´s Lamm <reservierung@${env.MAIL_DOMAIN || 'lammm.de'}>`
+);
+
+/** Ist der Versand überhaupt eingerichtet? */
+export const mailReady = env =>
+  !!(env?.EMAIL || (env?.CF_EMAIL_TOKEN && (env?.MAIL_ACCOUNT_ID || env?.CF_ACCOUNT_ID)));
+
+/**
+ * Verschickt eine Mail. Gibt true zurück, wenn Cloudflare sie angenommen hat.
+ * @param {object} msg { to, subject, html, text, replyTo }
+ */
+export async function send(env, to, subject, html, replyTo, text) {
+  if (!to) return false;
+  const from = fromOf(env);
+
+  /* 1) Workers-Binding */
+  if (env?.EMAIL?.send) {
+    try {
+      await env.EMAIL.send({
+        to,
+        from: from.name ? { email: from.address, name: from.name } : from.address,
+        subject, html,
+        ...(text ? { text } : {}),
+        ...(replyTo ? { replyTo } : {}),
+      });
+      return true;
+    } catch {
+      /* auf die REST-API zurückfallen */
+    }
+  }
+
+  /* 2) REST-API */
+  const token = env?.CF_EMAIL_TOKEN;
+  const account = env?.MAIL_ACCOUNT_ID || env?.CF_ACCOUNT_ID;
+  if (!token || !account) return false;
+
   try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        authorization: `Bearer ${env.RESEND_API_KEY}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        from, to: [to], subject, html,
-        ...(replyTo ? { reply_to: replyTo } : {}),
-      }),
-    });
-    return res.ok;
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${account}/email/sending/send`,
+      {
+        method: 'POST',
+        headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+        body: JSON.stringify({
+          to,
+          from: from.name ? { address: from.address, name: from.name } : from.address,
+          subject, html,
+          ...(text ? { text } : {}),
+          ...(replyTo ? { headers: { 'Reply-To': replyTo } } : {}),
+        }),
+      }
+    );
+    if (!res.ok) return false;
+    const j = await res.json().catch(() => null);
+    return !!j?.success;
   } catch {
     return false;
   }

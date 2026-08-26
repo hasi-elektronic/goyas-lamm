@@ -24,7 +24,7 @@ public/
   assets/               # Logo, Icons, Schriften (woff2), Bilder, legal.css
 functions/              # Cloudflare Pages Functions (Server-Code)
   _lib/core.js          # Öffnungszeiten, Slots, Kapazität, Validierung, Zeitzone
-  _lib/mail.js          # E-Mail-Vorlagen + Resend-Versand
+  _lib/mail.js          # E-Mail-Vorlagen + Cloudflare Email Sending
   api/slots.js          # GET  /api/slots?date=…&guests=…  bzw. ?month=YYYY-MM
   api/reservierung.js   # POST /api/reservierung
   storno.js             # GET/POST /storno?token=…   (Gast storniert selbst)
@@ -83,13 +83,23 @@ Gesetzt am Cloudflare-Pages-Projekt (Settings → Environment variables):
 |---|---|
 | `ADMIN_USER` / `ADMIN_PASS` | Zugang zu `/admin` (Anmeldeformular) — **secret** |
 | `IP_SALT` | Salt für den IP-Hash — **secret** |
-| `RESEND_API_KEY` | E-Mail-Versand über Resend — **secret**, noch nicht gesetzt |
-| `RES_FROM` | Absender, z. B. `Goya´s Lamm <reservierung@lammm.de>` |
+| `CF_EMAIL_TOKEN` | Cloudflare-API-Token mit **Email Sending: Edit** — **secret**, noch nicht gesetzt |
+| `MAIL_ACCOUNT_ID` | Cloudflare-Account-ID für den REST-Versand |
+| `MAIL_FROM` | Absender, z. B. `Goya´s Lamm <reservierung@lammm.de>` |
 | `RES_HOUSE_EMAIL` | Wohin die Benachrichtigung an die Küche geht |
 | `RES_SEATS_PER_SLOT` | Plätze je Zeitfenster |
 | `SITE_URL` | optional; ohne Angabe wird die aufgerufene Domain verwendet |
 
-Ohne `RESEND_API_KEY` funktioniert alles weiter — es gehen nur keine E-Mails raus,
+E-Mail läuft über den **Cloudflare Email Service** — kein Drittanbieter, derselbe
+Auftragsverarbeiter wie das Hosting. `functions/_lib/mail.js` nutzt zuerst ein
+`send_email`-Binding (`env.EMAIL`), falls vorhanden, sonst die REST-API
+`POST /accounts/{id}/email/sending/send`.
+
+Voraussetzungen: Die **Absenderdomain muss in Cloudflare liegen** und unter
+*Compute → Email Service → Email Sending* onboarded sein (Cloudflare legt dafür SPF-,
+DKIM-, DMARC- und Bounce-Records an). Email Sending setzt den **Workers-Paid-Plan** voraus.
+
+Solange nichts eingerichtet ist, funktioniert alles weiter — es gehen nur keine E-Mails raus,
 die Reservierung steht trotzdem in `/admin`. Das Panel weist oben darauf hin.
 
 ## Admin-Panel
@@ -135,8 +145,8 @@ wrangler pages deploy public --project-name=goyas-lamm --branch=main
 - [ ] Custom Domain `lammm.de` auf Cloudflare Pages umstellen (aktuell One.com Web Editor)
 - [ ] Original-Logodatei (Vektor oder hochauflösendes PNG) vom Kunden einholen und `assets/logo-*.png` ersetzen
 - [ ] Echte Fotos vom Restaurant ergänzen bzw. die generierten Bilder schrittweise ersetzen
-- [ ] `RESEND_API_KEY` setzen und Absenderdomain bei Resend verifizieren, damit
-      Bestätigungsmails rausgehen
+- [ ] Absenderdomain in Cloudflare Email Sending onboarden und `CF_EMAIL_TOKEN` setzen,
+      damit Bestätigungsmails rausgehen (`lammm.de` liegt noch bei One.com)
 - [ ] Mit dem Kunden klären, ob resmio abgeschaltet wird — zwei Reservierungsbücher
       parallel führen zu Doppelbelegungen
 - [ ] Rechtstexte vor breiter Bewerbung anwaltlich prüfen lassen

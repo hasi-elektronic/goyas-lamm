@@ -112,7 +112,7 @@ export async function onRequestPost({ request, env, params }) {
     let note = '';
     if (d.tell === '1' && r.email) {
       const m = cancelMailGuest(r);
-      const ok = await send(env, r.email, m.subject, m.html);
+      const ok = await send(env, r.email, m.subject, m.html, undefined, m.text);
       note = ok ? ' Der Gast wurde informiert.' : ' Die E-Mail konnte nicht verschickt werden.';
     }
     return redirect(back, 'Reservierung storniert.' + note);
@@ -127,10 +127,10 @@ export async function onRequestPost({ request, env, params }) {
   if (d.do === 'resend') {
     if (!r.email) return redirect(back + '?err=' + encodeURIComponent('Keine E-Mail-Adresse hinterlegt.'));
     const g = guestMail(r, site);
-    const ok = await send(env, r.email, g.subject, g.html, env.RES_HOUSE_EMAIL || HOUSE.mail);
+    const ok = await send(env, r.email, g.subject, g.html, env.RES_HOUSE_EMAIL || HOUSE.mail, g.text);
     if (ok) await env.DB.prepare(`UPDATE reservations SET mail_guest=1 WHERE id=?`).bind(r.id).run();
     return redirect(back, ok ? 'Bestätigung wurde erneut verschickt.'
-      : 'Versand nicht möglich — RESEND_API_KEY fehlt oder wurde abgelehnt.');
+      : 'Versand nicht möglich — Cloudflare Email Sending ist noch nicht eingerichtet.');
   }
 
   if (d.do === 'save') {

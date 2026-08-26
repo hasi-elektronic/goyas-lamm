@@ -103,11 +103,11 @@ export async function createReservation(db, env, input, opts = {}) {
   let okGuest = false, okHouse = false;
   if (opts.notifyGuest !== false && rec.email) {
     const g = guestMail(rec, site);
-    okGuest = await send(env, rec.email, g.subject, g.html, env.RES_HOUSE_EMAIL || HOUSE.mail);
+    okGuest = await send(env, rec.email, g.subject, g.html, env.RES_HOUSE_EMAIL || HOUSE.mail, g.text);
   }
   if (opts.notifyHouse !== false) {
     const h = houseMail(rec);
-    okHouse = await send(env, env.RES_HOUSE_EMAIL || HOUSE.mail, h.subject, h.html, rec.email || undefined);
+    okHouse = await send(env, env.RES_HOUSE_EMAIL || HOUSE.mail, h.subject, h.html, rec.email || undefined, h.text);
   }
   if (okGuest || okHouse) {
     await db.prepare(`UPDATE reservations SET mail_guest=?, mail_house=? WHERE id=?`)

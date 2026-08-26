@@ -1,5 +1,6 @@
 import { nowBerlin, addDays, formatDateDE, slotsForDate, esc, seatsPerSlot } from '../_lib/core.js';
 import { layout, flash, table, dayHeading } from '../_lib/ui.js';
+import { mailReady } from '../_lib/mail.js';
 
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
@@ -33,10 +34,11 @@ export async function onRequestGet({ request, env }) {
   const ruhetag = !slotsForDate(now.date).length;
   const cap = seatsPerSlot(env);
 
-  const mailWarn = env.RESEND_API_KEY ? '' : `<div class="msg warn">
+  const mailWarn = mailReady(env) ? '' : `<div class="msg warn">
     <b>E-Mail-Versand ist noch nicht aktiv.</b> Gäste bekommen keine Bestätigung und die Küche
     keine Benachrichtigung — alle Reservierungen stehen aber hier im Panel.
-    Zum Aktivieren fehlt nur der Schlüssel <code>RESEND_API_KEY</code>.</div>`;
+    Es fehlt die Einrichtung von <b>Cloudflare Email Sending</b>
+    (Absenderdomain onboarden und <code>CF_EMAIL_TOKEN</code> hinterlegen).</div>`;
 
   const upcoming = Object.keys(byDay).length
     ? Object.entries(byDay).slice(0, 8).map(([day, rs]) =>

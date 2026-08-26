@@ -118,7 +118,7 @@ export async function onRequestPost({ request, env }) {
     await env.DB.prepare(`UPDATE reservations SET status='cancelled', cancelled_at=? WHERE id=?`)
       .bind(new Date().toISOString(), r.id).run();
     const m = cancelMailHouse(r);
-    await send(env, env.RES_HOUSE_EMAIL || HOUSE.mail, m.subject, m.html, r.email);
+    await send(env, env.RES_HOUSE_EMAIL || HOUSE.mail, m.subject, m.html, r.email, m.text);
   }
 
   return page('Storniert', `

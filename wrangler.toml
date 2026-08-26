@@ -9,4 +9,5 @@ database_id = "5e10a722-8035-41fa-80b8-f3ee41ed1264"
 
 [vars]
 RES_HOUSE_EMAIL = "hallo@lammm.de"
+MAIL_ACCOUNT_ID = "ac6ab4ce1149a3591d014841856490af"
 RES_SEATS_PER_SLOT = "24"
