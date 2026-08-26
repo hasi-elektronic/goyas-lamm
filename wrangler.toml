@@ -1,3 +1,12 @@
 name = "goyas-lamm"
 pages_build_output_dir = "public"
 compatibility_date = "2026-08-26"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "goyas-lamm-db"
+database_id = "5e10a722-8035-41fa-80b8-f3ee41ed1264"
+
+[vars]
+RES_HOUSE_EMAIL = "hallo@lammm.de"
+RES_SEATS_PER_SLOT = "24"

@@ -283,17 +283,85 @@ header.solid .burger span{background:var(--ink)}
 /* ---------- reservation ---------- */
 .reserve{background:var(--cream)}
 .reserve-box{
-  background:var(--paper);border:1px solid var(--sand);padding:clamp(2rem,4vw,3.2rem);
-  display:grid;grid-template-columns:1fr auto;gap:3rem;align-items:center;box-shadow:var(--shadow)
+  background:var(--paper);border:1px solid var(--sand);padding:clamp(1.7rem,4vw,3.2rem);
+  display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:clamp(2rem,5vw,4rem);
+  align-items:start;box-shadow:var(--shadow)
 }
-.reserve-box iframe{border:0;width:275px;height:180px;display:block}
-.consent{
-  width:290px;border:1px dashed var(--sand);background:var(--cream);
-  padding:1.4rem 1.2rem;text-align:center
+.reserve-box > *{min-width:0}
+.res-grid .field{min-width:0}
+.field input,.field textarea{min-width:0}
+.res-side .mini{
+  list-style:none;margin:1.6rem 0 1.8rem;padding:0;border-top:1px solid var(--sand);font-size:.92rem
 }
-.consent .ctxt{font-size:.82rem;color:var(--muted);line-height:1.5;margin:0 0 1rem}
-.consent .ctxt.small{font-size:.74rem;margin:.9rem 0 0}
-.consent .btn{width:100%;padding:.8rem 1rem;font-size:.72rem}
+.res-side .mini li{display:flex;justify-content:space-between;gap:1rem;padding:.5rem 0;border-bottom:1px solid var(--sand)}
+.res-side .mini li span:last-child{font-weight:500;font-variant-numeric:tabular-nums}
+.res-side .mini li.zu span:last-child{color:var(--muted);font-weight:400}
+
+/* Formular */
+.res-form{display:block}
+.res-step{margin-bottom:1.5rem}
+.res-lab{
+  display:block;font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;font-weight:700;
+  color:var(--wine);margin-bottom:.7rem
+}
+.res-lab em{font-style:normal;color:var(--muted);font-weight:500;letter-spacing:.1em}
+.chips{display:flex;flex-wrap:wrap;gap:.42rem}
+.chip{
+  background:var(--paper);border:1px solid var(--sand);color:var(--ink);
+  padding:.6rem .95rem;font-family:inherit;font-size:.92rem;font-weight:500;cursor:pointer;
+  transition:.2s;font-variant-numeric:tabular-nums;line-height:1.15;border-radius:var(--r)
+}
+.chip:hover{border-color:var(--wine);color:var(--wine)}
+.chip[aria-pressed="true"]{background:var(--wine);border-color:var(--wine);color:#fff}
+.chip:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.chip.wide{padding-inline:1.15rem}
+.chips.times .chip{min-width:78px;text-align:center}
+.res-hint{font-size:.88rem;color:var(--muted);margin:.1rem 0 0;line-height:1.55}
+.res-hint a{color:var(--wine)}
+.res-hint.warn{color:var(--wine);font-weight:500}
+input[type="date"].res-date{
+  width:100%;max-width:260px;font-family:inherit;font-size:1rem;color:var(--ink);
+  background:var(--paper);border:1px solid var(--sand);border-radius:var(--r);
+  padding:.72rem .85rem;transition:.2s
+}
+input[type="date"].res-date:focus{outline:0;border-color:var(--wine);box-shadow:0 0 0 3px rgba(109,24,38,.09)}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem 1.1rem;margin-bottom:1.3rem}
+.field.full{grid-column:1 / -1}
+.field label{
+  display:block;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);font-weight:600;margin-bottom:.35rem
+}
+.field label em{font-style:normal;text-transform:none;letter-spacing:.02em}
+.field input,.field textarea{
+  width:100%;font-family:inherit;font-size:1rem;color:var(--ink);background:var(--paper);
+  border:1px solid var(--sand);border-radius:var(--r);padding:.72rem .85rem;transition:.2s
+}
+.field textarea{resize:vertical;min-height:76px;line-height:1.55}
+.field input:focus,.field textarea:focus{outline:0;border-color:var(--wine);box-shadow:0 0 0 3px rgba(109,24,38,.09)}
+.field input[aria-invalid="true"],.field textarea[aria-invalid="true"]{border-color:var(--wine-soft)}
+.hp{position:absolute!important;left:-9999px!important;width:1px;height:1px;opacity:0}
+.res-legal{font-size:.78rem;color:var(--muted);line-height:1.55;margin:0 0 1.1rem}
+.res-legal a{color:var(--wine)}
+.res-submit{width:100%;padding:1.05rem 1.6rem}
+.res-submit[disabled]{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.res-msg{margin:.9rem 0 0;font-size:.9rem;line-height:1.55;min-height:1px}
+.res-msg.err{color:var(--wine);font-weight:500}
+.res-summary{
+  margin:1.4rem 0 0;padding:.9rem 1.1rem;background:var(--cream);border-left:3px solid var(--gold);
+  font-size:.92rem;line-height:1.6
+}
+.res-summary b{font-weight:600}
+/* Bestätigung */
+.res-done{text-align:left}
+.res-done .tick{
+  width:54px;height:54px;border-radius:50%;background:var(--wine);color:#fff;display:grid;place-items:center;
+  font-size:1.6rem;margin-bottom:1.2rem
+}
+.res-done h3{font-size:clamp(1.5rem,3vw,2rem);margin-bottom:.6rem}
+.res-done .dl{margin:1.4rem 0;border-top:1px solid var(--sand)}
+.res-done .dl div{display:flex;justify-content:space-between;gap:1rem;padding:.6rem 0;border-bottom:1px solid var(--sand)}
+.res-done .dl span:first-child{font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);padding-top:.2rem}
+.res-done .dl span:last-child{font-weight:600;text-align:right}
 
 /* ---------- info ---------- */
 .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(2rem,5vw,4rem)}
@@ -383,7 +451,10 @@ footer a:hover{color:var(--gold)}
   .lb-prev,.lb-next{display:none}
   .lb-close{top:1rem;right:1rem;width:42px;height:42px}
   .lb img{max-height:72vh}
-  .reserve-box{grid-template-columns:1fr;gap:2rem;justify-items:center;text-align:center}
+  .reserve-box{grid-template-columns:minmax(0,1fr);gap:2.2rem}
+  .res-grid{grid-template-columns:1fr}
+  input[type="date"].res-date{max-width:100%}
+  .chips.times .chip{flex:1 0 calc(33.333% - .3rem);min-width:0}
   .info-grid{grid-template-columns:1fr}
   .foot-grid{grid-template-columns:1fr;gap:2.4rem}
   .stickybar{display:flex}
@@ -903,29 +974,103 @@ footer a:hover{color:var(--gold)}
 <section class="reserve" id="reservieren">
   <div class="wrap">
     <div class="reserve-box reveal">
-      <div>
+
+      <div class="res-side">
         <p class="eyebrow">Reservierung</p>
         <h2 style="margin-bottom:1rem">Tisch sichern.</h2>
-        <p class="lead" style="margin-bottom:1.4rem">
-          Reservieren Sie in wenigen Sekunden online — rund um die Uhr, ohne Anruf.
-          Für Gruppen ab 10 Personen und Feiern rufen Sie uns am besten direkt an.
+        <p class="lead" style="margin-bottom:0">
+          Reservieren Sie direkt hier — rund um die Uhr, in unter einer Minute.
+          Sie erhalten die Bestätigung sofort per E-Mail.
         </p>
-        <p style="margin:0">
-          <a class="btn btn-outline" href="tel:+497042832282">07042 83 22 82 anrufen</a>
+        <ul class="mini">
+          <li><span>Montag &amp; Dienstag</span><span>17 – 22 Uhr</span></li>
+          <li class="zu"><span>Mittwoch</span><span>Ruhetag</span></li>
+          <li><span>Donnerstag – Samstag</span><span>17 – 22 Uhr</span></li>
+          <li><span>Sonntag</span><span>12 – 20 Uhr</span></li>
+        </ul>
+        <p class="res-hint" style="margin-bottom:1.2rem">
+          Ab 11 Personen, für Feiern und Gesellschaften rufen Sie uns bitte an —
+          dann planen wir den Raum gemeinsam.
         </p>
+        <a class="btn btn-outline" href="tel:+497042832282">07042 83 22 82 anrufen</a>
       </div>
-      <div id="resmio-slot">
-        <div class="consent" id="resmio-consent">
-          <p class="ctxt">Die Online-Reservierung wird von <strong>resmio</strong> bereitgestellt.
-            Beim Laden werden Daten an resmio übertragen.</p>
-          <button class="btn btn-primary" id="resmio-load" type="button">Reservierung laden</button>
-          <p class="ctxt small">
-            Alternativ <a href="https://pages.resmio.com/landidyll-hotel-lamm/de" target="_blank" rel="noopener">direkt bei resmio reservieren</a>
-            &nbsp;·&nbsp; <a href="/datenschutz">Datenschutz</a>
+
+      <div>
+        <form class="res-form" id="resForm" novalidate>
+          <div class="res-step">
+            <span class="res-lab" id="lblGuests">Für wie viele Personen?</span>
+            <div class="chips" id="guestChips" role="group" aria-labelledby="lblGuests"></div>
+            <p class="res-hint" id="guestHint" hidden>
+              Ab 11 Personen reservieren wir gerne persönlich:
+              <a href="tel:+497042832282">07042 83 22 82</a>
+            </p>
+          </div>
+
+          <div class="res-step">
+            <label class="res-lab" for="resDate">An welchem Tag?</label>
+            <input class="res-date" type="date" id="resDate" name="date" required
+                   autocomplete="off" aria-describedby="dateHint">
+            <div class="chips" id="dateQuick" style="margin-top:.6rem"></div>
+            <p class="res-hint" id="dateHint" style="margin-top:.6rem"></p>
+          </div>
+
+          <div class="res-step">
+            <span class="res-lab" id="lblTime">Um wie viel Uhr?</span>
+            <div class="chips times" id="timeChips" role="group" aria-labelledby="lblTime"></div>
+            <p class="res-hint" id="timeHint">Bitte wählen Sie zuerst ein Datum.</p>
+          </div>
+
+          <div class="res-grid">
+            <div class="field">
+              <label for="resName">Name</label>
+              <input id="resName" name="name" type="text" autocomplete="name" required maxlength="80">
+            </div>
+            <div class="field">
+              <label for="resPhone">Telefon</label>
+              <input id="resPhone" name="phone" type="tel" autocomplete="tel" required maxlength="40">
+            </div>
+            <div class="field full">
+              <label for="resMail">E-Mail</label>
+              <input id="resMail" name="email" type="email" autocomplete="email" required maxlength="254">
+            </div>
+            <div class="field full">
+              <label for="resNote">Anmerkung <em>(optional)</em></label>
+              <textarea id="resNote" name="note" maxlength="500"
+                placeholder="Kinderstuhl, Allergie, Geburtstag, Tischwunsch …"></textarea>
+            </div>
+          </div>
+
+          <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <input type="hidden" name="ts" id="resTs">
+
+          <p class="res-legal">
+            Mit dem Absenden speichern wir Ihre Angaben, um den Tisch zu reservieren und Sie bei
+            Rückfragen zu erreichen. Näheres in der <a href="/datenschutz">Datenschutzerklärung</a>.
+          </p>
+
+          <button class="btn btn-primary res-submit" id="resSubmit" type="submit">
+            Tisch verbindlich reservieren
+          </button>
+          <p class="res-msg" id="resMsg" role="status" aria-live="polite"></p>
+        </form>
+
+        <div class="res-done" id="resDone" hidden>
+          <div class="tick" aria-hidden="true">&#10003;</div>
+          <h3>Ihr Tisch ist reserviert.</h3>
+          <p class="lead" id="doneLead" style="margin-bottom:0"></p>
+          <div class="dl" id="doneDl"></div>
+          <p class="res-hint" id="doneNote"></p>
+          <p style="margin-top:1.2rem">
+            <a class="btn btn-outline" href="#karte">Schon mal die Karte ansehen</a>
           </p>
         </div>
-        <noscript><p style="font-size:.85rem">Bitte rufen Sie uns für Ihre Reservierung an: 07042 83 22 82</p></noscript>
+
+        <noscript>
+          <p class="res-hint">Für die Online-Reservierung wird JavaScript benötigt.
+            Rufen Sie uns gerne an: <a href="tel:+497042832282">07042 83 22 82</a></p>
+        </noscript>
       </div>
+
     </div>
   </div>
 </section>
@@ -1051,7 +1196,7 @@ footer a:hover{color:var(--gold)}
   "logo":"https://lammm.de/assets/logo-dark.png",
   "priceRange":"€€",
   "servesCuisine":["Schwäbisch","Deutsch","Steakhouse","Mediterran"],
-  "acceptsReservations":"https://www.resmio.com/landidyll-hotel-lamm/",
+  "acceptsReservations":"https://lammm.de/#reservieren",
   "hasMenu":"https://lammm.de/#karte",
   "sameAs":["https://www.instagram.com/goyas.lamm/"],
   "address":{
@@ -1099,23 +1244,176 @@ footer a:hover{color:var(--gold)}
   },{threshold:.12,rootMargin:'0px 0px -40px 0px'});
   document.querySelectorAll('.reveal').forEach(function(el,i){ el.style.transitionDelay=(i%3)*70+'ms'; io.observe(el); });
 
-  var rl=document.getElementById('resmio-load');
-  function loadResmio(){
-    var slot=document.getElementById('resmio-slot');
-    slot.innerHTML='<div id="resmio-mount"></div>'+
-      '<p style="font-size:.74rem;color:var(--muted);margin:.9rem 0 0;text-align:center">'+
-      'Es klappt nicht? <a href="https://pages.resmio.com/landidyll-hotel-lamm/de" target="_blank" rel="noopener">Direkt bei resmio reservieren</a>'+
-      '</p>';
-    var sc=document.createElement('script');
-    sc.src='https://www.resmio.com/static/de/widget.js#id=landidyll-hotel-lamm&height=180&width=275&fontSize=14px';
-    sc.async=true;
-    document.getElementById('resmio-mount').appendChild(sc);
-    try{ localStorage.setItem('resmio-ok','1'); }catch(e){}
-  }
-  if(rl){
-    rl.addEventListener('click',loadResmio);
-    try{ if(localStorage.getItem('resmio-ok')==='1') loadResmio(); }catch(e){}
-  }
+  /* ---------- Reservierung ---------- */
+  (function(){
+    var form=document.getElementById('resForm');
+    if(!form) return;
+    var MAXG=10, PHONE='07042 83 22 82';
+    var state={guests:2,date:'',time:''};
+    var gWrap=document.getElementById('guestChips'),
+        gHint=document.getElementById('guestHint'),
+        dInp =document.getElementById('resDate'),
+        dQuick=document.getElementById('dateQuick'),
+        dHint=document.getElementById('dateHint'),
+        tWrap=document.getElementById('timeChips'),
+        tHint=document.getElementById('timeHint'),
+        msg  =document.getElementById('resMsg'),
+        btn  =document.getElementById('resSubmit');
+
+    document.getElementById('resTs').value=Date.now();
+
+    var WD=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+    var MO=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+    function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+    function labelDE(v){var p=v.split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);
+      return WD[d.getDay()]+', '+(+p[2])+'. '+MO[+p[1]-1]+' '+p[0];}
+
+    /* --- Personen --- */
+    for(var n=1;n<=MAXG;n++){
+      (function(n){
+        var b=document.createElement('button');
+        b.type='button'; b.className='chip'; b.textContent=n;
+        b.setAttribute('aria-pressed', n===state.guests?'true':'false');
+        b.addEventListener('click',function(){
+          state.guests=n;
+          [].forEach.call(gWrap.children,function(c){c.setAttribute('aria-pressed', c===b?'true':'false')});
+          gHint.hidden=true;
+          if(state.date) loadSlots();
+        });
+        gWrap.appendChild(b);
+      })(n);
+    }
+    var more=document.createElement('button');
+    more.type='button'; more.className='chip wide'; more.textContent='11+';
+    more.addEventListener('click',function(){ gHint.hidden=false; });
+    gWrap.appendChild(more);
+
+    /* --- Datum --- */
+    var today=new Date(), max=new Date(); max.setDate(max.getDate()+90);
+    dInp.min=iso(today); dInp.max=iso(max);
+
+    function quick(label,d){
+      var b=document.createElement('button');
+      b.type='button'; b.className='chip'; b.textContent=label;
+      b.dataset.iso=iso(d); b.setAttribute('aria-pressed','false');
+      b.addEventListener('click',function(){ dInp.value=b.dataset.iso; pickDate(); });
+      dQuick.appendChild(b);
+    }
+    (function(){
+      var t=new Date(), tm=new Date(); tm.setDate(tm.getDate()+1);
+      if(t.getDay()!==3) quick('Heute',t);
+      if(tm.getDay()!==3) quick('Morgen',tm);
+      var fr=new Date(); do{fr.setDate(fr.getDate()+1);}while(fr.getDay()!==5);
+      quick('Freitag',fr);
+      var sa=new Date(); do{sa.setDate(sa.getDate()+1);}while(sa.getDay()!==6);
+      quick('Samstag',sa);
+    })();
+
+    dInp.addEventListener('change',pickDate);
+    function pickDate(){
+      state.date=dInp.value; state.time='';
+      [].forEach.call(dQuick.children,function(c){
+        c.setAttribute('aria-pressed', c.dataset.iso===state.date ? 'true' : 'false');
+      });
+      dHint.textContent = state.date ? labelDE(state.date) : '';
+      dHint.className='res-hint';
+      loadSlots();
+    }
+
+    /* --- Zeiten --- */
+    function setTimeHint(txt,warn){ tHint.textContent=txt; tHint.className='res-hint'+(warn?' warn':''); }
+
+    function loadSlots(){
+      tWrap.innerHTML=''; state.time='';
+      if(!state.date){ setTimeHint('Bitte wählen Sie zuerst ein Datum.'); return; }
+      setTimeHint('Freie Zeiten werden geladen …');
+      fetch('/api/slots?date='+encodeURIComponent(state.date)+'&guests='+state.guests,{headers:{accept:'application/json'}})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if(d.closed){ setTimeHint(d.reason==='Ruhetag'
+            ? 'Mittwoch ist unser Ruhetag. Bitte wählen Sie einen anderen Tag.'
+            : 'An diesem Tag haben wir geschlossen ('+d.reason+').', true); return; }
+          if(!d.slots || !d.slots.length){
+            setTimeHint('Für '+state.guests+' Personen ist an diesem Tag leider nichts mehr frei. '+
+                        'Bitte anderen Tag wählen oder anrufen: '+PHONE, true); return; }
+          setTimeHint('');
+          d.slots.forEach(function(sl){
+            var b=document.createElement('button');
+            b.type='button'; b.className='chip'; b.textContent=sl.time;
+            b.setAttribute('aria-pressed','false');
+            b.addEventListener('click',function(){
+              state.time=sl.time;
+              [].forEach.call(tWrap.children,function(c){c.setAttribute('aria-pressed', c===b?'true':'false')});
+              msg.textContent=''; msg.className='res-msg';
+            });
+            tWrap.appendChild(b);
+          });
+        })
+        .catch(function(){
+          setTimeHint('Die Zeiten konnten nicht geladen werden. Bitte rufen Sie uns an: '+PHONE, true);
+        });
+    }
+
+    /* --- Absenden --- */
+    function invalid(el,on){ el.setAttribute('aria-invalid', on?'true':'false'); }
+
+    form.addEventListener('submit',function(e){
+      e.preventDefault();
+      msg.className='res-msg'; msg.textContent='';
+      var name=document.getElementById('resName'),
+          mail=document.getElementById('resMail'),
+          tel =document.getElementById('resPhone');
+      [name,mail,tel].forEach(function(el){invalid(el,false)});
+
+      if(!state.date){ msg.className='res-msg err'; msg.textContent='Bitte wählen Sie ein Datum.'; dInp.focus(); return; }
+      if(!state.time){ msg.className='res-msg err'; msg.textContent='Bitte wählen Sie eine Uhrzeit.'; tWrap.scrollIntoView({block:'center'}); return; }
+      if(name.value.trim().length<2){ invalid(name,true); msg.className='res-msg err'; msg.textContent='Bitte geben Sie Ihren Namen an.'; name.focus(); return; }
+      if(!/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(mail.value.trim())){ invalid(mail,true); msg.className='res-msg err'; msg.textContent='Bitte prüfen Sie Ihre E-Mail-Adresse.'; mail.focus(); return; }
+      if(tel.value.replace(/[^\d]/g,'').length<6){ invalid(tel,true); msg.className='res-msg err'; msg.textContent='Bitte geben Sie eine Telefonnummer an.'; tel.focus(); return; }
+
+      btn.disabled=true; btn.textContent='Wird gesendet …';
+      var payload={
+        date:state.date, time:state.time, guests:state.guests,
+        name:name.value.trim(), email:mail.value.trim(), phone:tel.value.trim(),
+        note:document.getElementById('resNote').value.trim(),
+        website:form.website.value, ts:document.getElementById('resTs').value
+      };
+      fetch('/api/reservierung',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)})
+        .then(function(r){ return r.json().then(function(j){ return {ok:r.ok,j:j}; }); })
+        .then(function(res){
+          if(!res.ok || !res.j.ok){
+            btn.disabled=false; btn.textContent='Tisch verbindlich reservieren';
+            msg.className='res-msg err';
+            msg.textContent=(res.j && res.j.message) || 'Das hat nicht geklappt. Bitte rufen Sie uns an: '+PHONE;
+            if(res.j && (res.j.error==='slot_taken')) loadSlots();
+            return;
+          }
+          done(res.j, payload);
+        })
+        .catch(function(){
+          btn.disabled=false; btn.textContent='Tisch verbindlich reservieren';
+          msg.className='res-msg err';
+          msg.textContent='Verbindung fehlgeschlagen. Bitte rufen Sie uns an: '+PHONE;
+        });
+    });
+
+    function done(d,p){
+      var wrap=document.getElementById('resDone');
+      document.getElementById('doneLead').textContent =
+        'Wir freuen uns auf Sie, '+p.name.split(' ')[0]+'.';
+      document.getElementById('doneDl').innerHTML =
+        '<div><span>Datum</span><span>'+d.dateLabel+'</span></div>'+
+        '<div><span>Uhrzeit</span><span>'+d.time+' Uhr</span></div>'+
+        '<div><span>Personen</span><span>'+d.guests+'</span></div>'+
+        '<div><span>Nummer</span><span>'+d.id+'</span></div>';
+      document.getElementById('doneNote').innerHTML = d.mailed
+        ? 'Eine Bestätigung ist an <b>'+p.email.replace(/</g,'')+'</b> unterwegs. '+
+          'Falls sich etwas ändert, genügt ein Anruf unter '+PHONE+'.'
+        : 'Notieren Sie sich gerne die Nummer. Bei Änderungen erreichen Sie uns unter '+PHONE+'.';
+      form.hidden=true; wrap.hidden=false;
+      wrap.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+  })();
 
   /* ---- Galerie: Lightbox + Mobile-Fortschritt ---- */
   var gItems=[].slice.call(document.querySelectorAll('.g-item'));
