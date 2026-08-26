@@ -3,7 +3,7 @@
  * Die Summe der Plätze aller aktiven Tische ist die Kapazität je Zeitfenster.
  * Eine Ausnahme für einen einzelnen Tag (unter „Schließtage") sticht diese Summe.
  */
-import { clean, esc, seatsPerSlot, capacityFor, nowBerlin } from '../_lib/core.js';
+import { clean, esc, jsq, seatsPerSlot, capacityFor, nowBerlin } from '../_lib/core.js';
 import { layout, flash, redirect } from '../_lib/ui.js';
 
 const AREAS = ['Gastraum', 'Nebenzimmer', 'Terrasse', 'Bar'];
@@ -68,7 +68,7 @@ export async function onRequestGet({ request, env, data }) {
           <button class="btn sm danger" type="submit">${t.active ? 'Stilllegen' : 'Wieder aktivieren'}</button>
         </form>
         <form method="post" action="/admin/tische" style="display:inline"
-              onsubmit="return confirm('Tisch „${esc(t.name)}“ wirklich löschen?')">
+              onsubmit="return confirm('Tisch ' + ${jsq(t.name)} + ' wirklich löschen?')">
           <input type="hidden" name="do" value="del">
           <input type="hidden" name="id" value="${esc(t.id)}">
           <button class="btn sm danger" type="submit">Löschen</button>

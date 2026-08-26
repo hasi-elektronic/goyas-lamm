@@ -140,9 +140,24 @@ export const json = (obj, status = 200, extra = {}) =>
     },
   });
 
+
 export const esc = s => String(s ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+/**
+ * Wert für ein JavaScript-String-Literal INNERHALB eines HTML-Attributs.
+ *
+ * Warum das nötig ist: In `onsubmit="return confirm('...${esc(name)}...')"` steht der Wert
+ * in zwei Zusammenhängen. `esc()` schützt nur das Attribut — der HTML-Parser macht aus
+ * `&#39;` wieder ein `'`, BEVOR der JavaScript-Parser den Handler liest. Ein Name wie
+ * „Goya's Klassiker" zerlegt damit den Handler: die Rückfrage erscheint gar nicht mehr und
+ * das Formular wird sofort abgeschickt — beim Löschen also ohne jede Nachfrage.
+ *
+ * Deshalb: erst als JSON-Literal serialisieren, dann fürs Attribut escapen. Verwendung:
+ *   onsubmit="return confirm('Wirklich ' + ${jsq(name)} + ' löschen?')"
+ */
+export const jsq = v => esc(JSON.stringify(String(v ?? '')));
 
 /* ------------------------------------------------------------------ */
 /* Kapazität                                                           */

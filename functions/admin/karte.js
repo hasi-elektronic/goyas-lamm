@@ -4,7 +4,7 @@
  * serverseitig gerendert und per normalem Formular gespeichert — kein
  * JavaScript nötig, funktioniert auch auf dem Küchen-Tablet.
  */
-import { clean, esc } from '../_lib/core.js';
+import { clean, esc, jsq } from '../_lib/core.js';
 import { layout, flash, redirect } from '../_lib/ui.js';
 import { loadKarte, zaehle } from '../_lib/karte.js';
 
@@ -46,7 +46,7 @@ function gerichtZeile(i) {
           <button class="btn sm danger" type="submit">
             ${i.active ? 'Heute nicht verfügbar' : 'Wieder anbieten'}</button></form>
         <form method="post" action="/admin/karte" style="display:inline"
-              onsubmit="return confirm('„${esc(i.name)}“ endgültig löschen?')">
+              onsubmit="return confirm('Gericht ' + ${jsq(i.name)} + ' endgültig löschen?')">
           <input type="hidden" name="do" value="item-del">
           <input type="hidden" name="id" value="${esc(i.id)}">
           <button class="btn sm danger" type="submit">Löschen</button></form>
@@ -95,7 +95,7 @@ function gruppeCard(g) {
       </form>
       <div class="row" style="margin-top:.8rem">
         <form method="post" action="/admin/karte" style="display:inline"
-              onsubmit="return confirm('Gruppe „${esc(g.title)}“ mit allen ${g.items.length} Gerichten löschen?')">
+              onsubmit="return confirm('Gruppe ' + ${jsq(g.title)} + ' mit allen ${g.items.length} Gerichten löschen?')">
           <input type="hidden" name="do" value="group-del">
           <input type="hidden" name="id" value="${esc(g.id)}">
           <button class="btn sm danger" type="submit">Ganze Gruppe löschen</button>

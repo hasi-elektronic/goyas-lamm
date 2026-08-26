@@ -88,7 +88,9 @@ async function sessionUid(request, env) {
   const raw = request.headers.get('cookie') || '';
   const m = raw.match(new RegExp('(?:^|;\\s*)' + COOKIE + '=([^;]+)'));
   if (!m) return null;
-  const teile = decodeURIComponent(m[1]).split('.');
+  let roh;
+  try { roh = decodeURIComponent(m[1]); } catch { return null; }   // kaputtes Cookie ≠ 500er
+  const teile = roh.split('.');
 
   /* Sitzungen von vor der Mehrbenutzer-Umstellung: exp.sig */
   if (teile.length === 2) {
@@ -139,10 +141,11 @@ export const verifySession = async (request, env) => !!(await currentUser(reques
 
 /** Notzugang aus den Umgebungsvariablen. */
 export function checkCredentials(env, user, pass) {
-  const u = normalize(user).toLowerCase();          // Benutzername ist kein Geheimnis
-  const soll = normalize(env.ADMIN_USER || ' ').toLowerCase();
-  return safeEqual(u, soll) &&
-         safeEqual(normalize(pass), normalize(env.ADMIN_PASS || ' '));
+  const sollUser = normalize(env.ADMIN_USER || '');
+  const sollPass = normalize(env.ADMIN_PASS || '');
+  if (!sollUser || !sollPass) return false;     // ohne gesetzten Notzugang gibt es keinen
+  const u = normalize(user).toLowerCase();      // Benutzername ist kein Geheimnis
+  return safeEqual(u, sollUser.toLowerCase()) && safeEqual(normalize(pass), sollPass);
 }
 
 /**
@@ -195,8 +198,8 @@ export const ROLLEN = {
 /** Seiten, die eine Rolle NICHT öffnen darf. */
 const GESPERRT = {
   chef: [],
-  service: ['/admin/karte', '/admin/tische', '/admin/personal', '/admin/arbeitszeit',
-            '/admin/zeitzettel', '/admin/stempel', '/admin/benutzer'],
+  service: ['/admin/karte', '/admin/tische', '/admin/zeiten', '/admin/personal',
+            '/admin/arbeitszeit', '/admin/zeitzettel', '/admin/stempel', '/admin/benutzer'],
   demo: ['/admin/suche', '/admin/zettel', '/admin/neu', '/admin/r', '/admin/warteliste',
          '/admin/personal', '/admin/arbeitszeit', '/admin/zeitzettel', '/admin/stempel',
          '/admin/benutzer'],

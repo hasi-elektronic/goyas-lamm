@@ -7,7 +7,7 @@
  */
 import {
   clean, isEmail, isPhone, isValidDate, json, nowBerlin, diffDays, hashIp, phoneKey,
-  MAX_DAYS_AHEAD, MAX_GUESTS_ONLINE, HOUSE,
+  MAX_DAYS_AHEAD, MAX_GUESTS_ONLINE, RATE_LIMIT_PER_DAY, HOUSE,
 } from '../_lib/core.js';
 
 const err = (code, msg, status = 400) => json({ ok: false, error: code, message: msg }, status);
@@ -27,6 +27,10 @@ export async function onRequestPost({ request, env }) {
   }
 
   if (clean(body.website)) return json({ ok: true, spam: true });   // Honigtopf
+  const ts = parseInt(body.ts, 10);
+  if (Number.isFinite(ts) && Date.now() - ts < 2500) {
+    return err('too_fast', 'Bitte versuchen Sie es noch einmal.');
+  }
 
   const date   = clean(body.date, 10);
   const time   = clean(body.time, 5);
@@ -49,6 +53,18 @@ export async function onRequestPost({ request, env }) {
   if (email && !isEmail(email)) return err('bad_email', 'Die E-Mail-Adresse sieht nicht richtig aus.');
 
   const ipHash = await hashIp(request.headers.get('cf-connecting-ip') || '', env.IP_SALT);
+
+  /* Gleiche Bremse wie bei der Reservierung — sonst lässt sich die Liste zumüllen. */
+  try {
+    const seit = new Date(Date.now() - 86400000).toISOString();
+    const cnt = await db.prepare(
+      `SELECT COUNT(*) AS n FROM waitlist WHERE ip_hash=? AND created_at > ?`
+    ).bind(ipHash, seit).first();
+    if ((cnt?.n || 0) >= RATE_LIMIT_PER_DAY) {
+      return err('rate_limited',
+        `Es liegen bereits mehrere Anfragen von Ihrem Anschluss vor. Bitte rufen Sie uns an: ${HOUSE.phone}`, 429);
+    }
+  } catch { /* Tabelle fehlt noch */ }
 
   try {
     /* Nicht zweimal für denselben Abend */

@@ -70,6 +70,38 @@ const zurueck = (flash, typ = 'ok') =>
   new Response(null, { status: 303, headers: {
     location: `/admin/stempel?${typ}=` + encodeURIComponent(flash), 'cache-control': 'no-store' } });
 
+const PIN_MAX = 5;          // Fehlversuche
+const PIN_SPERRE = 10;      // Minuten
+
+/** @returns {Promise<number>} verbleibende Sperrminuten, 0 = frei */
+async function pinGesperrt(db, key) {
+  if (!db) return 0;
+  try {
+    const r = await db.prepare(
+      `SELECT fails, last_at FROM login_attempts WHERE ip_hash=?`).bind(key).first();
+    if (!r || r.fails < PIN_MAX) return 0;
+    const min = (Date.now() - Date.parse(r.last_at)) / 60000;
+    return min >= PIN_SPERRE ? 0 : Math.ceil(PIN_SPERRE - min);
+  } catch { return 0; }
+}
+
+async function pinFehler(db, key) {
+  if (!db) return;
+  const jetzt = new Date().toISOString();
+  try {
+    await db.prepare(
+      `INSERT INTO login_attempts (ip_hash, fails, last_at) VALUES (?, 1, ?)
+       ON CONFLICT(ip_hash) DO UPDATE SET
+         fails = CASE WHEN (julianday(?) - julianday(last_at)) * 1440 >= ${PIN_SPERRE}
+                      THEN 1 ELSE fails + 1 END,
+         last_at = ?`).bind(key, jetzt, jetzt, jetzt).run();
+  } catch { /* nicht kritisch */ }
+}
+
+const pinOk = (db, key) => db
+  ? db.prepare(`DELETE FROM login_attempts WHERE ip_hash=?`).bind(key).run().catch(() => {})
+  : Promise.resolve();
+
 async function laufende(db) {
   try {
     return Object.fromEntries(((await db.prepare(
@@ -187,10 +219,20 @@ export async function onRequestPost({ request, env }) {
   const m = await db.prepare(`SELECT id,name,pin_hash,active FROM staff WHERE id=?`).bind(id).first();
   if (!m || !m.active) return zurueck('Diese Person gibt es nicht mehr.', 'err');
 
+  /* Bremse gegen Durchprobieren: eine vierstellige PIN ist schnell geraten, wenn man
+     beliebig oft darf. Gezählt wird je Person in derselben Tabelle wie beim Login. */
+  const zaehler = `pin:${id}`;
+  const gesperrt = await pinGesperrt(env.DB, zaehler);
+  if (gesperrt) {
+    return zurZeile(`Zu viele Fehlversuche. Bitte in ${gesperrt} ${gesperrt === 1 ? 'Minute' : 'Minuten'} noch einmal — oder beim Chef melden.`);
+  }
+
   if (!m.pin_hash || await pinHash(pin, env.IP_SALT) !== m.pin_hash) {
-    await new Promise(r => setTimeout(r, 700));   // Bremse gegen Durchprobieren
+    await pinFehler(env.DB, zaehler);
+    await new Promise(r => setTimeout(r, 700));
     return zurZeile('PIN stimmt nicht.');
   }
+  await pinOk(env.DB, zaehler);
 
   const offen = await db.prepare(
     `SELECT id,work_date,start_at FROM shifts WHERE staff_id=? AND end_at IS NULL

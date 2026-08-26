@@ -130,6 +130,15 @@ tr.cancelled td.t,tr.cancelled td.nm{text-decoration:line-through}
 .check input{width:18px;height:18px;margin-top:.15rem;accent-color:var(--wine);flex:0 0 auto}
 .check span{padding-top:.05rem}
 
+/* Zugangsdaten */
+.geheim{border-top:1px solid var(--sand);border-bottom:1px solid var(--sand)}
+.geheim div{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;
+  padding:.75rem 0;border-bottom:1px dotted var(--sand)}
+.geheim div:last-child{border-bottom:0}
+.geheim span{font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.geheim b{font-size:1.25rem;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  user-select:all;word-break:break-all;text-align:right}
+
 /* Meldungen */
 .msg{padding:.85rem 1.1rem;border-left:3px solid var(--ok);background:#EDF5F0;
   margin-bottom:1.2rem;font-size:.92rem}
@@ -379,6 +388,32 @@ ${rolle === 'demo' ? `<div class="demobar">Demo-Zugang · nur ansehen ·
 
 export const redirect = (to, flash) =>
   new Response(null, { status: 303, headers: { location: to + (flash ? (to.includes('?') ? '&' : '?') + 'ok=' + encodeURIComponent(flash) : ''), 'cache-control': 'no-store' } });
+
+/**
+ * Seite für frisch vergebene Zugangsdaten.
+ *
+ * Bewusst KEIN Redirect mit `?ok=…`: sonst stünde das Passwort in der Adresszeile,
+ * damit in der Browser-Historie des Küchen-Tablets und in jedem Zwischenprotokoll.
+ */
+export function geheimnis({ user, titel, zeilen, hinweis, zurueck }) {
+  const body = `
+    <h1>${esc(titel)}</h1>
+    <p class="sub">Bitte jetzt notieren — danach lässt sich das nicht mehr anzeigen.</p>
+    <div class="card">
+      <h2>Zugangsdaten</h2>
+      <div class="body">
+        <div class="geheim">
+          ${zeilen.map(([k, v]) =>
+            `<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('')}
+        </div>
+        ${hinweis ? `<p class="hint" style="margin-top:1rem">${esc(hinweis)}</p>` : ''}
+        <div class="row" style="margin-top:1.3rem">
+          <a class="btn" href="${esc(zurueck)}">Fertig</a>
+        </div>
+      </div>
+    </div>`;
+  return layout({ user, title: titel, active: zurueck, body });
+}
 
 export function flash(url) {
   const ok = url.searchParams.get('ok');

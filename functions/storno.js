@@ -114,6 +114,17 @@ export async function onRequestPost({ request, env }) {
   const r = await load(env, tk);
   if (!r) return notFound();
 
+  /* Vergangene Termine nicht mehr stornieren — der Besuch hat ja stattgefunden.
+     Die GET-Ansicht sagt das schon; der POST muss es genauso halten, sonst verfälscht
+     ein alter Link im Postfach nachträglich die Zahlen. */
+  if (diffDays(nowBerlin().date, r.res_date) < 0) {
+    return page('Termin vorbei', `
+      <h1>Dieser Termin liegt zurück</h1>
+      ${detailRows(r)}
+      <p>Eine Stornierung ist nicht mehr nötig. Wir hoffen, es hat geschmeckt.</p>
+      <div class="row"><a class="btn" href="/#reservieren">Wieder reservieren</a></div>`);
+  }
+
   if (r.status === 'confirmed') {
     await env.DB.prepare(`UPDATE reservations SET status='cancelled', cancelled_at=? WHERE id=?`)
       .bind(new Date().toISOString(), r.id).run();

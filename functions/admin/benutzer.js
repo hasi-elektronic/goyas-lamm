@@ -5,8 +5,8 @@
  * er lebt in den Umgebungsvariablen und ist die Rückfallebene, falls hier etwas
  * schiefgeht. Er lässt sich hier deshalb auch nicht abschalten.
  */
-import { clean, esc } from '../_lib/core.js';
-import { layout, flash, redirect } from '../_lib/ui.js';
+import { clean, esc, jsq } from '../_lib/core.js';
+import { layout, flash, redirect, geheimnis } from '../_lib/ui.js';
 import { passwortHash, ROLLEN } from '../_lib/auth.js';
 
 const nutzername = v => clean(v, 40).toLowerCase()
@@ -71,7 +71,7 @@ export async function onRequestGet({ request, env, data }) {
           <button class="btn sm danger" type="submit">${u.active ? 'Sperren' : 'Wieder freigeben'}</button>
         </form>
         <form method="post" action="/admin/benutzer" style="display:inline"
-              onsubmit="return confirm('Zugang „${esc(u.username)}“ löschen?')">
+              onsubmit="return confirm('Zugang ' + ${jsq(u.username)} + ' löschen?')">
           <input type="hidden" name="do" value="del">
           <input type="hidden" name="id" value="${esc(u.id)}">
           <button class="btn sm danger" type="submit">Löschen</button>
@@ -180,8 +180,13 @@ export async function onRequestPost({ request, env, data }) {
          VALUES (?,?,?,?,?,1,?,?)`
       ).bind(crypto.randomUUID(), user, name, await passwortHash(pass), rolle,
              note || null, new Date().toISOString()).run();
-      return redirect('/admin/benutzer',
-        `${name} angelegt. Benutzer: ${user} · Passwort: ${pass} — jetzt notieren und weitergeben, es wird nicht wieder angezeigt.`);
+      return geheimnis({
+        user: data?.user, titel: `${name} ist angelegt`,
+        zeilen: [['Benutzer', user], ['Passwort', pass], ['Rolle', ROLLEN[rolle]?.label || rolle]],
+        hinweis: 'Das Passwort steht nur hier. Es wird verschlüsselt gespeichert und lässt sich '
+               + 'nicht wieder anzeigen — vergessen heißt: ein neues vergeben.',
+        zurueck: '/admin/benutzer',
+      });
     }
 
     if (!id) return fehler('Zugang nicht gefunden.');
@@ -196,7 +201,12 @@ export async function onRequestPost({ request, env, data }) {
       if (pass) {
         await db.prepare(`UPDATE users SET name=?, username=?, role=?, pass_hash=? WHERE id=?`)
           .bind(name, user, rolle, await passwortHash(pass), id).run();
-        return redirect('/admin/benutzer', `${name} gespeichert. Neues Passwort: ${pass}`);
+        return geheimnis({
+          user: data?.user, titel: `${name}: neues Passwort`,
+          zeilen: [['Benutzer', user], ['Passwort', pass]],
+          hinweis: 'Der bisherige Zugang gilt nicht mehr.',
+          zurueck: '/admin/benutzer',
+        });
       }
       await db.prepare(`UPDATE users SET name=?, username=?, role=? WHERE id=?`)
         .bind(name, user, rolle, id).run();

@@ -8,7 +8,8 @@ export async function onRequestGet({ request, env, data }) {
 
   let result = '';
   if (q.length >= 2 && env.DB) {
-    const like = `%${q.replace(/[%_]/g, m => '\\' + m)}%`;
+    /* Der Backslash muss zuerst verdoppelt werden, sonst entwertet er das folgende Zeichen. */
+    const like = `%${q.replace(/[\\%_]/g, m => '\\' + m)}%`;
     const rows = (await env.DB.prepare(
       `SELECT id,res_date,res_time,guests,name,email,phone,note,status,source,no_show
          FROM reservations

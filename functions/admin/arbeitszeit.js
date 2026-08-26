@@ -50,11 +50,23 @@ export async function onRequestGet({ request, env, data }) {
   const nurWer = clean(url.searchParams.get('p') || '', 40) || null;
   const alle = await schichtenIm(db, monat, nurWer);
 
-  /* CSV für den Steuerberater */
+  /* CSV für den Steuerberater.
+     Zwei Fallstricke, die hier bewusst behandelt werden:
+     1. Felder werden gequotet — ein Semikolon im Namen darf die Spalten nicht verschieben.
+     2. Beginnt ein Feld mit = + - @, setzt Excel es als FORMEL um. Ein Eintrag wie
+        „=HYPERLINK(…)" würde also beim Steuerberater ausgeführt. Deshalb wird ein
+        Apostroph vorangestellt. */
   if (url.searchParams.get('csv') === '1') {
+    const feld = v => {
+      let t = String(v ?? '');
+      if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;
+      return '"' + t.replace(/"/g, '""') + '"';
+    };
     const namen = Object.fromEntries(leute.map(m => [m.id, m.name]));
     const zeilen = [
-      'Mitarbeiter;Datum;Wochentag;Beginn;Ende;Pause (Min);Arbeitszeit (Std);Arbeitszeit (dezimal);davon Sonntag;davon 20-6 Uhr;Quelle;korrigiert;Notiz',
+      ['Mitarbeiter','Datum','Wochentag','Beginn','Ende','Pause (Min)','Arbeitszeit (Std)',
+       'Arbeitszeit (dezimal)','davon Sonntag','davon 20-6 Uhr','Quelle','korrigiert','Notiz']
+        .map(feld).join(';'),
       ...alle.map(s => {
         const n = netto(s);
         const z = zuschlaege(s);
@@ -65,8 +77,8 @@ export async function onRequestGet({ request, env, data }) {
           dezimal(z.sonntag), dezimal(z.nacht),
           s.source === 'admin' ? 'nachgetragen' : 'Stempeluhr',
           s.corrected ? 'ja' : 'nein',
-          String(s.note || '').replace(/[;\n\r]/g, ' '),
-        ].join(';');
+          String(s.note || '').replace(/[\n\r]/g, ' '),
+        ].map(feld).join(';');
       }),
     ];
     return new Response('﻿' + zeilen.join('\r\n'), {
@@ -240,6 +252,8 @@ export async function onRequestPost({ request, env }) {
   try {
     if (d.do === 'add') {
       const staff = clean(d.staff, 40);
+      const gibtEs = await db.prepare(`SELECT id FROM staff WHERE id=?`).bind(staff).first();
+      if (!gibtEs) return fehler('Diesen Mitarbeiter gibt es nicht.');
       if (!isValidDate(datum) || !von) return fehler('Bitte Datum und Beginn angeben.');
       if (bis && brutto(von, bis) === 0) return fehler('Beginn und Ende dürfen nicht gleich sein.');
       await db.prepare(

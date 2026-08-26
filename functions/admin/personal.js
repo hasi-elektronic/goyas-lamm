@@ -3,7 +3,7 @@
  * nach dem Setzen ein einziges Mal im Klartext angezeigt.
  */
 import { clean, esc, nowBerlin } from '../_lib/core.js';
-import { layout, flash, redirect } from '../_lib/ui.js';
+import { layout, flash, redirect, geheimnis } from '../_lib/ui.js';
 import { pinHash, summe } from '../_lib/zeit.js';
 
 const ROLLEN = ['Küche', 'Service', 'Bar', 'Aushilfe', 'Leitung'];
@@ -140,7 +140,7 @@ export async function onRequestGet({ request, env, data }) {
   return layout({ user: data?.user, title: 'Personal', active: '/admin/personal', body });
 }
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost({ request, env, data }) {
   let d = {};
   try { d = Object.fromEntries(await request.formData()); } catch { /* leer */ }
   const db = env.DB;
@@ -164,8 +164,13 @@ export async function onRequestPost({ request, env }) {
         `INSERT INTO staff (id,name,role,pin_hash,active,sort,created_at) VALUES (?,?,?,?,1,?,?)`
       ).bind(crypto.randomUUID(), name, role, await pinHash(neu, env.IP_SALT),
              (Number(max?.m) || 0) + 10, new Date().toISOString()).run();
-      return redirect('/admin/personal',
-        `${name} angelegt. PIN: ${neu} — bitte jetzt notieren, sie wird nicht wieder angezeigt.`);
+      return geheimnis({
+        user: data?.user, titel: `${name} ist angelegt`,
+        zeilen: [['Name', name], ['PIN für die Stempeluhr', neu]],
+        hinweis: 'Die PIN wird verschlüsselt gespeichert und lässt sich nicht wieder anzeigen. '
+               + 'Vergessen? Einfach eine neue vergeben.',
+        zurueck: '/admin/personal',
+      });
     }
 
     if (!id) return fehler('Mitarbeiter nicht gefunden.');
@@ -176,7 +181,12 @@ export async function onRequestPost({ request, env }) {
         await db.prepare(`UPDATE staff SET name=?, role=?, sort=?, pin_hash=? WHERE id=?`)
           .bind(name, role, Number.isFinite(sort) ? sort : 0,
                 await pinHash(pin, env.IP_SALT), id).run();
-        return redirect('/admin/personal', `${name} gespeichert. Neue PIN: ${pin}`);
+        return geheimnis({
+          user: data?.user, titel: `${name}: neue PIN`,
+          zeilen: [['Name', name], ['PIN für die Stempeluhr', pin]],
+          hinweis: 'Die bisherige PIN gilt nicht mehr.',
+          zurueck: '/admin/personal',
+        });
       }
       await db.prepare(`UPDATE staff SET name=?, role=?, sort=? WHERE id=?`)
         .bind(name, role, Number.isFinite(sort) ? sort : 0, id).run();
@@ -187,13 +197,22 @@ export async function onRequestPost({ request, env }) {
       const an = d.do === 'on' ? 1 : 0;
       const m = await db.prepare(`SELECT name FROM staff WHERE id=?`).bind(id).first();
       await db.prepare(`UPDATE staff SET active=? WHERE id=?`).bind(an, id).run();
+
+      /* Läuft noch eine Schicht, muss der Chef sie von Hand abschließen. Ein Ende zu
+         erfinden wäre eine Fälschung der Aufzeichnung — also lieber deutlich sagen. */
+      let offenerHinweis = '';
       if (!an) {
-        await db.prepare(
-          `UPDATE shifts SET end_at=NULL WHERE staff_id=? AND end_at IS NULL AND 1=0`).bind(id).run();
+        try {
+          const o = await db.prepare(
+            `SELECT work_date FROM shifts WHERE staff_id=? AND end_at IS NULL LIMIT 1`)
+            .bind(id).first();
+          if (o) offenerHinweis = ' Achtung: Es läuft noch eine Schicht vom '
+            + `${o.work_date.slice(8)}.${o.work_date.slice(5, 7)}. — bitte unter „Arbeitszeit" das Ende eintragen.`;
+        } catch { /* egal */ }
       }
       return redirect('/admin/personal', an
         ? `${m?.name || 'Mitarbeiter'} ist wieder aktiv.`
-        : `${m?.name || 'Mitarbeiter'} ist ausgeschieden. Die Zeiten bleiben gespeichert.`);
+        : `${m?.name || 'Mitarbeiter'} ist ausgeschieden. Die Zeiten bleiben gespeichert.${offenerHinweis}`);
     }
   } catch {
     return fehler('Das hat nicht geklappt. Bitte noch einmal versuchen.');

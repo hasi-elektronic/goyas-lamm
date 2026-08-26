@@ -6,7 +6,9 @@ import { createReservation, BookError } from '../_lib/book.js';
 
 async function form({ env, url, user = null, values = {}, error = null }) {
   const now = nowBerlin();
-  const date = isValidDate(values.date || '') ? values.date : (url.searchParams.get('d') || now.date);
+  const wunsch = url.searchParams.get('d') || '';
+  const date = isValidDate(values.date || '') ? values.date
+             : (isValidDate(wunsch) ? wunsch : now.date);
   const slots = slotsForDate(date);
 
   let load = {};
