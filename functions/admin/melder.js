@@ -1,9 +1,9 @@
 /**
  * Melder — sagt dem Panel, ob seit dem letzten Blick etwas Neues hereingekommen ist.
  *
- * Das Panel fragt hier alle paar Sekunden nach. Bewusst gepollt und nicht über eine
+ * Das Panel fragt hier alle 15 Sekunden nach. Bewusst gepollt und nicht über eine
  * offene Verbindung: Pages Functions haben keinen Zustand, eine dauerhafte Verbindung
- * bräuchte Durable Objects. Zwei winzige Abfragen alle 20 Sekunden sind billiger als
+ * bräuchte Durable Objects. Zwei winzige Abfragen alle 15 Sekunden sind billiger als
  * diese Komplexität — und sie überleben jeden Verbindungsabbruch im Restaurant-WLAN.
  *
  * Zwei Regeln, damit die Meldung nicht nervt:
