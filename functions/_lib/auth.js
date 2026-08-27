@@ -185,8 +185,9 @@ export const ROLLEN = {
   },
   service: {
     label: 'Service',
-    text: 'Reservierungen ansehen und pflegen, Tagesliste, Küchenzettel. Keine Speisekarte, '
-        + 'keine Tische, kein Personal, keine Arbeitszeit.',
+    text: 'Reservierungen ansehen und pflegen, Tagesliste, Küchenzettel, Wareneingang '
+        + 'annehmen. Keine Speisekarte, keine Tische, kein Personal, keine Arbeitszeit, '
+        + 'keine Einkaufsauswertung.',
   },
   demo: {
     label: 'Demo',
@@ -198,11 +199,17 @@ export const ROLLEN = {
 /** Seiten, die eine Rolle NICHT öffnen darf. */
 const GESPERRT = {
   chef: [],
+  /* Service nimmt Ware an und pflegt dafür auch die Stammdaten — aber die
+     Auswertung, in der Einkaufspreise und Monatsausgaben stehen, bleibt zu. */
   service: ['/admin/karte', '/admin/tische', '/admin/zeiten', '/admin/personal',
-            '/admin/arbeitszeit', '/admin/zeitzettel', '/admin/stempel', '/admin/benutzer'],
+            '/admin/arbeitszeit', '/admin/zeitzettel', '/admin/stempel', '/admin/benutzer',
+            '/admin/preise', '/admin/inventur'],
   demo: ['/admin/suche', '/admin/zettel', '/admin/neu', '/admin/r', '/admin/warteliste',
          '/admin/personal', '/admin/arbeitszeit', '/admin/zeitzettel', '/admin/stempel',
-         '/admin/benutzer'],
+         '/admin/benutzer', '/admin/preise', '/admin/inventur',
+         /* Der Demo-Zugang zeigt das Reservierungssystem. Einkaufspreise und
+            Lieferantenkonditionen des Hauses gehören nicht dazu. */
+         '/admin/ware', '/admin/lager', '/admin/warenblatt'],
 };
 
 export const darfSeite = (role, pfad) =>

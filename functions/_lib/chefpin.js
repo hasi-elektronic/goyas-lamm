@@ -7,8 +7,11 @@
  * Kollegen lesen. Die Rollen helfen hier nicht — es ist ja dieselbe Anmeldung.
  *
  * Also eine PIN, die nur Gökhan kennt, vor Personal, Arbeitszeit, Zeitzettel,
- * Trinkgeld und Benutzer. Die Stempeluhr selbst bleibt frei; sonst könnte das
- * Team nicht mehr stempeln, und genau dafür steht das Tablet da.
+ * Trinkgeld und Benutzer — und aus demselben Grund vor dem Preis-Radar und der
+ * Inventur, wo Einkaufspreise und Monatsausgaben stehen. Die Stempeluhr selbst
+ * bleibt frei; sonst könnte das Team nicht mehr stempeln, und genau dafür steht
+ * das Tablet da. Ware annehmen bleibt ebenfalls frei — das muss jeder können,
+ * der die Tür aufmacht.
  *
  * Freigeschaltet wird für 20 Minuten, in einem eigenen Cookie. Das reicht, um
  * einen Monat durchzusehen, und ist kurz genug, dass ein vergessenes Tablet
@@ -28,6 +31,10 @@ export const PIN_PFADE = [
   '/admin/zeitzettel',
   '/admin/trinkgeld',
   '/admin/benutzer',
+  /* Dieselbe Trennung wie bei den Löhnen: Ware annehmen darf jeder, die
+     Einkaufspreise und die Monatsausgaben sieht nur der Chef. */
+  '/admin/preise',
+  '/admin/inventur',
 ];
 
 export const brauchtPin = pfad =>

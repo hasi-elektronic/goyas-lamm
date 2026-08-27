@@ -7,6 +7,16 @@ binding = "DB"
 database_name = "goyas-lamm-db"
 database_id = "5e10a722-8035-41fa-80b8-f3ee41ed1264"
 
+# Belegfotos zum Wareneingang. Bewusst NICHT in der Datenbank: ein Handyfoto
+# sprengt die 2-MB-Zeilengrenze von D1 und würde jede Abfrage mitschleppen.
+[[r2_buckets]]
+binding = "BELEGE"
+bucket_name = "goyas-lamm-belege"
+
+# Liest Belegfotos vor. Macht einen Vorschlag, nie eine Buchung — siehe admin/ware.js.
+[ai]
+binding = "AI"
+
 [vars]
 RES_HOUSE_EMAIL = "hallo@lammm.de"
 MAIL_ACCOUNT_ID = "ac6ab4ce1149a3591d014841856490af"

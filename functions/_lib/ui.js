@@ -3,6 +3,7 @@ import { esc, formatDateDE, nowBerlin, WEEKDAY_DE, weekday } from './core.js';
 import { darfSeite, darfPersonendaten, kuerzeName, ROLLEN } from './auth.js';
 import { FANFARE_CSS, fanfareMarkup, tonSchalter } from './fanfare.js';
 import { ZEITDIALOG_CSS } from './zeitdialog.js';
+import { WARE_CSS } from './warenui.js';
 
 export const CSS = `
 :root{
@@ -308,6 +309,7 @@ tr.noshow td.nm a{text-decoration:line-through;text-decoration-color:var(--wine)
   clip:rect(0 0 0 0);white-space:nowrap;border:0}
 ${FANFARE_CSS}
 ${ZEITDIALOG_CSS}
+${WARE_CSS}
 `;
 
 /* Kleine Strichzeichnungen — inline, damit kein zusätzlicher Request nötig ist. */
@@ -330,6 +332,10 @@ const IC = {
   sanduhr:'<path d="M7 3h10M7 21h10"/><path d="M17 3v3.5L12 12l5 5.5V21"/><path d="M7 3v3.5L12 12l-5 5.5V21"/>',
   schluessel:'<circle cx="8" cy="15" r="3.5"/><path d="m10.5 12.5 7-7"/><path d="m14.5 8.5 2 2"/><path d="m16.5 6.5 2 2"/>',
   leute:  '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><path d="M16 5.6a3.2 3.2 0 0 1 0 5.8"/><path d="M17.5 14.9c1.9.6 3 2.4 3 4.6"/>',
+  kiste:  '<path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/>',
+  regal:  '<rect x="3.5" y="4" width="17" height="16" rx="1.5"/><path d="M3.5 9.5h17M3.5 15h17"/>',
+  etikett:'<path d="M4 4.5h7.2L20 13.3a1.7 1.7 0 0 1 0 2.4l-4.3 4.3a1.7 1.7 0 0 1-2.4 0L4.5 11.2z"/><path d="M8 8h.01"/>',
+  zaehl:  '<rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/>',
 };
 const svg = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>`;
 
@@ -349,6 +355,10 @@ const NAV = [
   ['/admin/stempel',   'Stempeluhr',        'stempel',  'Stempel'],
   ['/admin/arbeitszeit','Arbeitszeit',      'sanduhr',  'Zeit'],
   ['/admin/trinkgeld', 'Trinkgeld',         'muenze',   'Trinkgeld'],
+  ['/admin/ware',      'Wareneingang',      'kiste',    'Ware'],
+  ['/admin/lager',     'Lager',             'regal',    'Lager'],
+  ['/admin/preise',    'Preis-Radar',       'etikett',  'Preise'],
+  ['/admin/inventur',  'Inventur',          'zaehl',    'Inventur'],
   ['/admin/personal',  'Personal',          'leute',    'Team'],
   ['/admin/benutzer',  'Benutzer',          'schluessel','Zugang'],
 ];
