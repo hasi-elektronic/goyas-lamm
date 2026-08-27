@@ -316,6 +316,7 @@ const IC = {
   kurve:  '<path d="M3.5 19.5h17"/><path d="M6.5 19.5V13M11 19.5V8.5M15.5 19.5v-4M20 19.5V4.5"/>',
   warte:  '<path d="M12 3.5a8.5 8.5 0 1 1-8.5 8.5"/><path d="M3.5 8 3.5 12 7.5 12"/><path d="M12 8v4.2l3 1.8"/>',
   stempel:'<circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.5 1.5"/><path d="M9 3h6"/>',
+  muenze: '<circle cx="12" cy="12" r="8.5"/><path d="M14.5 9.3a3 3 0 0 0-2.5-1.1c-1.5 0-2.4.8-2.4 1.8 0 2.4 5 1.2 5 3.7 0 1.1-1 1.9-2.6 1.9a3.2 3.2 0 0 1-2.6-1.2"/><path d="M12 6.6v10.8"/>',
   sanduhr:'<path d="M7 3h10M7 21h10"/><path d="M17 3v3.5L12 12l5 5.5V21"/><path d="M7 3v3.5L12 12l-5 5.5V21"/>',
   schluessel:'<circle cx="8" cy="15" r="3.5"/><path d="m10.5 12.5 7-7"/><path d="m14.5 8.5 2 2"/><path d="m16.5 6.5 2 2"/>',
   leute:  '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><path d="M16 5.6a3.2 3.2 0 0 1 0 5.8"/><path d="M17.5 14.9c1.9.6 3 2.4 3 4.6"/>',
@@ -337,6 +338,7 @@ const NAV = [
   ['/admin/zettel',    'Küchenzettel',      'druck',    'Zettel'],
   ['/admin/stempel',   'Stempeluhr',        'stempel',  'Stempel'],
   ['/admin/arbeitszeit','Arbeitszeit',      'sanduhr',  'Zeit'],
+  ['/admin/trinkgeld', 'Trinkgeld',         'muenze',   'Trinkgeld'],
   ['/admin/personal',  'Personal',          'leute',    'Team'],
   ['/admin/benutzer',  'Benutzer',          'schluessel','Zugang'],
 ];

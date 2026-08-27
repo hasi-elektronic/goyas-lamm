@@ -5,7 +5,8 @@
  */
 import { esc, nowBerlin, WEEKDAY_DE, weekday } from '../_lib/core.js';
 import {
-  netto, summe, hhmm, dezimal, monatLabel, istMonat, zuschlaege,
+  netto, runde, nettoGerundet, summe, hhmm, dezimal, monatLabel, istMonat, zuschlaege,
+  euro, lohnCent, verteileTrinkgeld, RUNDUNG_MIN,
 } from '../_lib/zeit.js';
 import { HOUSE } from '../_lib/core.js';
 
@@ -61,12 +62,40 @@ export async function onRequestGet({ request, env }) {
 
   let m = null, rows = [];
   try {
-    m = await db.prepare(`SELECT id,name,role FROM staff WHERE id=?`).bind(pid).first();
+    try {
+      m = await db.prepare(`SELECT id,name,role,wage_cent FROM staff WHERE id=?`).bind(pid).first();
+    } catch {
+      m = await db.prepare(`SELECT id,name,role FROM staff WHERE id=?`).bind(pid).first();
+    }
     rows = (await db.prepare(
       `SELECT work_date,start_at,end_at,break_min,note,source,corrected FROM shifts
         WHERE staff_id=? AND work_date LIKE ? ORDER BY work_date, start_at`
     ).bind(pid, monat + '%').all()).results || [];
   } catch { /* Migration fehlt */ }
+
+  /* Trinkgeldanteil des Monats — gerechnet wie auf der Trinkgeldseite. */
+  let trinkgeldCent = 0;
+  try {
+    const toepfe = (await db.prepare(
+      `SELECT day, amount_cent FROM tips WHERE day LIKE ?`).bind(monat + '%').all()).results || [];
+    if (toepfe.length) {
+      const alleSchichten = (await db.prepare(
+        `SELECT staff_id, work_date, start_at, end_at, break_min FROM shifts WHERE work_date LIKE ?`)
+        .bind(monat + '%').all()).results || [];
+      const proTag = {};
+      for (const x of alleSchichten) {
+        const min = nettoGerundet(x);
+        if (min === null) continue;
+        (proTag[x.work_date] ||= {});
+        proTag[x.work_date][x.staff_id] = (proTag[x.work_date][x.staff_id] || 0) + min;
+      }
+      for (const t of toepfe) {
+        if (!t.amount_cent) continue;
+        const leute = Object.entries(proTag[t.day] || {}).map(([id, minuten]) => ({ id, minuten }));
+        trinkgeldCent += verteileTrinkgeld(t.amount_cent, leute)[pid] || 0;
+      }
+    }
+  } catch { /* keine Trinkgeldtabelle */ }
 
   if (!m) {
     return new Response('<!DOCTYPE html><meta charset="utf-8"><p style="font-family:sans-serif;padding:2rem">'
@@ -85,7 +114,8 @@ export async function onRequestGet({ request, env }) {
       <td class="z">${esc(s.end_at || '—')}</td>
       <td class="z">${s.break_min ? esc(String(s.break_min)) + ' min' : '—'}</td>
       <td class="z">${n === null ? '—' : esc(hhmm(n))}</td>
-      <td class="z">${n === null ? '—' : esc(dezimal(n))}</td>
+      <td class="z">${n === null ? '—' : esc(hhmm(runde(n)))}</td>
+      <td class="z">${n === null ? '—' : esc(dezimal(runde(n)))}</td>
       <td>${s.source === 'admin' ? 'nachgetragen' : ''}${s.corrected ? ' korrigiert' : ''}
           ${s.note ? esc(s.note) : ''}</td>
     </tr>`;
@@ -108,20 +138,21 @@ export async function onRequestGet({ request, env }) {
       <h1>${esc(m.name)}</h1>
       <p class="s">Arbeitszeitnachweis · ${esc(monatLabel(monat))}${m.role ? ' · ' + esc(m.role) : ''}</p>
     </div>
-    <div class="r"><b>${dezimal(g.arbeit)}</b>Stunden gesamt</div>
+    <div class="r"><b>${dezimal(g.gerundet)}</b>Stunden gesamt</div>
   </div>
 
   ${rows.length ? `<table>
     <thead><tr>
       <th>Tag</th><th class="z">Beginn</th><th class="z">Ende</th><th class="z">Pause</th>
-      <th class="z">Dauer</th><th class="z">Dezimal</th><th>Hinweis</th>
+      <th class="z">Dauer</th><th class="z">gerundet</th><th class="z">Dezimal</th><th>Hinweis</th>
     </tr></thead>
     <tbody>${zeilen}</tbody>
     <tfoot><tr>
       <td>Summe</td><td class="z"></td><td class="z"></td>
       <td class="z">${esc(hhmm(g.pause))}</td>
       <td class="z">${esc(hhmm(g.arbeit))}</td>
-      <td class="z">${dezimal(g.arbeit)}</td><td></td>
+      <td class="z">${esc(hhmm(g.gerundet))}</td>
+      <td class="z">${dezimal(g.gerundet)}</td><td></td>
     </tr></tfoot>
   </table>
   <div class="zus">
@@ -129,6 +160,9 @@ export async function onRequestGet({ request, env }) {
     <span>Schichten <b>${g.anzahl}</b></span>
     <span>davon Sonntag <b>${dezimal(g.sonntag)} Std.</b></span>
     <span>davon 20–6 Uhr <b>${dezimal(g.nacht)} Std.</b></span>
+    ${m.wage_cent ? `<span>Stundenlohn <b>${euro(m.wage_cent)} €</b></span>
+      <span>Lohn brutto <b>${euro(lohnCent(g.gerundet, m.wage_cent))} €</b></span>` : ''}
+    ${trinkgeldCent ? `<span>Trinkgeld <b>${euro(trinkgeldCent)} €</b></span>` : ''}
   </div>`
   : '<p style="padding:2.5rem 0;text-align:center;color:#6E675A">In diesem Monat wurden keine Zeiten erfasst.</p>'}
 
@@ -141,6 +175,12 @@ export async function onRequestGet({ request, env }) {
     Aufzeichnung nach § 17 Mindestlohngesetz · ${esc(HOUSE.name)}, ${esc(HOUSE.addr)}<br>
     „davon Sonntag" und „davon 20–6 Uhr" beziehen sich auf die Anwesenheit ohne Pausenabzug und
     dienen als Anhaltspunkt für die Lohnabrechnung durch den Steuerberater.<br>
+    Spalte „Dauer" ist die gestempelte Zeit, Spalte „gerundet" die auf ${RUNDUNG_MIN} Minuten
+    kaufmännisch gerundete Abrechnungsgrundlage.${m.wage_cent
+      ? ' Der Lohnbetrag ist brutto und ohne Zuschläge, Steuern und Sozialabgaben gerechnet — keine Abrechnung.'
+      : ''}${trinkgeldCent
+      ? ' Das Trinkgeld stammt aus dem Haus-Topf und ist steuerlich gesondert zu beurteilen.'
+      : ''}<br>
     Erstellt am ${esc(new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }))} ·
     enthält personenbezogene Daten, nur für den internen Gebrauch.
   </p>

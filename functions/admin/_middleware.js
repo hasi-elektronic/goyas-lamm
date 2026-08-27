@@ -5,6 +5,7 @@
  * überhaupt etwas speichern darf. So kann eine einzelne Seite das nicht vergessen.
  */
 import { currentUser, loginPath, darfSeite, darfSchreiben } from '../_lib/auth.js';
+import { brauchtPin, gespeicherterPin, freigeschaltet } from '../_lib/chefpin.js';
 
 const sperre = (titel, text) => new Response(
 `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">
@@ -49,6 +50,28 @@ export async function onRequest(context) {
   if (request.method !== 'GET' && request.method !== 'HEAD' && !darfSchreiben(user.role)) {
     return sperre('Nur zum Anschauen',
       'Dieser Zugang kann nichts ändern — so bleiben die echten Daten des Restaurants unberührt.');
+  }
+
+  /*
+   * Zweite Tür vor den Seiten mit Löhnen und Personaldaten.
+   *
+   * Nötig, weil das Küchentablet für die Stempeluhr dauerhaft als Chef angemeldet
+   * bleibt: ohne diese Sperre könnte dort jeder die Stundenlöhne der Kollegen lesen.
+   * Ist keine PIN hinterlegt, ändert sich nichts — die Sperre schaltet sich erst
+   * ein, wenn Gökhan eine vergibt.
+   */
+  if (url.pathname !== '/admin/pin' && brauchtPin(url.pathname)
+      && await gespeicherterPin(env.DB) && !await freigeschaltet(request, env)) {
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      return sperre('Erst die Chef-PIN',
+        'Die Freischaltung ist abgelaufen, während das Formular offen war. '
+        + 'Bitte die Seite neu öffnen, PIN eingeben und die Eingabe wiederholen.');
+    }
+    const to = url.pathname + url.search;
+    return new Response(null, {
+      status: 303,
+      headers: { location: `/admin/pin?next=${encodeURIComponent(to)}`, 'cache-control': 'no-store' },
+    });
   }
 
   data.user = user;          // steht den Seiten als context.data.user zur Verfügung
