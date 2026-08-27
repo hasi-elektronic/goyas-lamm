@@ -31,7 +31,7 @@ async function form({ env, url, user = null, values = {}, error = null }) {
         return `<option value="${t}" ${preTime === t ? 'selected' : ''}>${t} Uhr — ${free} von ${cap} frei</option>`;
       }).join('')}</select>
       <p class="hint">Freie Plätze je Zeitfenster in der Auswahl.</p>`
-    : `<input id="t" name="time" type="time" step="900" value="${esc(preTime || '19:00')}" required>
+    : `<input id="t" name="time" type="time" step="300" value="${esc(preTime || '19:00')}" required>
       <p class="hint">An diesem Wochentag ist Ruhetag. Eintragen geht nur mit
          „Über Kapazität hinaus" — für geschlossene Gesellschaften und Sonderöffnungen.</p>`;
 

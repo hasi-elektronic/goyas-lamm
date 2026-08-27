@@ -17,6 +17,23 @@ import {
 const zeit = v => /^\d{1,2}:\d{2}$/.test(String(v || '').trim())
   ? String(v).trim().padStart(5, '0') : null;
 
+/**
+ * Schrittweite für ein Uhrzeitfeld: 5 Minuten, damit der Picker in Fünferschritten
+ * läuft.
+ *
+ * Aber nur, wenn der vorhandene Wert auch auf einer Fünferstufe liegt. Sonst wäre
+ * es eine Falle: Eine gestempelte 17:07 gilt bei `step="300"` als ungültiger Wert,
+ * der Browser verweigert das Speichern der ganzen Zeile — und die gestempelte Zeit
+ * darf nicht angetastet werden, sie ist die Aufzeichnung. Für solche Zeilen bleibt
+ * das Feld deshalb minutengenau.
+ */
+const schritt = v => {
+  const t = String(v ?? '').trim();
+  if (!t) return '300';
+  const m = /^(\d{1,2}):(\d{2})$/.exec(t);
+  return (m && Number(m[2]) % 5 === 0) ? '300' : '60';
+};
+
 async function team(db) {
   try {
     return (await db.prepare(
@@ -189,9 +206,11 @@ export async function onRequestGet({ request, env, data }) {
             <div class="f"><label for="d-${esc(x.id)}">Tag</label>
               <input id="d-${esc(x.id)}" name="date" type="date" value="${esc(x.work_date)}" required></div>
             <div class="f"><label for="a-${esc(x.id)}">Von</label>
-              <input id="a-${esc(x.id)}" name="start" type="time" value="${esc(x.start_at)}" required></div>
+              <input id="a-${esc(x.id)}" name="start" type="time" step="${schritt(x.start_at)}"
+                     value="${esc(x.start_at)}" required></div>
             <div class="f"><label for="b-${esc(x.id)}">Bis</label>
-              <input id="b-${esc(x.id)}" name="end" type="time" value="${esc(x.end_at || '')}"></div>
+              <input id="b-${esc(x.id)}" name="end" type="time" step="${schritt(x.end_at)}"
+                     value="${esc(x.end_at || '')}"></div>
             <div class="f"><label for="p-${esc(x.id)}">Pause</label>
               <input id="p-${esc(x.id)}" name="pause" type="number" min="0" max="600" step="5"
                      value="${esc(String(x.break_min || 0))}"></div>
@@ -254,9 +273,9 @@ export async function onRequestGet({ request, env, data }) {
             <div class="f"><label for="nd-${esc(m.id)}">Tag nachtragen</label>
               <input id="nd-${esc(m.id)}" name="date" type="date" value="${esc(now.date)}" required></div>
             <div class="f"><label for="na-${esc(m.id)}">Von</label>
-              <input id="na-${esc(m.id)}" name="start" type="time" value="17:00" required></div>
+              <input id="na-${esc(m.id)}" name="start" type="time" step="300" value="17:00" required></div>
             <div class="f"><label for="nb-${esc(m.id)}">Bis</label>
-              <input id="nb-${esc(m.id)}" name="end" type="time" value="23:00"></div>
+              <input id="nb-${esc(m.id)}" name="end" type="time" step="300" value="23:00"></div>
             <div class="f"><label for="np-${esc(m.id)}">Pause (Min)</label>
               <input id="np-${esc(m.id)}" name="pause" type="number" min="0" max="600" step="5" value="30"></div>
             <div class="f full"><label for="nn-${esc(m.id)}">Notiz</label>

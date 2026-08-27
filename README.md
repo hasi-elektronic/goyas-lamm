@@ -217,6 +217,12 @@ Bewusst *zur nächsten* Stufe und nicht ab- oder aufgerundet: Wer den Beginn hoc
 herunter rundet, kürzt systematisch die Arbeitszeit. Das ist arbeitsrechtlich unwirksam und beim
 Zoll ein Fehlbetrag, kein Rundungsfehler.
 
+Passend dazu laufen die **Uhrzeitfelder in Fünfer-Schritten** (`step="300"`). Eine Ausnahme, und
+die ist wichtig: Steht in einer Zeile eine gestempelte Zeit wie `17:07`, bleibt genau dieses Feld
+minutengenau. Mit `step="300"` würde der Browser den Wert als ungültig ablehnen und das Speichern
+der ganzen Zeile blockieren — und die gestempelte Zeit darf nicht angetastet werden, sie ist die
+Aufzeichnung. Geregelt in `schritt()` in `functions/admin/arbeitszeit.js`.
+
 #### Lohn
 
 Je Mitarbeiter lässt sich ein **Stundenlohn** hinterlegen; daraus rechnet das Panel den
