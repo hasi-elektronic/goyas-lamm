@@ -30,7 +30,8 @@ functions/              # Cloudflare Pages Functions (Server-Code)
   _lib/mail.js          # E-Mail-Vorlagen + Cloudflare Email Sending
   _lib/karte.js         # Speisekarte aus D1 lesen und rendern
   _lib/gaeste.js        # Gästekartei (Historie, Notiz, No-Show)
-  _lib/zeit.js          # Arbeitszeit: Runden, Zuschlagsfenster, Monatssummen
+  _lib/zeit.js          # Arbeitszeit: Runden, Zuschlagsfenster, Monatssummen, Lohn, Trinkgeld
+  _lib/chefpin.js       # zweite Tür vor den Seiten mit Löhnen
   _lib/book.js          # gemeinsame Buchungslogik für Web und Panel
   api/slots.js          # GET  /api/slots?date=…&guests=…  bzw. ?month=YYYY-MM
   api/reservierung.js   # POST /api/reservierung
@@ -50,9 +51,11 @@ functions/              # Cloudflare Pages Functions (Server-Code)
     personal.js         #   Mitarbeiter anlegen, PIN vergeben
     stempel.js          #   Stempeluhr (PIN am Tablet)
     arbeitszeit.js      #   Zeiten von Hand erfassen und korrigieren
-    zeitzettel.js       #   Monatsübersicht je Mitarbeiter + CSV-Export
+    zeitzettel.js       #   Monatsübersicht je Mitarbeiter zum Unterschreiben
+    trinkgeld.js        #   Topf je Abend, nach Stunden verteilt
+    pin.js              #   Chef-PIN eingeben (Sperre vor den Geldseiten)
     benutzer.js         #   Panel-Zugänge und Rollen
-migrations/0001…0009    # Struktur und Speisekarten-Grunddaten
+migrations/0001…0010    # Struktur, Speisekarten-Grunddaten, Lohn und Trinkgeld
 ```
 
 ## Reservierungssystem
@@ -139,7 +142,7 @@ Anmeldung setzt den Zähler zurück.
 | Küchenzettel | Tagesliste zum Ausdrucken, groß gesetzt, ohne Navigation |
 | Warteliste | Anfragen für ausgebuchte Tage, mit Kontakt und Status |
 | Auswertung | Wochentag, Uhrzeit, Verlauf, Gruppengrößen, Vorlauf, No-Show — ohne Umsatzschätzungen |
-| Personal · Stempeluhr · Arbeitszeit · Zeitzettel | Arbeitszeiterfassung, siehe unten |
+| Personal · Stempeluhr · Arbeitszeit · Zeitzettel · Trinkgeld | Arbeitszeiterfassung und Lohn, siehe unten |
 | Benutzer | Panel-Zugänge und Rollen |
 
 Mit der Option **„Über die Kapazität hinaus"** lassen sich Zusatztische, Schließtage und sogar
@@ -203,6 +206,63 @@ gibt sie weiter. Die Lohnabrechnung macht der Steuerberater.
 Offene Schichten werden **nicht automatisch geschlossen**. Wer das Ausstempeln vergisst,
 bekommt einen Hinweis im Panel; eine erfundene Endzeit wäre eine Fälschung eines gesetzlich
 vorgeschriebenen Nachweises.
+
+#### Rundung
+
+Abgerechnet wird auf **5 Minuten**, kaufmännisch zur nächsten Stufe: 5:16 wird 5:15, 5:18 wird
+5:20. **Die gestempelten Zeiten bleiben unverändert gespeichert** — sie sind die Aufzeichnung,
+die Rundung ist nur die Rechengrundlage. Im Panel und im CSV stehen beide Werte nebeneinander.
+
+Bewusst *zur nächsten* Stufe und nicht ab- oder aufgerundet: Wer den Beginn hoch und das Ende
+herunter rundet, kürzt systematisch die Arbeitszeit. Das ist arbeitsrechtlich unwirksam und beim
+Zoll ein Fehlbetrag, kein Rundungsfehler.
+
+#### Lohn
+
+Je Mitarbeiter lässt sich ein **Stundenlohn** hinterlegen; daraus rechnet das Panel den
+Monatsbetrag. Beträge stehen überall als ganze **Cent** in Integer-Spalten — Fließkommazahlen
+laufen bei Monatssummen sichtbar auseinander.
+
+| Grenze | Wert | Wirkung |
+|---|---|---|
+| Gesetzlicher Mindestlohn | 13,90 € (2026), ab 2027 14,60 € | Warnung, wenn der Stundenlohn darunter liegt |
+| Minijob-Grenze | 603 € im Monat (2026) | Warnung, wenn der Monatsbetrag darüber liegt |
+
+Beide Werte stehen als Konstanten in `functions/_lib/zeit.js` und müssen beim Jahreswechsel
+angepasst werden.
+
+**Das ist eine Bruttoschätzung, keine Abrechnung**: Stunden mal Stundenlohn, ohne Steuern, ohne
+Sozialabgaben, ohne Zuschläge für Sonntag und Nacht. Was ausgezahlt wird, rechnet der
+Steuerberater.
+
+#### Trinkgeld
+
+Der **Topf eines Abends** wird eingetragen und nach den gearbeiteten Minuten dieses Abends
+verteilt. Gespeichert ist nur die Summe; die Aufteilung wird bei jedem Aufruf neu gerechnet —
+ändert sich später eine Schicht, stimmt sie automatisch wieder. Offene Schichten zählen nicht mit.
+Der Rundungsrest geht an den mit der längsten Schicht, damit die Summe der Anteile exakt dem
+Topf entspricht.
+
+Steuerlich ist der Unterschied wichtig und **nicht** Sache des Panels: Trinkgeld, das ein Gast
+einem Mitarbeiter **direkt** gibt, ist nach § 3 Nr. 51 EStG steuerfrei. Was erst ins Haus geht und
+von dort verteilt wird (Tronc) — also genau das, was diese Seite abbildet — kann steuerpflichtiger
+Arbeitslohn sein. Die Liste gehört deshalb zum Steuerberater.
+
+#### Chef-PIN
+
+Damit die Stempeluhr läuft, bleibt das Küchentablet dauerhaft als Chef angemeldet. Ohne zweite
+Sperre könnte dort jeder auf „Personal" tippen und die Stundenlöhne der Kollegen lesen — die
+Rollen helfen nicht, es ist dieselbe Anmeldung.
+
+Ist unter `/admin/personal` eine **Chef-PIN** hinterlegt, fragt das Panel vor `/admin/personal`,
+`/admin/arbeitszeit`, `/admin/zeitzettel`, `/admin/trinkgeld` und `/admin/benutzer` danach und
+schaltet dann **20 Minuten** frei (eigenes signiertes HttpOnly-Cookie). Die Stempeluhr bleibt
+frei, sonst kann das Team nicht mehr stempeln. Nach **5 Fehlversuchen** ist die Eingabe
+**10 Minuten** gesperrt.
+
+Ohne hinterlegte PIN ändert sich nichts — die Sperre schaltet sich erst ein, wenn eine vergeben
+wird. Die PIN wird nur als Hash gespeichert; vergessen heißt: in der Datenbank zurücksetzen
+(`DELETE FROM settings WHERE k='chef_pin'`).
 
 ### Speisekarte
 
