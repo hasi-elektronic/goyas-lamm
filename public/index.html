@@ -259,36 +259,9 @@ header.solid .burger span{background:var(--ink)}
 .pricecard td:last-child{text-align:right;color:#fff;font-weight:500;font-variant-numeric:tabular-nums}
 .cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem;margin-top:3rem}
 
-/* ---------- menu ---------- */
-.menu-nav{
-  display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin:2.5rem 0 3.5rem;
-}
-.menu-nav button{
-  background:none;border:1px solid var(--sand);padding:.62rem 1.15rem;border-radius:var(--r);
-  font-family:'Inter',sans-serif;font-size:.73rem;letter-spacing:.14em;text-transform:uppercase;
-  font-weight:600;color:var(--muted);cursor:pointer;transition:.25s
-}
-.menu-nav button:hover{border-color:var(--wine);color:var(--wine)}
-.menu-nav button.active{background:var(--wine);border-color:var(--wine);color:#fff}
-.menu-panel{display:none;animation:fade .45s ease}
-.menu-panel.active{display:block}
-@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.menu-group{margin-bottom:3.2rem}
-.menu-group>h3{
-  font-family:'Inter',sans-serif;font-size:.76rem;letter-spacing:.26em;text-transform:uppercase;
-  font-weight:700;color:var(--wine);padding-bottom:.8rem;border-bottom:1px solid var(--sand);margin-bottom:1.6rem
-}
-.dishes{display:grid;grid-template-columns:repeat(2,1fr);gap:.4rem 3.5rem}
-.dish{display:flex;gap:1rem;align-items:baseline;padding:.75rem 0;border-bottom:1px dotted var(--sand)}
-.dish .info{flex:1;min-width:0}
-.dish .name{font-weight:600;font-size:1.02rem;letter-spacing:.01em}
-.dish .desc{font-size:.88rem;color:var(--muted);line-height:1.5;margin-top:.15rem}
-.dish .price{font-weight:600;font-variant-numeric:tabular-nums;color:var(--wine);white-space:nowrap;font-size:1.02rem}
-.dish.multi .price{font-size:.86rem;text-align:right;line-height:1.5}
+/* .note wird noch vom Hinweis unter dem Schaufenster gebraucht;
+   der Rest des alten Karten-CSS ist mit der vollen Karte weggefallen. */
 .note{font-size:.86rem;color:var(--muted);font-style:italic;margin-top:-.6rem;margin-bottom:1.4rem}
-.drinks{columns:2;column-gap:3.5rem}
-.drinks .menu-group{break-inside:avoid;margin-bottom:2.4rem}
-.drinks .dishes{grid-template-columns:1fr}
 
 /* ---------- gallery ---------- */
 #galerie{background:var(--ink);color:var(--cream)}
@@ -623,6 +596,24 @@ footer a:hover{color:var(--gold)}
   .teller-txt{padding:1rem 1.1rem 1.15rem}
   .teller-fuss{justify-content:flex-start}
 }
+
+/* Schaufenster: eine Auswahl statt der ganzen Karte. Die vollständige Karte
+   hat seit der QR-Fassung eine eigene Seite — hier steht nur noch, wofür das
+   Haus steht, damit die Startseite wieder überschaubar ist. */
+.schau-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:1rem;margin:clamp(2.2rem,4vw,3rem) 0 0}
+.schau{background:var(--paper,#FBFAF3);border:1px solid var(--sand,#E8E2D2);
+  padding:1.15rem 1.25rem 1rem;display:flex;flex-direction:column;gap:.7rem;
+  justify-content:space-between}
+.schau-kopf{display:flex;align-items:baseline;gap:1rem}
+.schau-kopf h3{margin:0;font-size:1.12rem;line-height:1.25;flex:1;min-width:0}
+.schau-preis{font-size:.92rem;font-weight:700;color:var(--wine);white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+.schau-txt p{margin:.35rem 0 0;font-size:.88rem;line-height:1.55;color:var(--muted,#6E675A)}
+.schau-gruppe{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--muted,#6E675A)}
+.karte-cta{display:flex;gap:.7rem;flex-wrap:wrap;justify-content:center;
+  margin-top:clamp(2rem,3.5vw,2.6rem)}
 </style>
 </head>
 <body>
@@ -998,294 +989,48 @@ footer a:hover{color:var(--gold)}
       <p class="eyebrow">Speisen &amp; Getränke</p>
       <h2>Unsere Karte</h2>
       <p class="lead" style="margin:1rem auto 0">
-        Alle Preise in Euro, inklusive Mehrwertsteuer. Eine separate Karte mit Allergenen und
-        Zusatzstoffen erhalten Sie gerne von unserem Personal.
+        Eine Auswahl aus dem, wofür wir stehen. Die vollständige Karte mit allen
+        Speisen, Weinen und Getränken — mit Bildern und auf Wunsch auf Englisch —
+        finden Sie auf einer eigenen Seite.
       </p>
     </div>
 
-    <div class="menu-nav reveal" role="tablist" id="karte-nav">
-      <button class="active" data-tab="vorspeisen" role="tab">Vorspeisen &amp; Salate</button>
-      <button data-tab="teigwaren" role="tab">Teigwaren</button>
-      <button data-tab="steak" role="tab">Steak &amp; Burger</button>
-      <button data-tab="klassiker" role="tab">Klassiker</button>
-      <button data-tab="suesses" role="tab">Süßes</button>
-      <button data-tab="getraenke" role="tab">Getränke</button>
-    </div>
-
-    <div id="karte-panels">
-    <!-- VORSPEISEN -->
-    <div class="menu-panel active" id="menu-vorspeisen">
-      <div class="menu-group">
-        <h3>Suppen</h3>
-        <div class="dishes">
-          <div class="dish"><div class="info"><div class="name">Tomatencremesuppe</div></div><div class="price">7,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Linsensuppe</div></div><div class="price">7,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Rinderkraftbrühe</div><div class="desc">mit hausgemachter Maultasche</div></div><div class="price">8,50 €</div></div>
+    <!-- Wird aus der Datenbank ersetzt; die Auswahl darunter ist die
+         Rückfallfassung, falls die Datenbank nicht antwortet. -->
+    <div class="schau-grid reveal" id="karte-schaufenster">
+      <div class="schau">
+        <div class="schau-txt">
+          <div class="schau-kopf"><h3>Filet</h3><div class="schau-preis">200 g 31,00 €</div></div>
+          <p>zart und mager</p>
         </div>
+        <span class="schau-gruppe">Steak auf heißem Stein</span>
       </div>
-      <div class="menu-group">
-        <h3>Vorspeisen</h3>
-        <div class="dishes">
-          <div class="dish"><div class="info"><div class="name">Salat</div></div><div class="price">7,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Bruschetta</div><div class="desc">mit frischem Rucola</div></div><div class="price">8,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Büffelmozzarella</div><div class="desc">mit hausgemachtem Pesto, Rucola und Kirschtomaten</div></div><div class="price">9,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Buratta</div><div class="desc">mit gebratener Zucchini, Tomaten, Rucola und Pinienkernen</div></div><div class="price">14,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Garnelen</div><div class="desc">mit Knoblauch im Tontopf</div></div><div class="price">14,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Carpaccio</div><div class="desc">mit Rucola, hausgemachtem Pesto und Grana Padano</div></div><div class="price">16,50 €</div></div>
+      <div class="schau">
+        <div class="schau-txt">
+          <div class="schau-kopf"><h3>Rostbraten</h3><div class="schau-preis">32,50 €</div></div>
+          <p>mit Maultasche und Lemberger-Jus, dazu handgeschabte Spätzle oder Bratkartoffeln</p>
         </div>
+        <span class="schau-gruppe">Klassiker</span>
       </div>
-      <div class="menu-group">
-        <h3>Salate</h3>
-        <div class="dishes">
-          <div class="dish"><div class="info"><div class="name">Salat Schwäbisch</div><div class="desc">mit hausgemachten Maultaschen</div></div><div class="price">19,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Salat Veggie</div><div class="desc">mit gegrilltem Gemüse und Feta</div></div><div class="price">22,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Salat Gambas</div><div class="desc">mit Garnelen und Ananas</div></div><div class="price">24,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Salat Omega</div><div class="desc">mit Lachsfilet und Avocado</div></div><div class="price">24,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Salat Steakhouse</div><div class="desc">mit Rindersteakstreifen</div></div><div class="price">24,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Salat Wien</div><div class="desc">mit panierten Kalbschnitzelstreifen</div></div><div class="price">24,50 €</div></div>
+      <div class="schau">
+        <div class="schau-txt">
+          <div class="schau-kopf"><h3>Maultaschen</h3><div class="schau-preis">13,50 €</div></div>
+          <p>hausgemacht mit Zwiebelschmelze</p>
         </div>
+        <span class="schau-gruppe">Schwäbische Teigwaren</span>
       </div>
     </div>
 
-    <!-- TEIGWAREN -->
-    <div class="menu-panel" id="menu-teigwaren">
-      <div class="menu-group">
-        <h3>Pasta</h3>
-        <p class="note">Pasta wählbar zwischen Spaghetti, Penne und Rigatoni.</p>
-        <div class="dishes">
-          <div class="dish"><div class="info"><div class="name">Pasta Arrabbiata</div><div class="desc">mit scharfer Tomatensoße</div></div><div class="price">12,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Pasta Caprese</div><div class="desc">mit Büffelmozzarella in Tomaten-Sahne-Soße</div></div><div class="price">14,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Pasta Veggie</div><div class="desc">mit gegrilltem Gemüse in Tomaten-Sahne-Soße</div></div><div class="price">16,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Pasta Gambas</div><div class="desc">mit Garnelen in Limetten-Sahne-Soße</div></div><div class="price">18,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Pasta Omega</div><div class="desc">mit Lachsfilet und Spinat in Weißwein-Sahne-Soße</div></div><div class="price">18,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Pasta Steakhouse</div><div class="desc">mit Rinderstreifen in Tomaten-Sahne-Soße</div></div><div class="price">18,50 €</div></div>
-        </div>
-      </div>
-      <div class="menu-group">
-        <h3>Schwäbische Teigwaren</h3>
-        <div class="dishes">
-          <div class="dish"><div class="info"><div class="name">Portion Spätzle</div><div class="desc">handgeschabt mit Zwiebelschmelze</div></div><div class="price">9,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Käsespätzle</div><div class="desc">handgeschabt mit Emmentaler, Bergkäse und Zwiebelschmelze</div></div><div class="price">13,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Maultaschen</div><div class="desc">hausgemacht mit Zwiebelschmelze</div></div><div class="price">13,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Manti</div><div class="desc">kleine mit Hackfleisch gefüllte Teigtaschen mit Knoblauch-Joghurt-Soße und in Butter geschmolzenem Tomatenmark</div></div><div class="price">16,50 €</div></div>
-        </div>
-      </div>
+    <div class="karte-cta reveal">
+      <a class="btn" href="/karte">Ganze Karte mit Bildern</a>
+      <a class="btn btn-outline" href="/karte?l=en" hreflang="en">Menu in English</a>
     </div>
 
-    <!-- STEAK & BURGER -->
-    <div class="menu-panel" id="menu-steak">
-      <div class="menu-group">
-        <h3>Steak auf heißem Stein</h3>
-        <div class="dishes">
-          <div class="dish multi"><div class="info"><div class="name">Hüftesteak</div><div class="desc">mager und intensiv</div></div><div class="price">200 g&nbsp;&nbsp;22,00 €<br>300 g&nbsp;&nbsp;29,00 €<br>400 g&nbsp;&nbsp;36,00 €</div></div>
-          <div class="dish multi"><div class="info"><div class="name">Rumpsteak</div><div class="desc">mit typischem Fettrand</div></div><div class="price">200 g&nbsp;&nbsp;25,00 €<br>300 g&nbsp;&nbsp;33,00 €<br>400 g&nbsp;&nbsp;41,00 €</div></div>
-          <div class="dish multi"><div class="info"><div class="name">Filet</div><div class="desc">zart und mager</div></div><div class="price">200 g&nbsp;&nbsp;31,00 €<br>300 g&nbsp;&nbsp;40,00 €<br>400 g&nbsp;&nbsp;49,00 €</div></div>
-        </div>
-      </div>
-      <div class="menu-group">
-        <h3>Burger</h3>
-        <p class="note">100 g hausgemachtes Patty.</p>
-        <div class="dishes">
-          <div class="dish"><div class="info"><div class="name">Hamburger</div></div><div class="price">11,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Cheeseburger</div><div class="desc">mit Cheddar</div></div><div class="price">12,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Chili-Cheeseburger</div><div class="desc">mit Cheddar und Jalapeños</div></div><div class="price">12,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">BBQ-Burger</div><div class="desc">mit BBQ-Soße und Bacon</div></div><div class="price">12,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Veggie-Burger</div><div class="desc">mit vegetarischem Patty</div></div><div class="price">11,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Patty extra</div></div><div class="price">4,00 €</div></div>
-        </div>
-      </div>
-      <div class="menu-group">
-        <h3>Beilagen</h3>
-        <div class="dishes">
-          <div class="dish"><div class="info"><div class="name">Pommes</div></div><div class="price">5,00 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Süßkartoffel-Pommes</div></div><div class="price">6,00 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Gemüse</div></div><div class="price">7,00 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Salat</div></div><div class="price">7,00 €</div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- KLASSIKER -->
-    <div class="menu-panel" id="menu-klassiker">
-      <div class="menu-group">
-        <h3>Klassiker</h3>
-        <div class="dishes">
-          <div class="dish"><div class="info"><div class="name">Schweizer Wurstsalat</div><div class="desc">Wurst von der Metzgerei Seyb mit Gürkchen und Emmentaler</div></div><div class="price">15,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Schweineschnitzel „Wiener Art“</div><div class="desc">hausgemacht vom Rücken, mit handgeschabten Spätzle oder Pommes</div></div><div class="price">19,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Garnelenpfanne</div><div class="desc">Garnelen mit gegrilltem Gemüse und Basmati-Reis</div></div><div class="price">29,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Fleischpfanne</div><div class="desc">geschnetzeltes Rindersteak mit gegrilltem Gemüse und Basmati-Reis</div></div><div class="price">29,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Lachsfilet</div><div class="desc">mit Spinat und Basmati-Reis in Weißwein-Soße</div></div><div class="price">29,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Rostbraten</div><div class="desc">mit Maultasche und Lemberger-Jus, dazu handgeschabte Spätzle oder Bratkartoffeln</div></div><div class="price">32,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Wiener Schnitzel vom Kalb</div><div class="desc">hausgemacht vom Rücken, mit Preiselbeeren und handgeschabten Spätzle oder Bratkartoffeln</div></div><div class="price">32,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Doradenfilet</div><div class="desc">mit Grillgemüse, Bratkartoffeln und Honig-Senf-Soße</div></div><div class="price">32,50 €</div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SÜSSES -->
-    <div class="menu-panel" id="menu-suesses">
-      <div class="menu-group">
-        <h3>Süßes</h3>
-        <div class="dishes">
-          <div class="dish"><div class="info"><div class="name">Portion Vanilleeis</div><div class="desc">2 Kugeln mit Schoko- oder Beerensoße</div></div><div class="price">5,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Panna Cotta</div><div class="desc">mit hausgemachter Erdbeersoße, gerösteten Haselnüssen und Erdbeere</div></div><div class="price">7,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Crème brûlée</div><div class="desc">hausgemacht mit Zitronenzeste und Vanille</div></div><div class="price">7,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Heiße Beeren</div><div class="desc">3 Kugeln Vanilleeis mit heißen Beeren und Schlagsahne</div></div><div class="price">9,50 €</div></div>
-          <div class="dish"><div class="info"><div class="name">Pancake</div><div class="desc">mit Vanilleeis, Beeren, Bananen und hausgemachter Schokoladensoße</div></div><div class="price">12,50 €</div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- GETRÄNKE -->
-    <div class="menu-panel" id="menu-getraenke">
-      <div class="drinks">
-        <div class="menu-group">
-          <h3>Cocktails</h3>
-          <div class="dishes">
-            <div class="dish"><div class="info"><div class="name">Aperol Sour</div></div><div class="price">8,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Whiskey Sour</div></div><div class="price">8,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Roseano Sour</div></div><div class="price">8,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Gin Fizz</div></div><div class="price">8,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Gin Basil Smash</div></div><div class="price">8,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Negroni</div></div><div class="price">9,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Americano</div></div><div class="price">9,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Old Fashioned</div></div><div class="price">9,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Caipirinha</div></div><div class="price">9,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Cuba Libre</div></div><div class="price">9,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Mojito</div></div><div class="price">9,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Cosmopolitan</div></div><div class="price">9,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Mai Tai</div></div><div class="price">9,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Espresso Martini</div></div><div class="price">9,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Tequila Sunrise</div></div><div class="price">9,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Planter´s Punch</div></div><div class="price">9,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Sex on the Beach</div></div><div class="price">9,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Piña Colada</div></div><div class="price">9,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Swimming Pool</div></div><div class="price">9,50 €</div></div>
-          </div>
-        </div>
-
-        <div class="menu-group">
-          <h3>Mocktails — alkoholfrei</h3>
-          <div class="dishes">
-            <div class="dish"><div class="info"><div class="name">Virgin Mojito</div></div><div class="price">6,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Virgin Caipi</div></div><div class="price">6,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Virgin Sunrise</div></div><div class="price">7,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Virgin Colada</div></div><div class="price">7,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Virgin on the Beach</div></div><div class="price">7,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Virgin Cosmo</div></div><div class="price">7,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Virgin Fizz</div></div><div class="price">8,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Virgin Basil Smash</div></div><div class="price">8,00 €</div></div>
-          </div>
-        </div>
-
-        <div class="menu-group">
-          <h3>Spritz &amp; Aperitif — 0,2 l</h3>
-          <div class="dishes">
-            <div class="dish"><div class="info"><div class="name">Aperol Spritz</div></div><div class="price">8,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Limoncello Spritz</div></div><div class="price">8,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Granatapfel Spritz</div></div><div class="price">8,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Campari Spritz</div></div><div class="price">8,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Spritz alkoholfrei</div></div><div class="price">8,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Roseano Wildberry / Tonic / Peach</div></div><div class="price">8,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Campari Orange</div></div><div class="price">8,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Hugo &nbsp;/&nbsp; Hugo alkoholfrei</div></div><div class="price">8,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Pimm´s No.1 Cup &nbsp;/&nbsp; Pimp Pimm´s</div></div><div class="price">8,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">London Mule &nbsp;/&nbsp; Moscow Mule</div><div class="desc">0,3 l</div></div><div class="price">9,50 €</div></div>
-          </div>
-        </div>
-
-        <div class="menu-group">
-          <h3>Biere vom Fass — Hochdorfer</h3>
-          <div class="dishes">
-            <div class="dish"><div class="info"><div class="name">Pils</div><div class="desc">0,33 l / 0,5 l</div></div><div class="price">4,00 € / 5,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Helles</div><div class="desc">0,33 l / 0,5 l</div></div><div class="price">4,00 € / 5,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Weizen naturtrüb</div><div class="desc">0,33 l / 0,5 l</div></div><div class="price">4,00 € / 5,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Radler</div><div class="desc">0,33 l / 0,5 l</div></div><div class="price">4,00 € / 5,00 €</div></div>
-          </div>
-        </div>
-
-        <div class="menu-group">
-          <h3>Flaschenbiere</h3>
-          <div class="dishes">
-            <div class="dish"><div class="info"><div class="name">Kristallweizen</div><div class="desc">0,5 l</div></div><div class="price">5,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Keller-Gold</div><div class="desc">0,5 l</div></div><div class="price">5,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Naturradler</div><div class="desc">0,33 l — auch alkoholfrei</div></div><div class="price">4,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Helles alkoholfrei</div><div class="desc">0,5 l</div></div><div class="price">5,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Sportweizen alkoholfrei</div><div class="desc">0,5 l</div></div><div class="price">5,00 €</div></div>
-          </div>
-        </div>
-
-        <div class="menu-group">
-          <h3>Weine aus der Region</h3>
-          <p class="note">Allmendinger · Weingärtner · Walz · Faigle — offen ab 0,1 l, Flasche 0,75 l.</p>
-          <div class="dishes">
-            <div class="dish"><div class="info"><div class="name">Riesling</div><div class="desc">Allmendinger · weiß, trocken · 0,1 l / 0,2 l / Schorle</div></div><div class="price">4,00 € / 6,00 € / 5,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Weißburgunder</div><div class="desc">Allmendinger · weiß, trocken · 0,75 l</div></div><div class="price">24,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Spätburgunder</div><div class="desc">Allmendinger · rosé, lieblich · 0,1 l / 0,2 l</div></div><div class="price">4,00 € / 6,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Trollinger-Lemberger</div><div class="desc">Allmendinger · rot, trocken · 0,1 l / 0,2 l</div></div><div class="price">4,00 € / 6,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Lemberger</div><div class="desc">Allmendinger · rot, trocken · 0,1 l / 0,2 l</div></div><div class="price">4,50 € / 7,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Traminer</div><div class="desc">Weingärtner · weiß, halbtrocken · 0,75 l</div></div><div class="price">24,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Lemberger Weißherbst</div><div class="desc">Weingärtner · rosé, feinherb · 0,1 l / 0,2 l / 0,75 l</div></div><div class="price">4,00 € / 6,00 € / 21,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Merlot rosé</div><div class="desc">Weingärtner · trocken · 0,75 l</div></div><div class="price">21,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Chardonnay</div><div class="desc">Faigle · weiß, trocken · 0,1 l / 0,2 l / 0,75 l</div></div><div class="price">4,50 € / 7,00 € / 24,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Muskat-Trollinger</div><div class="desc">Faigle · rosé, fruchtig · 0,1 l / 0,2 l / 0,75 l</div></div><div class="price">4,50 € / 7,00 € / 24,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Grauburgunder</div><div class="desc">Der Fischer · weiß, trocken · 0,1 l / 0,2 l / 0,75 l</div></div><div class="price">5,00 € / 8,00 € / 28,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Syrah</div><div class="desc">Der Fischer · rot, trocken · 0,75 l</div></div><div class="price">32,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Sauvignon Blanc</div><div class="desc">Bodegas Salentine · weiß, halbtrocken · 0,75 l</div></div><div class="price">28,00 €</div></div>
-          </div>
-        </div>
-
-        <div class="menu-group">
-          <h3>Schaumwein</h3>
-          <div class="dishes">
-            <div class="dish"><div class="info"><div class="name">Sekt Hausmarke</div><div class="desc">0,1 l / 0,75 l</div></div><div class="price">5,00 € / 19,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Zardetto Frizzante</div><div class="desc">Prosecco DOC brut · 0,75 l</div></div><div class="price">24,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Zardetto Spumante</div><div class="desc">Prosecco DOC brut · 0,75 l</div></div><div class="price">28,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Zardetto Rosé</div><div class="desc">Prosecco Millesimato DOC brut · 0,75 l</div></div><div class="price">28,50 €</div></div>
-          </div>
-        </div>
-
-        <div class="menu-group">
-          <h3>Alkoholfrei</h3>
-          <div class="dishes">
-            <div class="dish"><div class="info"><div class="name">Ensinger Bio-Gourmet still / medium</div><div class="desc">0,25 l / 0,75 l</div></div><div class="price">3,00 € / 7,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Hausgemachte Limonade · 0 % Zucker</div><div class="desc">Himbeer-Zitrone · Pfirsich-Maracuja · Orange-Mango · Limette-Zitrone · Holunderblüte · 0,4 l</div></div><div class="price">5,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Cola, Cola ohne Zucker, Orange, Zitrone</div><div class="desc">Afri/Bluna · 0,33 l</div></div><div class="price">4,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Schweppes Tonic, Bitter Lemon, Ginger Ale, Wildberry</div><div class="desc">0,2 l</div></div><div class="price">4,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Säfte &amp; Nektare</div><div class="desc">Kumpf · Apfel, Orange, Ananas, Maracuja, Traube, Rhabarber, Cranberry · 0,2 l</div></div><div class="price">4,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Schorle</div><div class="desc">0,2 l / 0,4 l</div></div><div class="price">3,00 € / 4,50 €</div></div>
-          </div>
-        </div>
-
-        <div class="menu-group">
-          <h3>Kaffee &amp; Tee</h3>
-          <div class="dishes">
-            <div class="dish"><div class="info"><div class="name">Crema &nbsp;/&nbsp; Espresso</div></div><div class="price">3,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Espresso Macchiato</div></div><div class="price">3,50 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Espresso doppelt &nbsp;/&nbsp; Cappuccino</div></div><div class="price">4,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Affogato</div></div><div class="price">5,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Tee von der Sternschnuppe</div><div class="desc">Grüner Tee, Früchtetee, Rotbuschtee, Schwarzer Tee</div></div><div class="price">4,00 €</div></div>
-          </div>
-        </div>
-
-        <div class="menu-group">
-          <h3>Spirituosen</h3>
-          <div class="dishes">
-            <div class="dish"><div class="info"><div class="name">Gin</div><div class="desc">Gibson´s · Tanqueray Ten · Elephant · Hendrick´s · Monkey 47 · Roner Z44 · 4 cl</div></div><div class="price">6,00 – 10,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Whisk(e)y</div><div class="desc">Canadian Club · Glen Moray · Bulleit · Suntory · Jura 12 · Dalmore 12 · 4 cl</div></div><div class="price">6,00 – 12,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Rum</div><div class="desc">Flor de Caña · Saint James VSOP · Abuelo 7 · Ron Zacapa · 4 cl</div></div><div class="price">6,00 – 10,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Wodka</div><div class="desc">Moskovskaya · Absolut · Ukiyo · Kaufmann · 4 cl</div></div><div class="price">6,00 – 10,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Weinbrand</div><div class="desc">Asbach Uralt · Hennessy VS · Maison Gaultier · Adega Velha 12 XO · 4 cl</div></div><div class="price">6,00 – 10,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Digestif &amp; Likör</div><div class="desc">Obstler · Jägermeister · Erdbeerlimes · Ouzo 7 · Limoncello · Raki · Ramazotti</div></div><div class="price">3,00 – 6,00 €</div></div>
-            <div class="dish"><div class="info"><div class="name">Wermut</div><div class="desc">Carpano Bianco / Rosso · Antico Formula · 6 cl</div></div><div class="price">6,00 – 8,00 €</div></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    </div>
-
-    <p class="note" style="text-align:center;margin-top:2rem">
-      Änderungen und Druckfehler vorbehalten. Stand der Karte: <span id="karte-stand">August 2026</span>.
+    <p class="note" style="text-align:center;margin-top:1.6rem">
+      Alle Preise in Euro, inklusive Mehrwertsteuer. Eine separate Karte mit Allergenen und
+      Zusatzstoffen erhalten Sie gerne von unserem Personal.
+      Änderungen und Druckfehler vorbehalten. Stand der Karte:
+      <span id="karte-stand">August 2026</span>.
     </p>
   </div>
 </section>
@@ -1632,18 +1377,6 @@ footer a:hover{color:var(--gold)}
   b.addEventListener('click',function(){ m.classList.add('open'); b.setAttribute('aria-expanded','true'); document.body.style.overflow='hidden'; });
   c.addEventListener('click',close);
   m.querySelectorAll('a').forEach(function(a){ a.addEventListener('click',close); });
-
-  var tabs=document.querySelectorAll('.menu-nav button');
-
-  tabs.forEach(function(t){
-    t.addEventListener('click',function(){
-      tabs.forEach(function(x){x.classList.remove('active')});
-      t.classList.add('active');
-      document.querySelectorAll('.menu-panel').forEach(function(p){p.classList.remove('active')});
-      var el=document.getElementById('menu-'+t.dataset.tab);
-      if(el) el.classList.add('active');
-    });
-  });
 
   var io=new IntersectionObserver(function(es){
     es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });

@@ -1,32 +1,36 @@
 /**
- * Speisekarte in die Startseite einsetzen.
+ * Das Schaufenster in die Startseite einsetzen.
  *
- * Die Startseite bleibt eine statische Datei — sie enthält weiterhin die
- * vollständige Karte als HTML. Steht in der Datenbank eine gepflegte Karte,
- * wird der Inhalt von #karte-nav und #karte-panels im Vorbeifliegen ersetzt
- * (HTMLRewriter, kein zweiter Request, kein JavaScript beim Gast).
+ * Die Startseite bleibt eine statische Datei. Steht in der Datenbank eine
+ * gepflegte Karte, wird der Inhalt von #karte-schaufenster im Vorbeifliegen
+ * ersetzt (HTMLRewriter, kein zweiter Request, kein JavaScript beim Gast).
  *
- * Failsafe: geht dabei irgendetwas schief oder ist die Karte leer, bleibt
- * die statische Fassung stehen. Die Seite kann durch diesen Schritt nie leer
- * werden — das ist der Grund, warum die Karte auch im HTML bleibt.
+ * Bis August 2026 stand hier die **vollständige** Karte — alle 132 Gerichte,
+ * ein Viertel des gesamten HTML der Seite. Seit es die digitale Karte unter
+ * `/karte` gibt, hat die Karte ein eigenes Zuhause; auf der Startseite steht
+ * nur noch eine Auswahl. Welche, entscheidet die Spalte `highlight`.
+ *
+ * Failsafe: geht dabei irgendetwas schief oder ist nichts markiert, bleibt
+ * die statische Auswahl im HTML stehen. Die Seite kann durch diesen Schritt
+ * nie leer werden — das ist der Grund, warum überhaupt etwas im HTML steht.
  */
-import { loadKarte, navHtml, panelsHtml } from './_lib/karte.js';
+import { loadKarte, schaufensterHtml } from './_lib/karte.js';
 
 const KARTE_TTL = 60; // Sekunden, die eine gerenderte Karte im Speicher bleibt
 
-let cache = { at: 0, nav: null, panels: null, stand: null };
+let cache = { at: 0, schau: null, stand: null };
 
 async function karteHtml(env) {
   const jetzt = Date.now();
-  if (cache.nav && jetzt - cache.at < KARTE_TTL * 1000) return cache;
+  if (cache.schau && jetzt - cache.at < KARTE_TTL * 1000) return cache;
   const karte = await loadKarte(env.DB);
-  if (!karte || !karte.length) return { nav: null, panels: null, stand: null };
+  if (!karte || !karte.length) return { schau: null, stand: null };
   let stand = null;
   try {
     const r = await env.DB.prepare(`SELECT v FROM settings WHERE k='karte_stand'`).first();
     stand = r?.v || null;
   } catch { /* egal */ }
-  cache = { at: jetzt, nav: navHtml(karte), panels: panelsHtml(karte), stand };
+  cache = { at: jetzt, schau: schaufensterHtml(karte), stand };
   return cache;
 }
 
@@ -42,13 +46,12 @@ export async function onRequest(context) {
 
   let teile;
   try { teile = await karteHtml(env); } catch { return res; }
-  if (!teile.nav || !teile.panels) return res;
+  if (!teile.schau) return res;
 
   try {
     return new HTMLRewriter()
-      .on('#karte-nav',    { element: e => e.setInnerContent(teile.nav,    { html: true }) })
-      .on('#karte-panels', { element: e => e.setInnerContent(teile.panels, { html: true }) })
-      .on('#karte-stand',  { element: e => { if (teile.stand) e.setInnerContent(teile.stand); } })
+      .on('#karte-schaufenster', { element: e => e.setInnerContent(teile.schau, { html: true }) })
+      .on('#karte-stand',        { element: e => { if (teile.stand) e.setInnerContent(teile.stand); } })
       .transform(res);
   } catch {
     return res;

@@ -26,7 +26,8 @@ export async function loadKarte(db, { nurAktive = true } = {}) {
         `SELECT id,tab_id,title,note,sort,active${mitExtra ? ',title_en,note_en' : ''}
            FROM menu_groups ${nurAktive ? 'WHERE active = 1' : ''} ORDER BY sort, title`).all()).results || [];
       const i = (await db.prepare(
-        `SELECT id,group_id,name,descr,price,sort,active${mitExtra ? ',bild,name_en,descr_en' : ''}
+        `SELECT id,group_id,name,descr,price,sort,active${
+          mitExtra ? ',bild,name_en,descr_en,highlight' : ''}
            FROM menu_items ORDER BY sort, name`).all()).results || [];
       return [g, i];
     };
@@ -49,34 +50,6 @@ export async function loadKarte(db, { nurAktive = true } = {}) {
 
 const preis = p => esc(String(p ?? '')).replace(/\n/g, '<br>');
 
-function gruppeHtml(g) {
-  const sichtbar = g.items.filter(i => i.active);
-  return `<div class="menu-group">
-        <h3>${esc(g.title)}</h3>
-        ${g.note ? `<p class="note">${esc(g.note)}</p>` : ''}
-        <div class="dishes">
-          ${sichtbar.map(i => `<div class="dish${String(i.price || '').includes('\n') ? ' multi' : ''}"><div class="info"><div class="name">${esc(i.name)}</div>${i.descr ? `<div class="desc">${esc(i.descr)}</div>` : ''}</div><div class="price">${preis(i.price)}</div></div>`).join('\n          ')}
-        </div>
-      </div>`;
-}
-
-/** Die Reiter-Leiste (Inhalt von .menu-nav). */
-export function navHtml(karte) {
-  return karte.map((t, n) =>
-    `<button class="${n === 0 ? 'active ' : ''}" data-tab="${esc(t.id)}" role="tab">${esc(t.title)}</button>`
-  ).join('\n      ');
-}
-
-/** Alle Panels (Inhalt von #karte-panels). */
-export function panelsHtml(karte) {
-  return karte.map((t, n) => {
-    const inner = t.groups.map(gruppeHtml).join('\n      ');
-    return `<div class="menu-panel${n === 0 ? ' active' : ''}" id="menu-${esc(t.id)}">
-      ${t.cols === 2 ? `<div class="drinks">${inner}</div>` : inner}
-    </div>`;
-  }).join('\n\n    ');
-}
-
 /** Zählt, was in der Karte steht — für das Admin-Dashboard. */
 export function zaehle(karte) {
   const gruppen = karte.reduce((s, t) => s + t.groups.length, 0);
@@ -84,4 +57,51 @@ export function zaehle(karte) {
   const aus = karte.reduce((s, t) =>
     s + t.groups.reduce((x, g) => x + g.items.filter(i => !i.active).length, 0), 0);
   return { tabs: karte.length, gruppen, items, aus };
+}
+
+/* ------------------------------------------------------------------ */
+/* Schaufenster für die Startseite                                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Eine Auswahl statt der ganzen Karte.
+ *
+ * Die Startseite zeigte alle 132 Gerichte — ein Viertel ihres HTML. Seit die
+ * Karte unter `/karte` ein eigenes Zuhause hat, reicht hier ein Schaufenster:
+ * die Gerichte, für die das Haus steht, mit Preis, und ein deutlicher Weg zur
+ * vollständigen Karte.
+ *
+ * Was im Schaufenster steht, entscheidet die Spalte `highlight` — also Gökhan
+ * unter /admin/karte, nicht eine Liste im Quelltext. Ausgelistete Gerichte
+ * fallen automatisch heraus.
+ *
+ * Reihenfolge: nach Reitern der Karte, damit Vorspeise vor Hauptgang vor
+ * Nachtisch steht und nicht die Datenbankreihenfolge durchschlägt.
+ *
+ * @returns {string} leer, wenn nichts markiert ist — dann bleibt die
+ *                   statische Fassung im HTML stehen (dasselbe Failsafe wie
+ *                   bei der vollen Karte).
+ */
+export function schaufensterHtml(karte) {
+  const zeilen = [];
+  for (const tab of karte) {
+    for (const g of tab.groups) {
+      for (const i of g.items) {
+        if (!i.active || !i.highlight) continue;
+        zeilen.push({ ...i, gruppe: g.title });
+      }
+    }
+  }
+  if (!zeilen.length) return '';
+
+  return zeilen.map(i => `<div class="schau">
+          <div class="schau-txt">
+            <div class="schau-kopf">
+              <h3>${esc(i.name)}</h3>
+              <div class="schau-preis">${preis(i.price)}</div>
+            </div>
+            ${i.descr ? `<p>${esc(i.descr)}</p>` : ''}
+          </div>
+          <span class="schau-gruppe">${esc(i.gruppe)}</span>
+        </div>`).join('\n        ');
 }

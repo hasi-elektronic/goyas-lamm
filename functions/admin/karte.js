@@ -45,6 +45,12 @@ function gerichtZeile(i) {
           <input type="hidden" name="id" value="${esc(i.id)}">
           <button class="btn sm danger" type="submit">
             ${i.active ? 'Heute nicht verfügbar' : 'Wieder anbieten'}</button></form>
+        <form method="post" action="/admin/karte" style="display:inline">
+          <input type="hidden" name="do" value="${i.highlight ? 'schau-aus' : 'schau-an'}">
+          <input type="hidden" name="id" value="${esc(i.id)}">
+          <button class="btn sm ${i.highlight ? '' : 'ghost'}" type="submit"
+            title="Steht auf der Startseite in der Auswahl">
+            ${i.highlight ? '★ Im Schaufenster' : '☆ Ins Schaufenster'}</button></form>
         <form method="post" action="/admin/karte" style="display:inline"
               onsubmit="return confirm('Gericht ' + ${jsq(i.name)} + ' endgültig löschen?')">
           <input type="hidden" name="do" value="item-del">
@@ -211,9 +217,16 @@ export async function onRequestGet({ request, env, data }) {
            Ein Klick, und sie ist wieder da. <b>Löschen</b> ist endgültig.</p>
         <p style="margin:0 0 .6rem"><b>Die Nummer</b> bestimmt die Reihenfolge, kleinere Zahl
            steht oben. In 10er-Schritten vergeben — dann passt später immer noch etwas dazwischen.</p>
-        <p style="margin:0"><b>Preis</b> ist ein freies Textfeld: „12,50 €", „6,00 – 10,00 €"
-           oder leer. Für Staffelpreise wie beim Steak die Zeilen mit einem senkrechten Strich
-           trennen: <code>200 g 22,00 € | 300 g 29,00 €</code>.</p>
+        <p style="margin:0 0 .6rem"><b>Preis</b> ist ein freies Textfeld: „12,50 €",
+           „6,00 – 10,00 €" oder leer. Für Staffelpreise wie beim Steak die Zeilen mit einem
+           senkrechten Strich trennen: <code>200 g 22,00 € | 300 g 29,00 €</code>.</p>
+        <p style="margin:0"><b>★ Im Schaufenster</b> heißt: Das Gericht steht auf der
+           Startseite in der Auswahl unter „Unsere Karte". Die vollständige Karte liegt
+           seit August 2026 auf einer eigenen Seite (<a href="/karte" target="_blank"
+           rel="noopener">/karte</a>, dieselbe, die der QR-Code am Tisch öffnet). Zwölf
+           Gerichte füllen das Raster auf der Startseite genau aus — wer eins dazunimmt,
+           sollte ein anderes herausnehmen. Ein Gericht auf „heute nicht verfügbar"
+           verschwindet auch aus dem Schaufenster und kommt von allein zurück.</p>
       </div>
     </div>`;
 
@@ -300,6 +313,20 @@ export async function onRequestPost({ request, env }) {
         await db.prepare(`UPDATE menu_items SET name=?, descr=?, price=?, sort=? WHERE id=?`)
           .bind(name, descr || null, price || null, sort, rid).run();
         return redirect(zurueck(tab), `„${name}" gespeichert.`);
+      }
+
+      /* Schaufenster: Was auf der Startseite steht. Bewusst hier und nicht in
+         einer Liste im Quelltext — die Auswahl ändert sich mit der Saison, und
+         dafür soll niemand anrufen müssen. */
+      case 'schau-an':
+      case 'schau-aus': {
+        const an = d.do === 'schau-an' ? 1 : 0;
+        const t = await tabVon((await db.prepare(
+          `SELECT group_id FROM menu_items WHERE id=?`).bind(rid).first())?.group_id);
+        await db.prepare(`UPDATE menu_items SET highlight=? WHERE id=?`).bind(an, rid).run();
+        return redirect(zurueck(t), an
+          ? 'Steht jetzt auf der Startseite.'
+          : 'Von der Startseite genommen.');
       }
 
       case 'item-on':
