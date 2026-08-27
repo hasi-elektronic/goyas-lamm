@@ -2,6 +2,7 @@
 import { esc, formatDateDE, nowBerlin, WEEKDAY_DE, weekday } from './core.js';
 import { darfSeite, darfPersonendaten, kuerzeName, ROLLEN } from './auth.js';
 import { FANFARE_CSS, fanfareMarkup, tonSchalter } from './fanfare.js';
+import { NACHTRAGEN_CSS } from './nachtragen.js';
 
 export const CSS = `
 :root{
@@ -298,6 +299,7 @@ tr.noshow td.nm a{text-decoration:line-through;text-decoration-color:var(--wine)
 .sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
   clip:rect(0 0 0 0);white-space:nowrap;border:0}
 ${FANFARE_CSS}
+${NACHTRAGEN_CSS}
 `;
 
 /* Kleine Strichzeichnungen — inline, damit kein zusätzlicher Request nötig ist. */

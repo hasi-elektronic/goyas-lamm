@@ -5,9 +5,11 @@
  * zusammengezählt. Was daraus wird, entscheidet der Steuerberater.
  */
 import {
-  clean, esc, nowBerlin, isValidDate, formatDateDE, addDays, weekday, WEEKDAY_DE,
+  clean, esc, nowBerlin, isValidDate, formatDateDE, addDays, diffDays, weekday,
+  WEEKDAY_DE, slotsForDate,
 } from '../_lib/core.js';
 import { layout, flash, redirect } from '../_lib/ui.js';
+import { nachtragenForm, NACHTRAGEN_JS } from '../_lib/nachtragen.js';
 import {
   netto, nettoGerundet, runde, brutto, summe, hhmm, dezimal, monatLabel, istMonat,
   monatVerschieben, tagKurz, zuschlaege, euro, lohnCent, verteileTrinkgeld,
@@ -16,6 +18,36 @@ import {
 
 const zeit = v => /^\d{1,2}:\d{2}$/.test(String(v || '').trim())
   ? String(v).trim().padStart(5, '0') : null;
+
+/** So viele Tage darf ein Zeitraum höchstens umfassen. */
+const MAX_ZEITRAUM = 62;
+
+const minuten = t => { const [h, m] = String(t || '0:00').split(':').map(Number);
+                       return (h || 0) * 60 + (m || 0); };
+
+/**
+ * Stößt eine neue Schicht mit einer vorhandenen zusammen?
+ *
+ * Gerechnet wird in absoluten Minuten ab dem Tag, damit eine Schicht über
+ * Mitternacht richtig verglichen wird. Eine noch laufende Schicht (kein Ende)
+ * zählt am selben Tag immer als Konflikt — wie lang sie wird, weiß niemand.
+ *
+ * @returns die kollidierende Schicht oder null
+ */
+function kollision(tag, von, bis, vorhanden) {
+  const tagNr = t => Math.round(Date.parse(t + 'T00:00:00Z') / 86400000);
+  const a1 = tagNr(tag) * 1440 + minuten(von);
+  let e1 = tagNr(tag) * 1440 + minuten(bis || von);
+  if (e1 <= a1) e1 += 1440;
+  for (const s of vorhanden) {
+    if (!s.end_at) { if (s.work_date === tag) return s; continue; }
+    const a2 = tagNr(s.work_date) * 1440 + minuten(s.start_at);
+    let e2 = tagNr(s.work_date) * 1440 + minuten(s.end_at);
+    if (e2 <= a2) e2 += 1440;
+    if (a1 < e2 && a2 < e1) return s;
+  }
+  return null;
+}
 
 /**
  * Schrittweite für ein Uhrzeitfeld: 5 Minuten, damit der Picker in Fünferschritten
@@ -110,6 +142,11 @@ export async function onRequestGet({ request, env, data }) {
   const nurWer = clean(url.searchParams.get('p') || '', 40) || null;
   const alle = await schichtenIm(db, monat, nurWer);
   const trinkgeld = await trinkgeldAnteile(db, monat);
+  let zuTage = [];
+  try {
+    zuTage = ((await db.prepare(`SELECT day FROM closures WHERE day LIKE ?`)
+      .bind(monat + '%').all()).results || []).map(r => r.day);
+  } catch { /* keine Schließtage */ }
   const lohnBekannt = leute.some(m => m.wage_cent);
 
   /* CSV für den Steuerberater.
@@ -265,27 +302,14 @@ export async function onRequestGet({ request, env, data }) {
       ${zeilen ? `<table><tbody>${zeilen}</tbody></table>`
         : '<div class="empty">In diesem Monat keine Zeiten erfasst.</div>'}
       <div class="body">
-        <form method="post" action="/admin/arbeitszeit">
-          <input type="hidden" name="do" value="add">
-          <input type="hidden" name="staff" value="${esc(m.id)}">
-          <input type="hidden" name="m" value="${esc(monat)}">
-          <div class="grid">
-            <div class="f"><label for="nd-${esc(m.id)}">Tag nachtragen</label>
-              <input id="nd-${esc(m.id)}" name="date" type="date" value="${esc(now.date)}" required></div>
-            <div class="f"><label for="na-${esc(m.id)}">Von</label>
-              <input id="na-${esc(m.id)}" name="start" type="time" step="300" value="17:00" required></div>
-            <div class="f"><label for="nb-${esc(m.id)}">Bis</label>
-              <input id="nb-${esc(m.id)}" name="end" type="time" step="300" value="23:00"></div>
-            <div class="f"><label for="np-${esc(m.id)}">Pause (Min)</label>
-              <input id="np-${esc(m.id)}" name="pause" type="number" min="0" max="600" step="5" value="30"></div>
-            <div class="f full"><label for="nn-${esc(m.id)}">Notiz</label>
-              <input id="nn-${esc(m.id)}" name="note" maxlength="120"
-                     placeholder="z. B. Stempeln vergessen"></div>
-            <div class="f" style="display:flex;align-items:flex-end">
-              <button class="btn ghost" type="submit">Eintragen</button></div>
-          </div>
-        </form>
-        <div class="row" style="margin-top:.8rem">
+        ${nachtragenForm(m, {
+          monat,
+          heute: now.date,
+          letzte: [...s].reverse().find(x => x.end_at) || null,
+          schichten: s,
+          zu: zuTage,
+        })}
+        <div class="row" style="margin-top:1rem">
           <a class="btn sm ghost" href="/admin/zeitzettel?m=${esc(monat)}&p=${esc(m.id)}">
             Monatszettel zum Unterschreiben</a>
         </div>
@@ -360,14 +384,15 @@ export async function onRequestGet({ request, env, data }) {
       </div>
     </div>`;
 
-  return layout({ user: data?.user, title: 'Arbeitszeit', active: '/admin/arbeitszeit', body });
+  return layout({ user: data?.user, title: 'Arbeitszeit', active: '/admin/arbeitszeit',
+                  body: body + NACHTRAGEN_JS });
 }
 
 /* ------------------------------------------------------------------ */
 
 export async function onRequestPost({ request, env }) {
-  let d = {};
-  try { d = Object.fromEntries(await request.formData()); } catch { /* leer */ }
+  let d = {}, roh = new FormData();
+  try { roh = await request.formData(); d = Object.fromEntries(roh); } catch { /* leer */ }
   const db = env.DB;
   const monat = istMonat(d.m) ? d.m : nowBerlin().date.slice(0, 7);
   const ziel = `/admin/arbeitszeit?m=${monat}`;
@@ -384,16 +409,93 @@ export async function onRequestPost({ request, env }) {
   try {
     if (d.do === 'add') {
       const staff = clean(d.staff, 40);
-      const gibtEs = await db.prepare(`SELECT id FROM staff WHERE id=?`).bind(staff).first();
+      const gibtEs = await db.prepare(`SELECT id,name FROM staff WHERE id=?`).bind(staff).first();
       if (!gibtEs) return fehler('Diesen Mitarbeiter gibt es nicht.');
       if (!isValidDate(datum) || !von) return fehler('Bitte Datum und Beginn angeben.');
       if (bis && brutto(von, bis) === 0) return fehler('Beginn und Ende dürfen nicht gleich sein.');
-      await db.prepare(
+
+      /* --- Welche Tage? --- */
+      let tage = [datum];
+      if (d.modus === 'zeitraum') {
+        const bisTag = clean(d.date_bis, 10);
+        if (!isValidDate(bisTag)) return fehler('Bitte auch das Ende des Zeitraums angeben.');
+        if (bisTag < datum) return fehler('Das Ende des Zeitraums liegt vor dem Anfang.');
+        if (diffDays(datum, bisTag) > MAX_ZEITRAUM) {
+          return fehler(`Höchstens ${MAX_ZEITRAUM} Tage auf einmal — sonst wird aus einem `
+            + 'Vertipper schnell ein halbes Jahr.');
+        }
+        /* formData liefert bei mehreren gleichnamigen Feldern nur das letzte —
+           deshalb hier über getAll() gehen. */
+        const gewaehlt = new Set(roh.getAll('wt').map(v => Number(v))
+          .filter(n => Number.isInteger(n) && n >= 0 && n <= 6));
+        if (!gewaehlt.size) return fehler('Bitte mindestens einen Wochentag auswählen.');
+
+        tage = [];
+        for (let t = datum; t <= bisTag; t = addDays(t, 1)) {
+          if (gewaehlt.has(weekday(t))) tage.push(t);
+        }
+        if (!tage.length) return fehler('In diesem Zeitraum liegt keiner der gewählten Wochentage.');
+      }
+
+      /* --- Ruhetage und Schließtage überspringen, wenn nicht ausdrücklich gewollt --- */
+      const uebersprungen = [];
+      if (d.auchzu !== '1') {
+        let zu = new Set();
+        try {
+          zu = new Set(((await db.prepare(
+            `SELECT day FROM closures WHERE day >= ? AND day <= ?`)
+            .bind(tage[0], tage[tage.length - 1]).all()).results || []).map(r => r.day));
+        } catch { /* keine Schließtage-Tabelle */ }
+        const bleibt = [];
+        for (const t of tage) {
+          if (!slotsForDate(t).length) { uebersprungen.push([t, 'Ruhetag']); continue; }
+          if (zu.has(t)) { uebersprungen.push([t, 'Schließtag']); continue; }
+          bleibt.push(t);
+        }
+        tage = bleibt;
+        if (!tage.length) {
+          return fehler('Alle Tage im Zeitraum sind Ruhetage oder Schließtage. Mit dem Haken '
+            + '„Auch an Ruhetagen und Schließtagen eintragen" geht es trotzdem.');
+        }
+      }
+
+      /* --- Überschneidungen --- */
+      if (d.egal !== '1') {
+        const vorhanden = (await db.prepare(
+          `SELECT work_date, start_at, end_at FROM shifts
+            WHERE staff_id = ? AND work_date >= ? AND work_date <= ?`)
+          .bind(staff, addDays(tage[0], -1), tage[tage.length - 1]).all()).results || [];
+        const stoss = [];
+        for (const t of tage) {
+          const k = kollision(t, von, bis, vorhanden);
+          if (k) stoss.push([t, k]);
+        }
+        if (stoss.length) {
+          const [t, k] = stoss[0];
+          const wo = stoss.length === 1
+            ? `am ${t.slice(8)}.${t.slice(5, 7)}.`
+            : `an ${stoss.length} Tagen, zuerst am ${t.slice(8)}.${t.slice(5, 7)}.`;
+          return fehler(`${gibtEs.name} hat ${wo} schon eine Schicht `
+            + `(${k.start_at}${k.end_at ? '–' + k.end_at : ', läuft noch'}). `
+            + 'Nichts eingetragen. Zum Doppeleintrag den Haken „Trotzdem eintragen" setzen.');
+        }
+      }
+
+      const jetzt = new Date().toISOString();
+      const notiz = note || null;
+      await db.batch(tage.map(t => db.prepare(
         `INSERT INTO shifts (id,staff_id,work_date,start_at,end_at,break_min,note,source,corrected,created_at)
          VALUES (?,?,?,?,?,?,?, 'admin', 0, ?)`
-      ).bind(crypto.randomUUID(), staff, datum, von, bis, pause, note || null,
-             new Date().toISOString()).run();
-      return redirect(ziel, `Zeit für den ${datum.slice(8)}.${datum.slice(5, 7)}. eingetragen.`);
+      ).bind(crypto.randomUUID(), staff, t, von, bis, pause, notiz, jetzt)));
+
+      const uebrig = uebersprungen.length
+        ? ` ${uebersprungen.length} ${uebersprungen.length === 1 ? 'Tag' : 'Tage'} übersprungen `
+          + `(${[...new Set(uebersprungen.map(u => u[1]))].join(', ')}).`
+        : '';
+      return redirect(ziel, tage.length === 1
+        ? `Zeit für den ${tage[0].slice(8)}.${tage[0].slice(5, 7)}. eingetragen.${uebrig}`
+        : `${tage.length} Tage eingetragen (${tage[0].slice(8)}.${tage[0].slice(5, 7)}. bis `
+          + `${tage[tage.length - 1].slice(8)}.${tage[tage.length - 1].slice(5, 7)}.).${uebrig}`);
     }
 
     if (!id) return fehler('Eintrag nicht gefunden.');
