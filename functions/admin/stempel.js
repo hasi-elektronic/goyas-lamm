@@ -157,16 +157,31 @@ export async function onRequestGet({ request, env }) {
           text-transform:uppercase;color:rgba(244,247,234,.55);margin-bottom:.5rem">PIN</label>
         <input id="pin" name="pin" inputmode="numeric" pattern="[0-9]*" maxlength="4"
                autocomplete="off" autofocus required>
+        ${/* Fünferschritte wie bei der Abrechnung — eine Pause von 20 oder 25 Minuten
+             gibt es im Betrieb wirklich, und sie soll ehrlich eintragbar sein. */ ''}
         ${o ? `<label for="pause" style="display:block;font-size:.72rem;letter-spacing:.18em;
             text-transform:uppercase;color:rgba(244,247,234,.55);margin:.4rem 0 .5rem">Pause</label>
           <select id="pause" name="pause" style="width:100%;font:inherit;font-size:1.05rem;
             padding:.85rem .8rem;border:1px solid rgba(244,247,234,.24);background:#1e1a17;
             color:#fff;border-radius:3px;margin-bottom:1rem">
             <option value="0">keine Pause</option>
+            <option value="5">5 Minuten</option>
+            <option value="10">10 Minuten</option>
             <option value="15">15 Minuten</option>
+            <option value="20">20 Minuten</option>
+            <option value="25">25 Minuten</option>
             <option value="30">30 Minuten</option>
+            <option value="35">35 Minuten</option>
+            <option value="40">40 Minuten</option>
             <option value="45">45 Minuten</option>
+            <option value="50">50 Minuten</option>
+            <option value="55">55 Minuten</option>
             <option value="60">60 Minuten</option>
+            <option value="65">65 Minuten</option>
+            <option value="70">70 Minuten</option>
+            <option value="75">75 Minuten</option>
+            <option value="80">80 Minuten</option>
+            <option value="85">85 Minuten</option>
             <option value="90">90 Minuten</option>
           </select>` : ''}
         <div class="tasten">

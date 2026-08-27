@@ -193,7 +193,9 @@ Zum Ausprobieren ohne echten Gast: der Knopf **„Meldung testen"** unten auf de
 ### Arbeitszeiterfassung
 
 Zwei Wege, dasselbe Ziel: **Stempeluhr** (Mitarbeiter tippt am Tablet seine PIN, kommt/geht)
-oder **Eintrag von Hand** durch den Inhaber. Daraus entstehen Monatssummen je Mitarbeiter und
+oder **Eintrag von Hand** durch den Inhaber. Die Pause wird beim Gehen aus einer Liste
+in **Fünfer-Schritten** (0–90 Minuten) gewählt — dieselbe Stufung wie die Abrechnung, damit auch
+eine Pause von 20 oder 25 Minuten ehrlich eintragbar ist. Daraus entstehen Monatssummen je Mitarbeiter und
 ein CSV-Export für den Steuerberater.
 
 Gebaut nach **§ 17 MiLoG**: Beginn, Ende und Dauer werden festgehalten, innerhalb von sieben
