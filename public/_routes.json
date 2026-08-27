@@ -1,5 +1,21 @@
 {
   "version": 1,
-  "include": ["/", "/index.html", "/admin", "/admin/*", "/api/*", "/storno"],
-  "exclude": ["/assets/*", "/impressum.html", "/datenschutz.html", "/robots.txt", "/sitemap.xml", "/site.webmanifest", "/favicon.ico"]
+  "include": [
+    "/",
+    "/index.html",
+    "/karte",
+    "/admin",
+    "/admin/*",
+    "/api/*",
+    "/storno"
+  ],
+  "exclude": [
+    "/assets/*",
+    "/impressum.html",
+    "/datenschutz.html",
+    "/robots.txt",
+    "/sitemap.xml",
+    "/site.webmanifest",
+    "/favicon.ico"
+  ]
 }

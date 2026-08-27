@@ -336,6 +336,7 @@ const IC = {
   regal:  '<rect x="3.5" y="4" width="17" height="16" rx="1.5"/><path d="M3.5 9.5h17M3.5 15h17"/>',
   etikett:'<path d="M4 4.5h7.2L20 13.3a1.7 1.7 0 0 1 0 2.4l-4.3 4.3a1.7 1.7 0 0 1-2.4 0L4.5 11.2z"/><path d="M8 8h.01"/>',
   zaehl:  '<rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/>',
+  qr:     '<rect x="3.5" y="3.5" width="7" height="7" rx="1"/><rect x="13.5" y="3.5" width="7" height="7" rx="1"/><rect x="3.5" y="13.5" width="7" height="7" rx="1"/><path d="M13.5 13.5h3v3h-3zM20.5 13.5v3M17.5 20.5h3M13.5 20.5h.01"/>',
 };
 const svg = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>`;
 
@@ -355,6 +356,7 @@ const NAV = [
   ['/admin/stempel',   'Stempeluhr',        'stempel',  'Stempel'],
   ['/admin/arbeitszeit','Arbeitszeit',      'sanduhr',  'Zeit'],
   ['/admin/trinkgeld', 'Trinkgeld',         'muenze',   'Trinkgeld'],
+  ['/admin/aufsteller','QR-Aufsteller',     'qr',       'QR'],
   ['/admin/ware',      'Wareneingang',      'kiste',    'Ware'],
   ['/admin/lager',     'Lager',             'regal',    'Lager'],
   ['/admin/preise',    'Preis-Radar',       'etikett',  'Preise'],

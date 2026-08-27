@@ -209,7 +209,7 @@ const GESPERRT = {
          '/admin/benutzer', '/admin/preise', '/admin/inventur',
          /* Der Demo-Zugang zeigt das Reservierungssystem. Einkaufspreise und
             Lieferantenkonditionen des Hauses gehören nicht dazu. */
-         '/admin/ware', '/admin/lager', '/admin/warenblatt'],
+         '/admin/ware', '/admin/lager', '/admin/warenblatt', '/admin/aufsteller'],
 };
 
 export const darfSeite = (role, pfad) =>

@@ -616,6 +616,7 @@ footer a:hover{color:var(--gold)}
 .teller-fuss .echt{margin:0;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;
   color:var(--muted,#6E675A)}
 .teller-fuss .echt span{color:var(--wine)}
+.teller-tasten{display:flex;gap:.6rem;flex-wrap:wrap}
 @media(max-width:900px){.teller-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){
   .teller-grid{grid-template-columns:1fr;gap:1rem}
@@ -983,7 +984,10 @@ footer a:hover{color:var(--gold)}
 
     <div class="teller-fuss reveal">
       <p class="echt"><span>Echte Aufnahmen</span> aus unserer Küche</p>
-      <a class="btn btn-outline" href="#karte">Ganze Karte ansehen</a>
+      <div class="teller-tasten">
+        <a class="btn" href="/karte">Karte mit Bildern</a>
+        <a class="btn btn-outline" href="#karte">Ganze Karte ansehen</a>
+      </div>
     </div>
   </div>
 </section>
