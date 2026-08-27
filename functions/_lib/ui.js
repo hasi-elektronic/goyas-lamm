@@ -267,6 +267,11 @@ tr.noshow td.nm a{text-decoration:line-through;text-decoration-color:var(--wine)
     color:var(--ink);font-size:.98rem;font-weight:600;border-bottom:1px solid var(--sand)}
   details.more .sheet a:last-child{border-bottom:0}
   details.more .sheet a.on{color:var(--wine)}
+  /* Gruppenüberschrift im Blatt. Ohne sie wären es wieder einundzwanzig Zeilen
+     in einer Reihe — der Zustand, aus dem dieses Menü gerade herauskommt. */
+  details.more .sheet .grp{
+    padding:1rem 1.1rem .3rem;font-size:.72rem;letter-spacing:.16em;
+    text-transform:uppercase;font-weight:700;color:var(--muted)}
   details.more .sheet a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;
     stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto;color:var(--muted)}
   details.more .sheet a.on svg{color:var(--wine)}
@@ -348,42 +353,85 @@ const NAV = [
   ['/admin/warteliste','Warteliste',        'warte',    'Warte'],
   ['/admin/auswertung','Auswertung',        'kurve',    'Zahlen'],
   ['/admin/neu',       'Neue Reservierung', 'plus',     'Neu'],
-  ['/admin/karte',     'Speisekarte',       'karte',    'Karte'],
-  ['/admin/tische',    'Tische',            'tisch',    'Tische'],
-  ['/admin/zeiten',    'Schließtage',       'uhr',      'Zeiten'],
   ['/admin/suche',     'Suche',             'lupe',     'Suche'],
   ['/admin/zettel',    'Küchenzettel',      'druck',    'Zettel'],
-  ['/admin/stempel',   'Stempeluhr',        'stempel',  'Stempel'],
-  ['/admin/arbeitszeit','Arbeitszeit',      'sanduhr',  'Zeit'],
-  ['/admin/trinkgeld', 'Trinkgeld',         'muenze',   'Trinkgeld'],
+  ['/admin/karte',     'Speisekarte',       'karte',    'Karte'],
   ['/admin/aufsteller','QR-Aufsteller',     'qr',       'QR'],
   ['/admin/ware',      'Wareneingang',      'kiste',    'Ware'],
-  ['/admin/lager',     'Lager',             'regal',    'Lager'],
-  ['/admin/preise',    'Preis-Radar',       'etikett',  'Preise'],
+  /* Hieß „Lager". Falscher Name: Auf der Seite stehen Lieferanten, Artikel und
+     Grenzwerte — ein Bestand entsteht erst mit der Inventur. */
+  ['/admin/lager',     'Artikel & Lieferanten', 'regal', 'Artikel'],
   ['/admin/inventur',  'Inventur',          'zaehl',    'Inventur'],
+  /* „Preis-Radar" war ein Eigenname, den außerhalb dieses Hauses niemand kennt. */
+  ['/admin/preise',    'Einkaufspreise',    'etikett',  'Preise'],
+  ['/admin/warenblatt','Kontrollblatt',     'druck',    'Blatt'],
   ['/admin/personal',  'Personal',          'leute',    'Team'],
-  ['/admin/benutzer',  'Benutzer',          'schluessel','Zugang'],
+  ['/admin/arbeitszeit','Arbeitszeit',      'sanduhr',  'Zeit'],
+  /* Es gab zwei „Zettel" — einen für die Küche, einen für die Stunden. */
+  ['/admin/zeitzettel','Stundennachweis',   'druck',    'Nachweis'],
+  ['/admin/trinkgeld', 'Trinkgeld',         'muenze',   'Trinkgeld'],
+  ['/admin/stempel',   'Stempeluhr · Tablet','stempel', 'Stempel'],
+  ['/admin/tische',    'Tische',            'tisch',    'Tische'],
+  ['/admin/zeiten',    'Schließtage',       'uhr',      'Zeiten'],
+  ['/admin/benutzer',  'Benutzer & Rechte', 'schluessel','Zugang'],
 ];
 
-/* Reiterleiste am Rechner: vorne das Tagesgeschäft, der Rest im Klappmenü „Mehr".
-   Elf Reiter nebeneinander waren schlicht zu viele. */
-const HAUPT = ['/admin', '/admin/warteliste', '/admin/kalender', '/admin/neu',
-               '/admin/karte', '/admin/auswertung'];
-const TABS  = NAV.filter(([h]) => HAUPT.includes(h))
-                 .sort((a, b) => HAUPT.indexOf(a[0]) - HAUPT.indexOf(b[0]))
-                 .map(([h, t]) => [h, t]);
-const TABS_MEHR = NAV.filter(([h]) => !HAUPT.includes(h) && h !== '/admin/tag')
-                     .map(([h, t]) => [h, t]);
+/**
+ * Das Menü in zwei Ebenen.
+ *
+ * Vorher standen einundzwanzig Punkte nebeneinander in einer flachen Liste —
+ * sechs als Reiter, der Rest in einem Sammelklappmenü „Mehr", das nach nichts
+ * sortiert war. Vergleichbare Gastro-Backoffices kommen mit acht bis dreizehn
+ * Oberpunkten und zwei Ebenen aus; das größte davon (Lightspeed) hat vierzehn
+ * bei deutlich mehr Funktionsumfang.
+ *
+ * Zwei Entscheidungen, die man später hinterfragen wird:
+ *
+ * **Wareneingang, Artikel, Inventur, Preise und Kontrollblatt liegen unter
+ * einem Punkt.** Die spezialisierten Warenwirtschaften trennen Einkauf und
+ * Lager (gastronovi, Apicbase, FoodNotify) — das lohnt sich aber erst bei
+ * mehreren Lagerorten oder Filialen. Die POS-nahen Systeme für Einzelbetriebe
+ * bündeln (Lightspeed „Bestand", SIDES „Warenwirtschaft & Lager"), und ein
+ * Haus mit einer Küche ist genau dieser Fall.
+ *
+ * **„Heute" bleibt ein eigener Reiter**, obwohl der Küchenzettel inhaltlich
+ * dazugehört. Es ist die meistgeöffnete Seite; sie hinter ein Klappmenü zu
+ * legen, wäre ein Klick zu viel an jedem einzelnen Tag.
+ */
+const GRUPPEN = [
+  { titel: 'Übersicht', pfad: '/admin' },
+  { titel: 'Heute',     pfad: '/admin/tag' },
+  { titel: 'Gäste', kinder: ['/admin/kalender', '/admin/warteliste', '/admin/neu',
+                             '/admin/suche', '/admin/zettel', '/admin/auswertung'] },
+  { titel: 'Speisekarte', kinder: ['/admin/karte', '/admin/aufsteller'] },
+  { titel: 'Warenwirtschaft', kinder: ['/admin/ware', '/admin/lager', '/admin/inventur',
+                                       '/admin/preise', '/admin/warenblatt'] },
+  { titel: 'Team', kinder: ['/admin/personal', '/admin/arbeitszeit', '/admin/zeitzettel',
+                            '/admin/trinkgeld', '/admin/stempel'] },
+  { titel: 'Einstellungen', kinder: ['/admin/tische', '/admin/zeiten', '/admin/benutzer'] },
+];
+
+const eintrag = pfad => NAV.find(n => n[0] === pfad);
+
+/** Gruppen für eine Rolle: gesperrte Seiten fallen weg, leere Gruppen auch. */
+function gruppenFuer(rolle) {
+  return GRUPPEN
+    .map(g => ({
+      titel: g.titel,
+      pfad: g.pfad,
+      eintraege: (g.kinder || []).map(eintrag).filter(Boolean)
+        .filter(([h]) => darfSeite(rolle, h)),
+    }))
+    .filter(g => (g.pfad ? darfSeite(rolle, g.pfad) : g.eintraege.length > 0));
+}
 
 /* Untere Leiste am Handy: vier häufige Ziele plus „Mehr". */
 const UNTEN = ['/admin', '/admin/tag', '/admin/neu', '/admin/karte'];
 
 export function layout({ title, active, body, status = 200, user = null }) {
   const rolle = user?.role || 'chef';
-  const tabs = TABS.filter(([h]) => darfSeite(rolle, h));
-  const tabsMehr = TABS_MEHR.filter(([h]) => darfSeite(rolle, h));
+  const gruppen = gruppenFuer(rolle);
   const unten = UNTEN.filter(h => darfSeite(rolle, h));
-  const nav = NAV.filter(([h]) => darfSeite(rolle, h));
   return new Response(
 `<!DOCTYPE html><html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -396,7 +444,7 @@ export function layout({ title, active, body, status = 200, user = null }) {
 <header class="top"><div class="in">
   <a class="brand" href="/admin">
     <img src="/assets/logo-white.png" alt="Goya´s Lamm">
-    <b>Reservierungen</b>
+    <b>Verwaltung</b>
   </a>
   <div class="wer">
     ${tonSchalter()}
@@ -408,13 +456,14 @@ export function layout({ title, active, body, status = 200, user = null }) {
 ${rolle === 'demo' ? `<div class="demobar">Demo-Zugang · nur ansehen ·
   Gastdaten sind abgekürzt</div>` : ''}
 <nav class="tabs"><div class="in">
-  ${tabs.map(([h, t]) => `<a href="${h}" class="${active === h ? 'on' : ''}">${t}</a>`).join('')}
-  ${tabsMehr.length ? `<details class="tmehr">
-    <summary class="${tabsMehr.some(([h]) => h === active) ? 'on' : ''}">Mehr</summary>
+  ${gruppen.map(g => g.pfad
+    ? `<a href="${g.pfad}" class="${active === g.pfad ? 'on' : ''}">${esc(g.titel)}</a>`
+    : `<details class="tmehr">
+    <summary class="${g.eintraege.some(([h]) => h === active) ? 'on' : ''}">${esc(g.titel)}</summary>
     <div class="tliste">
-      ${tabsMehr.map(([h, t]) =>
-        `<a href="${h}" class="${active === h ? 'on' : ''}">${t}</a>`).join('')}
-    </div></details>` : ''}
+      ${g.eintraege.map(([h, t]) =>
+        `<a href="${h}" class="${active === h ? 'on' : ''}">${esc(t)}</a>`).join('')}
+    </div></details>`).join('')}
 </div></nav>
 <main>${body}</main>
 
@@ -428,8 +477,13 @@ ${rolle === 'demo' ? `<div class="demobar">Demo-Zugang · nur ansehen ·
     <summary>${svg('mehr')}<span>Mehr</span></summary>
     <div class="sheet-bg"></div>
     <div class="sheet">
-      ${nav.map(([h, t, ic]) =>
-        `<a href="${h}" class="${active === h ? 'on' : ''}">${svg(ic)}<span>${t}</span></a>`).join('')}
+      ${gruppen.map(g => g.pfad
+        ? `<a href="${g.pfad}" class="${active === g.pfad ? 'on' : ''}">
+             ${svg(eintrag(g.pfad)[2])}<span>${esc(g.titel)}</span></a>`
+        : `<div class="grp">${esc(g.titel)}</div>
+           ${g.eintraege.map(([h, t, ic]) =>
+             `<a href="${h}" class="${active === h ? 'on' : ''}">
+                ${svg(ic)}<span>${esc(t)}</span></a>`).join('')}`).join('')}
       <a href="/admin/logout" class="ab">${svg('aus')}<span>Abmelden</span></a>
     </div>
   </details>

@@ -135,7 +135,7 @@ export async function onRequestGet({ request, env, data }) {
   const ohnePreis = zeilen.length && !zeilen.some(z => z.ep_cent);
 
   const body = `
-    <h1>Preis-Radar</h1>
+    <h1>Einkaufspreise</h1>
     <p class="sub">${esc(monatLabel(von))} bis ${esc(monatLabel(bis))} —
        was der Einkauf gekostet hat und was sich bewegt.</p>
     ${fehler ? `<div class="msg err">${esc(fehler)}</div>` : ''}
@@ -239,9 +239,9 @@ export async function onRequestGet({ request, env, data }) {
            tatsächlich in die Gerichte gegangen ist, sagt erst die
            <a href="/admin/inventur">Inventur</a>.</p>
         <p style="margin:0">Die Schwelle für den Alarm steht bei ${proz} % und lässt
-           sich unter <a href="/admin/lager">Lager</a> ändern.</p>
+           sich unter <a href="/admin/lager">Artikel &amp; Lieferanten</a> ändern.</p>
       </div>
     </details>`;
 
-  return layout({ user: data?.user, title: 'Preis-Radar', active: '/admin/preise', body });
+  return layout({ user: data?.user, title: 'Einkaufspreise', active: '/admin/preise', body });
 }

@@ -201,12 +201,17 @@ const GESPERRT = {
   chef: [],
   /* Service nimmt Ware an und pflegt dafür auch die Stammdaten — aber die
      Auswertung, in der Einkaufspreise und Monatsausgaben stehen, bleibt zu. */
+  /* Trinkgeld stand hier lange nicht drin, weil die Seite ohnehin hinter der
+     Chef-PIN liegt. Beim Umbau des Menüs fiel auf, dass sie deshalb trotzdem
+     im Menü stand — eine Zeile, hinter der für Service und Demo nur eine
+     PIN-Abfrage wartet. Wer Löhne und Trinkgeldanteile nicht sehen darf,
+     braucht den Punkt auch nicht angeboten zu bekommen. */
   service: ['/admin/karte', '/admin/gericht', '/admin/tische', '/admin/zeiten', '/admin/personal',
             '/admin/arbeitszeit', '/admin/zeitzettel', '/admin/stempel', '/admin/benutzer',
-            '/admin/preise', '/admin/inventur'],
+            '/admin/preise', '/admin/inventur', '/admin/trinkgeld'],
   demo: ['/admin/karte', '/admin/gericht', '/admin/suche', '/admin/zettel', '/admin/neu', '/admin/r', '/admin/warteliste',
          '/admin/personal', '/admin/arbeitszeit', '/admin/zeitzettel', '/admin/stempel',
-         '/admin/benutzer', '/admin/preise', '/admin/inventur',
+         '/admin/benutzer', '/admin/preise', '/admin/inventur', '/admin/trinkgeld',
          /* Der Demo-Zugang zeigt das Reservierungssystem. Einkaufspreise und
             Lieferantenkonditionen des Hauses gehören nicht dazu. */
          '/admin/ware', '/admin/lager', '/admin/warenblatt', '/admin/aufsteller'],

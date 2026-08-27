@@ -157,7 +157,7 @@ export async function onRequestGet({ request, env, data }) {
         <p class="meta" style="margin:0 0 1rem">Damit die Stempeluhr läuft, bleibt das Küchentablet
            dauerhaft angemeldet. Ohne eine zweite Sperre kann dort jeder auf „Personal" tippen und
            die Stundenlöhne der Kollegen lesen. Mit PIN fragt das Panel vor <b>Personal</b>,
-           <b>Arbeitszeit</b>, <b>Zeitzettel</b>, <b>Trinkgeld</b> und <b>Benutzer</b> nach —
+           <b>Arbeitszeit</b>, <b>Stundennachweis</b>, <b>Trinkgeld</b> und <b>Benutzer</b> nach —
            danach ist ${DAUER_MIN} Minuten offen. Die Stempeluhr bleibt frei, sonst kann das Team
            nicht mehr stempeln.</p>
         <form method="post" action="/admin/personal" class="grid">
@@ -237,7 +237,7 @@ export async function onRequestPost({ request, env, data }) {
       return geheimnis({
         user: data?.user, titel: 'Chef-PIN gesetzt',
         zeilen: [['Chef-PIN', neu]],
-        hinweis: 'Gilt ab sofort für Personal, Arbeitszeit, Zeitzettel, Trinkgeld und Benutzer. '
+        hinweis: 'Gilt ab sofort für Personal, Arbeitszeit, Stundennachweis, Trinkgeld und Benutzer. '
                + 'Sie wird nur verschlüsselt gespeichert und lässt sich nicht wieder anzeigen — '
                + 'am besten jetzt notieren.',
         zurueck: '/admin/personal',

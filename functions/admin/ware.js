@@ -155,7 +155,7 @@ export async function onRequestGet(context) {
       <a class="btn ghost" href="/admin/ware?m=${monatVerschieben(monat, 1)}">→</a>
       <span class="spacer"></span>
       <a class="btn ghost" href="/admin/warenblatt?m=${esc(monat)}">Kontrollblatt drucken</a>
-      <a class="btn ghost" href="/admin/lager">Lager</a>
+      <a class="btn ghost" href="/admin/lager">Artikel &amp; Lieferanten</a>
     </div>
 
     <div class="stats">
@@ -287,7 +287,7 @@ async function formular({ request, env, data }, id) {
 
     ${!artikel.length && !fehler ? `<div class="msg warn">Es sind noch keine Artikel angelegt.
       Die Hygienekontrolle lässt sich trotzdem erfassen — für Positionen und Preise
-      bitte zuerst unter <a href="/admin/lager">Lager</a> ein paar Artikel anlegen.</div>` : ''}
+      bitte zuerst unter <a href="/admin/lager">Artikel &amp; Lieferanten</a> ein paar Artikel anlegen.</div>` : ''}
 
     <script type="application/json" id="waredaten">${jsonBlock(jsDaten)}</script>
 

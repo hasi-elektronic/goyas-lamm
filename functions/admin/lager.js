@@ -171,7 +171,7 @@ export async function onRequestGet({ request, env, data }) {
     </div>`;
 
   const body = `
-    <h1>Lager &amp; Lieferanten</h1>
+    <h1>Artikel &amp; Lieferanten</h1>
     <p class="sub">Die Stammdaten hinter dem Wareneingang. Wer hier anfängt, fängt
        am richtigen Ende an.</p>
     ${fehler ? `<div class="msg err">${esc(fehler)}</div>` : ''}
@@ -179,7 +179,7 @@ export async function onRequestGet({ request, env, data }) {
 
     <div class="row" style="margin-bottom:1.4rem">
       <a class="btn" href="/admin/ware">Wareneingang</a>
-      <a class="btn ghost" href="/admin/preise">Preis-Radar</a>
+      <a class="btn ghost" href="/admin/preise">Einkaufspreise</a>
       <a class="btn ghost" href="/admin/inventur">Inventur</a>
       <span class="spacer"></span>
       <a class="btn ghost" href="/admin/lager?${gruppe ? `g=${esc(gruppe)}&` : ''}${zeigeAlle ? '' : 'alle=1'}">
@@ -316,7 +316,7 @@ export async function onRequestGet({ request, env, data }) {
       </div>
     </details>`;
 
-  return layout({ user: data?.user, title: 'Lager', active: '/admin/lager', body });
+  return layout({ user: data?.user, title: 'Artikel & Lieferanten', active: '/admin/lager', body });
 }
 
 /* ------------------------------------------------------------------ */

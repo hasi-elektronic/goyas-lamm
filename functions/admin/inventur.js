@@ -157,7 +157,7 @@ export async function onRequestGet({ request, env, data }) {
       <a class="btn ghost" href="/admin/inventur?m=${monatVerschieben(monat, 1)}">${
         esc(monatLabel(monatVerschieben(monat, 1)).split(' ')[0])} →</a>
       <span class="spacer"></span>
-      <a class="btn ghost" href="/admin/preise">Preis-Radar</a>
+      <a class="btn ghost" href="/admin/preise">Einkaufspreise</a>
       <a class="btn ghost" href="/admin/ware?m=${esc(monat)}">Wareneingang</a>
     </div>
 
@@ -210,7 +210,7 @@ export async function onRequestGet({ request, env, data }) {
                        text-transform:uppercase;color:var(--muted)">${esc(o || 'Ohne Lagerort')}</h2>
             ${artikel.filter(a => (a.lagerort || null) === o).map(zeile).join('')}
           `).join('') : `<div class="empty">Noch keine Artikel angelegt.<br>
-            <span class="meta">Unter <a href="/admin/lager">Lager</a> anfangen.</span></div>`}
+            <span class="meta">Unter <a href="/admin/lager">Artikel &amp; Lieferanten</a> anfangen.</span></div>`}
 
           ${artikel.length ? `<div class="row end" style="margin-top:1.4rem">
             <button class="btn" type="submit">Zählung speichern</button></div>` : ''}
