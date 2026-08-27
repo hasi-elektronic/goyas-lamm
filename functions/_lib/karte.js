@@ -27,7 +27,10 @@ export async function loadKarte(db, { nurAktive = true } = {}) {
            FROM menu_groups ${nurAktive ? 'WHERE active = 1' : ''} ORDER BY sort, title`).all()).results || [];
       const i = (await db.prepare(
         `SELECT id,group_id,name,descr,price,sort,active${
-          mitExtra ? ',bild,name_en,descr_en,highlight' : ''}
+          mitExtra ? `,bild,name_en,descr_en,highlight,
+             allergene,zusatz,marken,kennz_ok,
+             herkunft,herkunft_en,reifung,reifung_en,
+             garstufe,garstufe_en,wein,geschichte,geschichte_en` : ''}
            FROM menu_items ORDER BY sort, name`).all()).results || [];
       return [g, i];
     };

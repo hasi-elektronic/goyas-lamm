@@ -45,6 +45,8 @@ function gerichtZeile(i) {
           <input type="hidden" name="id" value="${esc(i.id)}">
           <button class="btn sm danger" type="submit">
             ${i.active ? 'Heute nicht verfügbar' : 'Wieder anbieten'}</button></form>
+        <a class="btn sm ghost" href="/admin/gericht?id=${encodeURIComponent(i.id)}"
+           title="Allergene, Zusatzstoffe, Herkunft, Reifung">Details</a>
         <form method="post" action="/admin/karte" style="display:inline">
           <input type="hidden" name="do" value="${i.highlight ? 'schau-aus' : 'schau-an'}">
           <input type="hidden" name="id" value="${esc(i.id)}">
@@ -57,6 +59,7 @@ function gerichtZeile(i) {
           <input type="hidden" name="id" value="${esc(i.id)}">
           <button class="btn sm danger" type="submit">Löschen</button></form>
         ${i.active ? '' : '<span class="pill">steht nicht auf der Website</span>'}
+        ${i.kennz_ok ? '<span class="pill web">Kennzeichnung freigegeben</span>' : ''}
       </div>
     </td></tr>`;
 }

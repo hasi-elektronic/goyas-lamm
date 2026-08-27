@@ -27,6 +27,11 @@
  */
 import { esc, HOUSE, nowBerlin, weekday, HOURS } from './_lib/core.js';
 import { loadKarte } from './_lib/karte.js';
+import { jsonBlock } from './_lib/warenui.js';
+import {
+  ALLERGENE, ZUSATZSTOFFE, MARKEN,
+  allergenListe, zusatzListe, markenListe, allergenKurz, zusatzKurz, istFreigegeben,
+} from './_lib/kennzeichnung.js';
 
 const TTL = 60;                    // Sekunden, die eine gerenderte Karte hält
 let cache = { at: 0, html: {} };   // je Sprache eine Fassung
@@ -47,6 +52,23 @@ const T = {
     echt: 'Echte Aufnahme',
     sprache: 'English', spracheKurz: 'EN',
     stand: 'Stand',
+    mehr: 'Details ansehen',
+    schliessen: 'Schließen',
+    allergene: 'Allergene',
+    zusatz: 'Zusatzstoffe',
+    herkunft: 'Herkunft',
+    reifung: 'Reifung',
+    garstufe: 'Empfehlung',
+    wein: 'Dazu passt',
+    geschichte: 'Aus unserer Küche',
+    keineKennz: 'Für dieses Gericht ist die Kennzeichnung noch nicht hinterlegt. '
+              + 'Fragen Sie uns bitte — wir sagen Ihnen genau, was drin ist.',
+    ohneAllergen: 'Enthält keines der 14 kennzeichnungspflichtigen Allergene.',
+    ohneZusatz: 'Ohne kennzeichnungspflichtige Zusatzstoffe.',
+    legende: 'Was die Buchstaben und Zahlen bedeuten',
+    legendeHinweis: 'Buchstaben stehen für die 14 kennzeichnungspflichtigen Allergene, '
+                  + 'Zahlen für Zusatzstoffe. Steht bei einem Gericht nichts, ist die '
+                  + 'Kennzeichnung noch nicht hinterlegt — fragen Sie uns bitte.',
   },
   en: {
     titel: 'Menu',
@@ -59,6 +81,23 @@ const T = {
     echt: 'Real photograph',
     sprache: 'Deutsch', spracheKurz: 'DE',
     stand: 'Updated',
+    mehr: 'View details',
+    schliessen: 'Close',
+    allergene: 'Allergens',
+    zusatz: 'Additives',
+    herkunft: 'Origin',
+    reifung: 'Ageing',
+    garstufe: 'We recommend',
+    wein: 'Goes well with',
+    geschichte: 'From our kitchen',
+    keineKennz: 'Labelling for this dish is not on file yet. Please ask us — '
+              + 'we will tell you exactly what is in it.',
+    ohneAllergen: 'Contains none of the 14 allergens subject to declaration.',
+    ohneZusatz: 'No additives subject to declaration.',
+    legende: 'What the letters and numbers mean',
+    legendeHinweis: 'Letters stand for the 14 allergens subject to declaration, '
+                  + 'numbers for additives. Where a dish shows nothing, the labelling '
+                  + 'is not on file yet — please ask us.',
   },
 };
 
@@ -167,7 +206,9 @@ a{color:var(--gold)}
 .gericht .preis span{display:block;font-size:.78rem;font-weight:400;color:var(--gedaempft);
   text-align:right;line-height:1.45}
 .gericht .beschreibung{color:#B4AAA0;font-size:.88rem;line-height:1.5;margin:0}
-.gericht .echt{position:absolute;top:.5rem;left:.5rem;z-index:2;
+/* Nicht auf .gericht einschränken: dieselbe Marke sitzt auch auf dem Bild in
+   der Detailtafel, und dort hing sie sonst unformatiert am linken Rand. */
+.echt{position:absolute;top:.5rem;left:.5rem;z-index:2;
   font-size:.54rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;
   color:var(--creme);background:rgba(11,10,8,.72);backdrop-filter:blur(4px);
   border:1px solid rgba(244,239,228,.2);border-radius:100px;padding:.16rem .45rem}
@@ -222,6 +263,98 @@ a{color:var(--gold)}
 .js .hero .inhalt > *:nth-child(4){animation-delay:.42s}
 @keyframes rein{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
 
+/* ---------- Kennzeichen am Gericht ---------- */
+/* Buchstaben und Zahlen stehen fest im HTML, nicht erst in der Tafel. Zwei
+   Gründe: Zusatzstoffe müssen schriftlich kenntlich sein, und ohne
+   JavaScript wäre die Angabe sonst weg. Die Tafel erklärt sie nur schöner. */
+.kennz{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-top:.1rem}
+.kennz .code{font-size:.72rem;letter-spacing:.08em;color:var(--gedaempft);
+  font-variant-numeric:tabular-nums}
+.kennz .marke{font-size:.86rem;line-height:1}
+.gericht .mehr{margin-top:.35rem;background:none;border:0;padding:0;font:inherit;
+  font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;
+  color:var(--gold);cursor:pointer;text-align:left;display:inline-flex;
+  align-items:center;gap:.35rem;min-height:32px}
+.gericht .mehr::after{content:"›";font-size:1.1em;line-height:1}
+.gericht .mehr:hover{color:var(--creme)}
+
+/* ---------- Detailtafel ---------- */
+dialog.tafel{border:0;padding:0;background:transparent;max-width:100%;max-height:100%;
+  width:100%;height:100%;margin:0;overflow:visible;color:var(--creme)}
+dialog.tafel::backdrop{background:rgba(6,5,4,.72);backdrop-filter:blur(3px)}
+.tafel-innen{position:fixed;left:0;right:0;bottom:0;max-height:92svh;overflow-y:auto;
+  background:var(--nacht-2);border-top:1px solid var(--rand);
+  border-radius:20px 20px 0 0;box-shadow:0 -24px 60px -20px rgba(0,0,0,.9);
+  padding-bottom:calc(1.6rem + env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling:touch}
+.js dialog.tafel[open] .tafel-innen{animation:rauf .34s cubic-bezier(.2,.7,.2,1)}
+@keyframes rauf{from{transform:translateY(100%)}to{transform:none}}
+.tafel-griff{position:sticky;top:0;z-index:2;padding:.7rem 0 .5rem;
+  background:linear-gradient(180deg,var(--nacht-2) 62%,transparent);
+  display:flex;justify-content:center}
+.tafel-griff i{width:42px;height:4px;border-radius:100px;background:var(--rand);display:block}
+.tafel-zu{position:absolute;top:.7rem;right:.9rem;z-index:3;width:36px;height:36px;
+  border-radius:50%;border:1px solid var(--rand);background:rgba(11,10,8,.72);
+  color:var(--creme);font:inherit;font-size:1rem;line-height:1;cursor:pointer;
+  display:grid;place-items:center}
+.tafel-zu:hover{border-color:var(--gold);color:var(--gold)}
+.tafel-bild{aspect-ratio:3/2;overflow:hidden;background:#0F0D0C;margin:0 0 1.2rem;
+  position:relative}
+.tafel-bild img{width:100%;height:100%;object-fit:cover}
+/* Auf dem großen Bild darf die Marke etwas mehr Luft und Größe haben als auf
+   einer 112px-Vorschau. */
+.tafel-bild .echt{top:.8rem;left:.8rem;font-size:.62rem;padding:.22rem .6rem}
+.tafel-koerper{width:min(100% - 2.4rem,700px);margin-inline:auto}
+.tafel-kopf{display:flex;align-items:baseline;gap:1rem;margin-bottom:.5rem}
+.tafel-kopf h2{font-family:var(--serif);font-weight:400;font-size:1.7rem;line-height:1.15;
+  margin:0;flex:1;min-width:0}
+.tafel-kopf .preis{font-size:1.05rem;font-weight:700;color:var(--gold);white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+.tafel-kopf .preis span{display:block;font-size:.8rem;font-weight:400;color:var(--gedaempft);
+  text-align:right;line-height:1.45}
+.tafel-lead{color:#B4AAA0;margin:0 0 1.4rem;line-height:1.55}
+.tafel-marken{display:flex;gap:.45rem;flex-wrap:wrap;margin:0 0 1.4rem}
+.tafel-marken span{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;
+  font-weight:700;color:var(--creme);border:1px solid var(--rand);border-radius:100px;
+  padding:.32rem .7rem;display:inline-flex;align-items:center;gap:.35rem}
+.block{border-top:1px solid var(--rand);padding:1.1rem 0}
+.block:first-of-type{border-top:0}
+.block h3{font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;font-weight:700;
+  color:var(--gold);margin:0 0 .5rem}
+.block p{margin:0;line-height:1.6}
+.block ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.3rem}
+.block li{display:flex;gap:.7rem;line-height:1.5}
+.block li b{color:var(--gold);font-weight:700;min-width:1.6rem;font-variant-numeric:tabular-nums}
+.block .leer{color:var(--gedaempft)}
+.tafel-hinweis{color:var(--gedaempft);font-size:.86rem;line-height:1.6;
+  border-top:1px solid var(--rand);padding:1.1rem 0 0;margin:0}
+
+/* ---------- Legende ---------- */
+.legende{border-top:1px solid var(--rand);padding:2.4rem 0 0;margin-top:2.4rem}
+.legende h2{font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;font-weight:700;
+  color:var(--gold);margin:0 0 .8rem}
+.legende > p{color:var(--gedaempft);font-size:.86rem;line-height:1.6;margin:0 0 1.4rem;
+  max-width:62ch}
+.legende-spalten{display:grid;gap:1.6rem}
+.legende ul{margin:0;padding:0;list-style:none;
+  columns:2;column-gap:1.6rem;font-size:.84rem;line-height:1.7;color:#B4AAA0}
+.legende li{break-inside:avoid}
+.legende li b{color:var(--gold);font-weight:700}
+.legende h3{font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--gedaempft);margin:0 0 .5rem;font-weight:700}
+
+@media(min-width:620px){
+  .tafel-innen{left:50%;right:auto;transform:translateX(-50%);width:min(100% - 3rem,720px);
+    bottom:0;border-radius:20px 20px 0 0;max-height:88svh}
+  .js dialog.tafel[open] .tafel-innen{animation:rauf2 .34s cubic-bezier(.2,.7,.2,1)}
+  @keyframes rauf2{from{transform:translate(-50%,100%)}to{transform:translateX(-50%)}}
+  .legende-spalten{grid-template-columns:1fr 1fr;gap:2.4rem}
+  .legende ul{columns:1}
+}
+@media(prefers-reduced-motion:reduce){
+  .js dialog.tafel[open] .tafel-innen{animation:none}
+}
+
 @media(min-width:620px){
   .liste{grid-template-columns:repeat(2,minmax(0,1fr))}
   /* Breitere Vorschau: 112 px sind am Telefon richtig, neben einer 660 px
@@ -269,19 +402,113 @@ function preisHtml(p) {
   return `<div class="preis">${esc(erste)}${rest.map(z => `<span>${esc(z)}</span>`).join('')}</div>`;
 }
 
+/** Sprachfassung eines Feldes, mit Rückfall auf Deutsch. */
+const feld = (i, name, sprache) =>
+  (sprache === 'en' ? (i[name + '_en'] || i[name]) : i[name]) || null;
+
+/**
+ * Hat das Gericht überhaupt etwas zu erzählen?
+ * Ohne Inhalt keinen Knopf zeigen — ein „Details ansehen", hinter dem nichts
+ * steht, ist ärgerlicher als gar keiner.
+ */
+const hatDetails = i => !!(istFreigegeben(i) || i.herkunft || i.reifung
+  || i.garstufe || i.wein || i.geschichte || markenListe(i.marken).length);
+
 function gerichtHtml(i, sprache, gross) {
   const name = (sprache === 'en' && i.name_en) || i.name;
   const beschr = sprache === 'en' ? (i.descr_en || i.descr) : i.descr;
   const bild = i.bild || null;
   const t = T[sprache];
+
+  /* Kennzeichen fest im HTML, nicht erst in der Tafel: Zusatzstoffe müssen
+     schriftlich kenntlich sein, und ohne JavaScript wäre die Angabe sonst
+     verschwunden. Die Tafel schreibt sie nur aus. */
+  const al = istFreigegeben(i) ? allergenListe(i.allergene) : [];
+  const zu = istFreigegeben(i) ? zusatzListe(i.zusatz) : [];
+  const mk = markenListe(i.marken);
+  const codes = [al.length ? allergenKurz(al) : '', zu.length ? zusatzKurz(zu) : '']
+    .filter(Boolean).join(' · ');
+
   return `<article class="gericht auf${bild ? ' mitbild' : ''}${bild && gross ? ' gross' : ''}">
     ${bild ? `<div class="bild">${ECHTE_FOTOS.has(bild)
         ? `<span class="echt">${esc(t.echt)}</span>` : ''}${bildTag(bild, gross)}</div>` : ''}
     <div class="txt">
       <div class="zeile"><h4>${esc(name)}</h4>${preisHtml(i.price)}</div>
       ${beschr ? `<p class="beschreibung">${esc(beschr)}</p>` : ''}
+      ${codes || mk.length ? `<div class="kennz">
+        ${mk.map(k => `<span class="marke" title="${esc(MARKEN[k][sprache])}"
+          >${MARKEN[k].zeichen}</span>`).join('')}
+        ${codes ? `<span class="code">${esc(codes)}</span>` : ''}
+      </div>` : ''}
+      ${hatDetails(i) ? `<button type="button" class="mehr" data-gericht="${esc(i.id)}"
+        >${esc(t.mehr)}</button>` : ''}
     </div>
   </article>`;
+}
+
+/**
+ * Was die Tafel je Gericht braucht — als JSON in der Seite.
+ *
+ * Bewusst nicht per Nachladen: Es sind ein paar Kilobyte für die ganze Karte,
+ * und am Tisch mit schwachem Mobilfunk ist eine Tafel, die sofort aufgeht,
+ * mehr wert als ein paar gesparte Bytes.
+ */
+function tafelDaten(karte, sprache) {
+  const aus = {};
+  for (const tab of karte) {
+    for (const g of tab.groups) {
+      for (const i of g.items) {
+        if (!i.active || !hatDetails(i)) continue;
+        aus[i.id] = {
+          n: (sprache === 'en' && i.name_en) || i.name,
+          b: feld(i, 'descr', sprache),
+          p: String(i.price || '').split('\n').map(x => x.trim()).filter(Boolean),
+          bild: i.bild || null,
+          echt: i.bild ? ECHTE_FOTOS.has(i.bild) : false,
+          ok: istFreigegeben(i) ? 1 : 0,
+          al: istFreigegeben(i) ? allergenListe(i.allergene) : [],
+          zu: istFreigegeben(i) ? zusatzListe(i.zusatz) : [],
+          mk: markenListe(i.marken),
+          hk: feld(i, 'herkunft', sprache),
+          rf: feld(i, 'reifung', sprache),
+          gs: feld(i, 'garstufe', sprache),
+          w: i.wein || null,
+          gh: feld(i, 'geschichte', sprache),
+        };
+      }
+    }
+  }
+  return aus;
+}
+
+/**
+ * Die Legende am Fuß — erklärt jeden Buchstaben und jede Zahl.
+ *
+ * Erscheint erst, wenn mindestens ein Gericht eine freigegebene Kennzeichnung
+ * hat. Eine Tabelle, die Zeichen erklärt, die auf der ganzen Karte nirgends
+ * vorkommen, ist keine Hilfe, sondern Beiwerk.
+ */
+function legendeHtml(sprache, karte) {
+  const t = T[sprache];
+  const gibtKennzeichnung = karte.some(tab => tab.groups.some(g =>
+    g.items.some(i => i.active && istFreigegeben(i))));
+  if (!gibtKennzeichnung) return '';
+  return `<section class="legende auf">
+    <h2>${esc(t.legende)}</h2>
+    <p>${esc(t.legendeHinweis)}</p>
+    <div class="legende-spalten">
+      <div>
+        <h3>${esc(t.allergene)}</h3>
+        <ul>${Object.entries(ALLERGENE).map(([k, v]) =>
+          `<li><b>${k.toUpperCase()}</b> ${esc(v[sprache])}</li>`).join('')}</ul>
+      </div>
+      <div>
+        <h3>${esc(t.zusatz)}</h3>
+        <ul>${Object.entries(ZUSATZSTOFFE).map(([k, v]) =>
+          `<li><b>${k}</b> ${esc(v[sprache])}</li>`).join('')}</ul>
+      </div>
+    </div>
+  </section>`;
 }
 
 function gruppeHtml(g, sprache) {
@@ -372,7 +599,30 @@ function seite(karte, sprache, stand) {
   </div>
 </nav>
 
-<main>${koerper}</main>
+<main>${koerper}
+  <div class="wrap">${legendeHtml(sprache, karte)}</div>
+</main>
+
+<dialog class="tafel" id="tafel" aria-label="${esc(t.mehr)}">
+  <div class="tafel-innen">
+    <button type="button" class="tafel-zu" id="tafelZu"
+      aria-label="${esc(t.schliessen)}">✕</button>
+    <div class="tafel-griff"><i></i></div>
+    <div id="tafelInhalt"></div>
+  </div>
+</dialog>
+
+<script type="application/json" id="tafeldaten">${jsonBlock({
+  g: tafelDaten(karte, sprache),
+  a: Object.fromEntries(Object.entries(ALLERGENE).map(([k, v]) => [k, v[sprache]])),
+  z: Object.fromEntries(Object.entries(ZUSATZSTOFFE).map(([k, v]) => [k, v[sprache]])),
+  m: Object.fromEntries(Object.entries(MARKEN).map(([k, v]) => [k, [v.zeichen, v[sprache]]])),
+  t: {
+    allergene: t.allergene, zusatz: t.zusatz, herkunft: t.herkunft, reifung: t.reifung,
+    garstufe: t.garstufe, wein: t.wein, geschichte: t.geschichte, echt: t.echt,
+    keineKennz: t.keineKennz, ohneAllergen: t.ohneAllergen, ohneZusatz: t.ohneZusatz,
+  },
+})}</script>
 
 <footer class="fuss">
   <div class="wrap">
@@ -440,6 +690,112 @@ const SKRIPT = `
     }, { rootMargin: '-45% 0px -50% 0px' });
     ziele.forEach(function(z){ aktiv.observe(z) });
   }
+
+  /* --- Detailtafel ------------------------------------------------- */
+  var D = {}; try { D = JSON.parse(document.getElementById('tafeldaten').textContent) || {}; } catch(e) {}
+  var tafel = document.getElementById('tafel');
+  var inhalt = document.getElementById('tafelInhalt');
+  var zurueckZu = null;
+
+  function h(s){ return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+  function block(titel, innen){
+    return '<div class="block"><h3>' + h(titel) + '</h3>' + innen + '</div>';
+  }
+
+  function bau(g){
+    var t = D.t || {}, s = '';
+
+    if (g.bild) {
+      s += '<div class="tafel-bild">'
+        + (g.echt ? '<span class="echt">' + h(t.echt) + '</span>' : '')
+        + '<picture>'
+        + '<source type="image/webp" srcset="/assets/karte/' + h(g.bild) + '-900.webp 900w, '
+        + '/assets/karte/' + h(g.bild) + '-1400.webp 1400w" sizes="(min-width:620px) 720px, 100vw">'
+        + '<img src="/assets/karte/' + h(g.bild) + '-900.jpg" alt="" width="900" height="600">'
+        + '</picture></div>';
+    }
+
+    s += '<div class="tafel-koerper">';
+    s += '<div class="tafel-kopf"><h2>' + h(g.n) + '</h2>';
+    if (g.p && g.p.length) {
+      s += '<div class="preis">' + h(g.p[0])
+        + g.p.slice(1).map(function(z){ return '<span>' + h(z) + '</span>' }).join('')
+        + '</div>';
+    }
+    s += '</div>';
+    if (g.b) s += '<p class="tafel-lead">' + h(g.b) + '</p>';
+
+    if (g.mk && g.mk.length) {
+      s += '<div class="tafel-marken">' + g.mk.map(function(k){
+        var m = (D.m || {})[k] || ['', k];
+        return '<span>' + m[0] + ' ' + h(m[1]) + '</span>';
+      }).join('') + '</div>';
+    }
+
+    /* Erzählung zuerst — das ist der Grund, warum jemand tippt. */
+    if (g.hk) s += block(t.herkunft, '<p>' + h(g.hk) + '</p>');
+    if (g.rf) s += block(t.reifung, '<p>' + h(g.rf) + '</p>');
+    if (g.gs) s += block(t.garstufe, '<p>' + h(g.gs) + '</p>');
+    if (g.w)  s += block(t.wein, '<p>' + h(g.w) + '</p>');
+    if (g.gh) s += block(t.geschichte, '<p>' + h(g.gh) + '</p>');
+
+    /* Kennzeichnung. Nur wenn die Küche freigegeben hat — sonst der Hinweis,
+       dass man fragen soll. Eine leere Liste ohne Freigabe würde wie „enthält
+       nichts" aussehen, und das wäre die gefährlichste Fehlanzeige von allen. */
+    if (g.ok) {
+      s += block(t.allergene, g.al.length
+        ? '<ul>' + g.al.map(function(k){
+            return '<li><b>' + k.toUpperCase() + '</b> ' + h((D.a || {})[k] || k) + '</li>';
+          }).join('') + '</ul>'
+        : '<p class="leer">' + h(t.ohneAllergen) + '</p>');
+      s += block(t.zusatz, g.zu.length
+        ? '<ul>' + g.zu.map(function(n){
+            return '<li><b>' + n + '</b> ' + h((D.z || {})[n] || n) + '</li>';
+          }).join('') + '</ul>'
+        : '<p class="leer">' + h(t.ohneZusatz) + '</p>');
+    } else {
+      s += '<p class="tafel-hinweis">' + h(t.keineKennz) + '</p>';
+    }
+
+    s += '</div>';
+    return s;
+  }
+
+  function oeffne(id){
+    var g = (D.g || {})[id];
+    if (!g || !tafel) return;
+    inhalt.innerHTML = bau(g);
+    var innen = tafel.querySelector('.tafel-innen');
+    if (innen) innen.scrollTop = 0;
+    if (tafel.showModal) tafel.showModal(); else tafel.setAttribute('open', '');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function schliesse(){
+    if (!tafel) return;
+    if (tafel.close) tafel.close(); else tafel.removeAttribute('open');
+  }
+
+  document.addEventListener('click', function(e){
+    var k = e.target.closest ? e.target.closest('[data-gericht]') : null;
+    if (k) { zurueckZu = k; oeffne(k.dataset.gericht); return; }
+    /* Klick auf den abgedunkelten Rand schließt — das dialog-Element meldet
+       den Klick auf sich selbst, nicht auf den Inhalt darin. */
+    if (e.target === tafel) schliesse();
+  });
+
+  var zu = document.getElementById('tafelZu');
+  if (zu) zu.addEventListener('click', schliesse);
+
+  if (tafel) tafel.addEventListener('close', function(){
+    document.body.style.overflow = '';
+    /* Zurück auf den Knopf, von dem aus geöffnet wurde — sonst steht der
+       Fokus am Seitenanfang und man scrollt sich neu zurecht. */
+    if (zurueckZu && zurueckZu.focus) { zurueckZu.focus(); zurueckZu = null; }
+  });
 })();
 `;
 
