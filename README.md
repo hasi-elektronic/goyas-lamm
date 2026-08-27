@@ -152,14 +152,37 @@ Seiten — eine vergessene Prüfung kann so keine Lücke aufreißen.
 
 | Rolle | Darf |
 |---|---|
-| `inhaber` | alles, inklusive Benutzerverwaltung |
-| `service` | Reservierungen, Warteliste, Speisekarte, Küchenzettel; keine Personalseiten |
-| `kueche` | Küchenzettel und Tagesansicht |
-| `demo` | nur lesen, personenbezogene Daten maskiert, Wartelisten- und Personalseiten gesperrt |
+| `chef` | alles — Reservierungen, Speisekarte, Tische, Personal, Arbeitszeit, Benutzer |
+| `service` | Reservierungen pflegen, Warteliste, Tagesliste, Küchenzettel, Auswertung; keine Speisekarte, keine Tische, kein Personal |
+| `demo` | nur ansehen; Gastnamen abgekürzt, keine Telefonnummern, Wartelisten- und Personalseiten gesperrt |
 
 Passwörter liegen als **PBKDF2-HMAC-SHA256 mit 100 000 Runden** in der Tabelle `users`,
 nie im Klartext. `ADMIN_USER`/`ADMIN_PASS` bleiben als Rückfallzugang bestehen, falls die
 Datenbank einmal leer ist.
+
+### Meldung bei neuen Reservierungen
+
+Kommt online eine Reservierung herein, meldet sich das Panel von selbst: Konfetti, ein
+springendes Lamm und eine Karte mit Name, Tag, Uhrzeit und Personenzahl. Nach acht Sekunden
+schließt sie sich, ein Tippen geht auch. Grund für das Ganze ist nüchtern — das Tablet steht
+den ganzen Abend auf derselben Seite, ohne Meldung fällt eine Buchung erst auf, wenn jemand
+nachsieht.
+
+- Das Panel fragt alle 20 Sekunden `/admin/melder` — nur solange die Seite sichtbar ist.
+  Gepollt statt dauerhaft verbunden, weil Pages Functions zustandslos sind; eine offene
+  Verbindung bräuchte Durable Objects und würde jeden WLAN-Aussetzer nicht überleben.
+- **Nur Buchungen des Gastes** (`source = 'web'`) und neue Wartelisten-Einträge melden sich.
+  Was das Personal selbst einträgt, bleibt still.
+- Beim Laden der Seite holt sich das Panel nur einen Startpunkt — alte Buchungen fliegen
+  nicht noch einmal durchs Bild. Lag das Tablet länger als eine Stunde im Standby, wird
+  ebenfalls nichts nachgemeldet.
+- **Ton** ist je Gerät abschaltbar (Lautsprecher-Schalter im Kopf, Einstellung im Browser
+  gespeichert). Die Fanfare wird per Web Audio erzeugt — keine Tondatei.
+- `prefers-reduced-motion` schaltet Konfetti und Animation ab, die Meldung bleibt.
+- Für die Demo-Rolle sind Gastname abgekürzt und die Anmerkung leer.
+
+Zum Ausprobieren ohne echten Gast: `/admin?probe=1` aufrufen oder in der Konsole
+`goyaProbe()` (bzw. `goyaProbe('warteliste')`).
 
 ### Arbeitszeiterfassung
 

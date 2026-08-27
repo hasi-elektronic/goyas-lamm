@@ -1,6 +1,7 @@
 /** Gemeinsames Layout und Bausteine für den Admin-Bereich. */
 import { esc, formatDateDE, nowBerlin, WEEKDAY_DE, weekday } from './core.js';
 import { darfSeite, darfPersonendaten, kuerzeName, ROLLEN } from './auth.js';
+import { FANFARE_CSS, fanfareMarkup, tonSchalter } from './fanfare.js';
 
 export const CSS = `
 :root{
@@ -292,6 +293,11 @@ tr.noshow td.nm a{text-decoration:line-through;text-decoration-color:var(--wine)
   table.stack td.det{grid-column:1 / -1;grid-row:2}
   table.stack td.act{grid-column:1 / -1;grid-row:3;text-align:left;margin-top:.4rem}
 }
+
+/* nur für Screenreader */
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0 0 0 0);white-space:nowrap;border:0}
+${FANFARE_CSS}
 `;
 
 /* Kleine Strichzeichnungen — inline, damit kein zusätzlicher Request nötig ist. */
@@ -369,6 +375,7 @@ export function layout({ title, active, body, status = 200, user = null }) {
     <b>Reservierungen</b>
   </a>
   <div class="wer">
+    ${tonSchalter()}
     ${user ? `<span class="nm">${esc(user.name)}</span>
       ${rolle !== 'chef' ? `<span class="ro">${esc(ROLLEN[rolle]?.label || rolle)}</span>` : ''}` : ''}
     <a class="out" href="/admin/logout">Abmelden</a>
@@ -403,6 +410,7 @@ ${rolle === 'demo' ? `<div class="demobar">Demo-Zugang · nur ansehen ·
     </div>
   </details>
 </nav>
+${fanfareMarkup()}
 </body></html>`,
     { status, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } }
   );
