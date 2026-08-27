@@ -21,7 +21,10 @@ body{margin:0;background:#f2f1ea;color:#14120F;
 .bar button{background:#6D1826;border-color:#6D1826;color:#fff}
 .bar .sp{flex:1}
 .sheet{width:min(100% - 1.4rem,900px);margin:1.2rem auto 4rem;background:#fff;
-  border:1px solid #d9d3c4;padding:1.6rem 1.5rem 2rem}
+  border:1px solid #d9d3c4;padding:1.6rem 1.5rem 2rem;
+  /* Am Handy scrollt das Blatt in seinem eigenen Kasten statt die ganze Seite:
+     acht Spalten passen auf kein Telefon, und der Zettel ist für A4 gemacht. */
+  overflow-x:auto}
 /* Briefkopf: Logo links, Anschrift rechts — das Blatt geht unterschrieben aus
    dem Haus, also soll man auf den ersten Blick sehen, von wem es kommt. */
 .brief{display:flex;justify-content:space-between;align-items:flex-start;gap:1.4rem;
@@ -53,21 +56,48 @@ tfoot td{border-top:2px solid #14120F;border-bottom:0;font-weight:700;padding-to
 .unterschrift .lin{border-bottom:1px solid #14120F;height:34px}
 .unterschrift span{font-size:.72rem;color:#6E675A}
 .fuss{margin-top:1.6rem;font-size:.7rem;color:#9b9285;line-height:1.6}
+/* Laufende Fußzeile — nur im Druck. Am Bildschirm steht alles ohnehin untereinander. */
+/* Das Blatt liegt in einer Tabelle, damit die Fußzeile im Druck auf jeder Seite
+   wiederholt wird. Am Bildschirm soll man davon nichts merken. */
+.blatt{width:100%;border-collapse:collapse}
+.blatt > tbody > tr > td,.blatt > tfoot > tr > td{padding:0;border:0}
+.laufzeile{display:none}
 @media print{
-  @page{size:A4 portrait;margin:12mm}
+  /* Unten mehr Rand: dort läuft die Fußzeile jeder Seite. */
+  @page{size:A4 portrait;margin:12mm 12mm 24mm}
   body{background:#fff}
   .bar{display:none}
-  .sheet{width:auto;margin:0;border:0;padding:0}
+  .sheet{width:auto;margin:0;border:0;padding:0;overflow:visible}
   /* Nicht die ganze Polsterung wegnehmen: bei acht Spalten kleben sonst
      „Dezimal" und „Hinweis" aneinander („5,17korrigiert"). Aussen buendig,
      innen ein schmaler Abstand. */
   td,th{padding-left:0;padding-right:.55rem}
   td:last-child,th:last-child{padding-right:0}
   tr{break-inside:avoid}
+  /* Kopfzeile der Tabelle auf jeder Seite wiederholen — sonst steht die zweite
+     Seite ohne Spaltenbeschriftung da. */
+  thead{display:table-header-group}
+  tfoot{display:table-row-group}
   /* Ohne das lassen manche Browser Bilder und Flächen beim Drucken weg. */
   .brief{-webkit-print-color-adjust:exact;print-color-adjust:exact;
     padding-bottom:.7rem;margin-bottom:.9rem}
   .brief img{height:48px}
+
+  /* Die laufende Fußzeile — auf jeder Seite.
+     Nicht mit position:fixed: das wiederholt Chrome beim Drucken nicht mehr, die
+     Zeile landet dann einmalig irgendwo mitten im Text. Auch display:table-footer-group
+     auf einem div reicht nicht — Chrome druckt sie dann nur auf der letzten Seite.
+     Zuverlässig ist allein echtes <tfoot> in einer echten <table>: genau das
+     Verhalten, das hier schon die Spaltenüberschriften auf Seite zwei bringt. */
+  .blatt > tfoot{display:table-footer-group}
+  .laufzeile{display:flex;gap:1rem;justify-content:space-between;align-items:baseline;
+    border-top:1px solid #d9d3c4;margin-top:4mm;padding-top:1.5mm;
+    font-size:.6rem;line-height:1.5;color:#9b9285;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .laufzeile b{color:#14120F;font-weight:700}
+  .laufzeile .re{text-align:right;white-space:nowrap}
+  .unterschrift,.fuss{break-inside:avoid}
+  .unterschrift{margin-top:1.6rem}
 }`;
 
 export async function onRequestGet({ request, env }) {
@@ -141,6 +171,8 @@ export async function onRequestGet({ request, env }) {
     </tr>`;
   }).join('');
 
+  const erstellt = new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' });
+
   const html = `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Arbeitszeit ${esc(m.name)} — ${esc(monatLabel(monat))}</title>
@@ -153,6 +185,15 @@ export async function onRequestGet({ request, env }) {
   <button type="button" onclick="window.print()">Drucken</button>
 </div>
 <div class="sheet">
+ <table class="blatt"><tfoot><tr><td>
+   <!-- Wiederholt sich im Druck am Fuß **jeder** Seite. Echtes tfoot, weil
+        Browser genau das zuverlässig wiederholen — siehe Kommentar im CSS. -->
+   <div class="laufzeile" aria-hidden="true">
+     <span><b>Arbeitszeitnachweis ${esc(m.name)}</b> · ${esc(monatLabel(monat))} ·
+       Aufzeichnung nach § 17 MiLoG</span>
+     <span class="re"><b>${esc(HOUSE.name)}</b> · erstellt am ${esc(erstellt)}</span>
+   </div>
+ </td></tr></tfoot><tbody><tr><td>
   <div class="brief">
     <img src="/assets/logo-dark.png" alt="${esc(HOUSE.name)}">
     <div class="adr">
@@ -209,9 +250,10 @@ export async function onRequestGet({ request, env }) {
       : ''}${trinkgeldCent
       ? ' Das Trinkgeld stammt aus dem Haus-Topf und ist steuerlich gesondert zu beurteilen.'
       : ''}<br>
-    Erstellt am ${esc(new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }))} ·
+    Erstellt am ${esc(erstellt)} ·
     enthält personenbezogene Daten, nur für den internen Gebrauch.
   </p>
+ </td></tr></tbody></table>
 </div>
 </body></html>`;
 
