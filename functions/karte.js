@@ -289,8 +289,13 @@ function gruppeHtml(g, sprache) {
   if (!gerichte.length) return '';
   const titel = (sprache === 'en' && g.title_en) || g.title;
   const note = sprache === 'en' ? (g.note_en || g.note) : g.note;
-  /* Ein großes Bild je Gruppe: das erste Gericht, das eins hat. */
-  const grossId = gerichte.find(i => i.bild)?.id;
+  /* Genau ein großes Bild je Gruppe. Hat die Gruppe ein echtes Foto, bekommt
+     das den Platz — zum einen, weil eine echte Aufnahme mehr wert ist als eine
+     erzeugte, zum anderen aus einem schlichten Grund: Die Marke „Echte
+     Aufnahme" verdeckt auf einer 112px breiten Vorschau das halbe Bild.
+     Sonst das erste Gericht, das überhaupt eins hat. */
+  const grossId = (gerichte.find(i => i.bild && ECHTE_FOTOS.has(i.bild))
+    || gerichte.find(i => i.bild))?.id;
   return `<section class="gruppe">
     <h3 class="auf">${esc(titel)}</h3>
     ${note ? `<p class="note auf">${esc(note)}</p>` : ''}
