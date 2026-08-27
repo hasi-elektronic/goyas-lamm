@@ -2,7 +2,7 @@
 import { esc, formatDateDE, nowBerlin, WEEKDAY_DE, weekday } from './core.js';
 import { darfSeite, darfPersonendaten, kuerzeName, ROLLEN } from './auth.js';
 import { FANFARE_CSS, fanfareMarkup, tonSchalter } from './fanfare.js';
-import { NACHTRAGEN_CSS } from './nachtragen.js';
+import { ZEITDIALOG_CSS } from './zeitdialog.js';
 
 export const CSS = `
 :root{
@@ -80,6 +80,14 @@ h2{font-size:1.05rem;margin:0 0 .9rem}
   display:flex;justify-content:space-between;align-items:center;gap:1rem}
 .card > h2 em{font-style:normal;color:var(--muted);font-weight:400;letter-spacing:.04em;text-transform:none;font-size:.82rem}
 .card .body{padding:1.1rem}
+details.card > summary{margin:0;font-size:.75rem;letter-spacing:.18em;text-transform:uppercase;
+  padding:.8rem 1.1rem;background:var(--cream);cursor:pointer;list-style:none;
+  display:flex;justify-content:space-between;align-items:center;gap:1rem;font-weight:700}
+details.card > summary::-webkit-details-marker{display:none}
+details.card > summary::after{content:"▾";font-size:.8em;color:var(--muted)}
+details.card[open] > summary{border-bottom:1px solid var(--sand)}
+details.card[open] > summary::after{content:"▴"}
+details.card > summary:hover{color:var(--wine)}
 .empty{padding:2.2rem 1.1rem;text-align:center;color:var(--muted)}
 
 /* Tabelle */
@@ -299,7 +307,7 @@ tr.noshow td.nm a{text-decoration:line-through;text-decoration-color:var(--wine)
 .sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
   clip:rect(0 0 0 0);white-space:nowrap;border:0}
 ${FANFARE_CSS}
-${NACHTRAGEN_CSS}
+${ZEITDIALOG_CSS}
 `;
 
 /* Kleine Strichzeichnungen — inline, damit kein zusätzlicher Request nötig ist. */

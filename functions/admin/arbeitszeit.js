@@ -9,7 +9,7 @@ import {
   WEEKDAY_DE, slotsForDate,
 } from '../_lib/core.js';
 import { layout, flash, redirect } from '../_lib/ui.js';
-import { nachtragenForm, NACHTRAGEN_JS } from '../_lib/nachtragen.js';
+import { zeitDialog, ZEITDIALOG_JS } from '../_lib/zeitdialog.js';
 import {
   netto, nettoGerundet, runde, brutto, summe, hhmm, dezimal, monatLabel, istMonat,
   monatVerschieben, tagKurz, zuschlaege, euro, lohnCent, verteileTrinkgeld,
@@ -228,50 +228,36 @@ export async function onRequestGet({ request, env, data }) {
   const namen = Object.fromEntries(leute.map(m => [m.id, m.name]));
   const gesamt = summe(alle);
 
-  const personKarte = m => {
-    const s = alle.filter(x => x.staff_id === m.id);
-    if (!s.length && nurWer !== m.id) return '';
-    const g = summe(s);
-    const zeilen = s.map(x => {
-      const n = netto(x);
-      return `<tr class="${x.end_at ? '' : 'cancelled'}">
-        <td colspan="4" style="padding:0">
-          <form method="post" action="/admin/arbeitszeit" class="trow">
-            <input type="hidden" name="do" value="save">
-            <input type="hidden" name="id" value="${esc(x.id)}">
-            <input type="hidden" name="m" value="${esc(monat)}">
-            <div class="f"><label for="d-${esc(x.id)}">Tag</label>
-              <input id="d-${esc(x.id)}" name="date" type="date" value="${esc(x.work_date)}" required></div>
-            <div class="f"><label for="a-${esc(x.id)}">Von</label>
-              <input id="a-${esc(x.id)}" name="start" type="time" step="${schritt(x.start_at)}"
-                     value="${esc(x.start_at)}" required></div>
-            <div class="f"><label for="b-${esc(x.id)}">Bis</label>
-              <input id="b-${esc(x.id)}" name="end" type="time" step="${schritt(x.end_at)}"
-                     value="${esc(x.end_at || '')}"></div>
-            <div class="f"><label for="p-${esc(x.id)}">Pause</label>
-              <input id="p-${esc(x.id)}" name="pause" type="number" min="0" max="600" step="5"
-                     value="${esc(String(x.break_min || 0))}"></div>
-            <div class="trow-act"><button class="btn sm" type="submit">Speichern</button></div>
-          </form>
-          <div class="trow-sub">
-            <span class="meta"><b>${esc(tagKurz(x.work_date))}</b>
-              ${n === null ? '<span class="pill ns">läuft noch</span>'
-                : `${esc(hhmm(n))} Std.${runde(n) !== n
-                    ? ` → gerundet <b>${esc(hhmm(runde(n)))}</b> (${esc(dezimal(runde(n)))})`
-                    : ` (${esc(dezimal(n))})`}`}</span>
-            ${x.source === 'admin' ? '<span class="pill">nachgetragen</span>' : ''}
-            ${x.corrected ? '<span class="pill tel">korrigiert</span>' : ''}
-            ${x.note ? `<span class="meta">${esc(x.note)}</span>` : ''}
-            <form method="post" action="/admin/arbeitszeit" style="display:inline"
-                  onsubmit="return confirm('Diesen Eintrag löschen? Aufzeichnungen müssen zwei Jahre aufbewahrt werden.')">
-              <input type="hidden" name="do" value="del">
-              <input type="hidden" name="id" value="${esc(x.id)}">
-              <input type="hidden" name="m" value="${esc(monat)}">
-              <button class="btn sm danger" type="submit">Löschen</button></form>
-          </div>
-        </td></tr>`;
-    }).join('');
+  /** Eine Schichtzeile — ruhige Tabelle; geändert wird im Dialog, nicht hier. */
+  const schichtZeile = (x, m) => {
+    const n = netto(x);
+    const gr = runde(n);
+    const so = weekday(x.work_date) === 0;
+    const lohn = (n !== null && m.wage_cent) ? lohnCent(gr, m.wage_cent) : null;
+    return `<tr class="${x.end_at ? '' : 'laeuft'}">
+      <td class="tag ${so ? 'so' : ''}">${esc(tagKurz(x.work_date))}</td>
+      <td class="num">${esc(x.start_at)}<span class="roh"> – ${esc(x.end_at || '…')}</span></td>
+      <td class="num opt">${x.break_min ? esc(String(x.break_min)) + ' min' : '—'}</td>
+      <td class="num">${n === null ? '<span class="pill ns">läuft noch</span>'
+        : `<b>${esc(hhmm(gr))}</b>${gr !== n ? `<span class="roh"> statt ${esc(hhmm(n))}</span>` : ''}`}</td>
+      <td class="num opt">${lohn === null ? '—' : esc(euro(lohn)) + ' €'}</td>
+      <td class="opt"><div class="knz">
+        ${x.source === 'admin' ? '<span class="pill">nachgetragen</span>' : ''}
+        ${x.corrected ? '<span class="pill tel">korrigiert</span>' : ''}
+        ${x.note ? `<span class="meta">${esc(x.note)}</span>` : ''}
+      </div></td>
+      <td class="akt"><button type="button" class="btn sm ghost" data-zd-aendern
+        data-zid="${esc(x.id)}" data-wer="${esc(m.id)}" data-name="${esc(m.name)}"
+        data-tag="${esc(x.work_date)}" data-von="${esc(x.start_at)}" data-bis="${esc(x.end_at || '')}"
+        data-pause="${esc(String(x.break_min || 0))}" data-notiz="${esc(x.note || '')}"
+      >Ändern</button></td>
+    </tr>`;
+  };
 
+  const personKarte = m => {
+    const eigene = alle.filter(x => x.staff_id === m.id);
+    if (!eigene.length && nurWer !== m.id) return '';
+    const g = summe(eigene);
     const bruttoLohn = lohnCent(g.gerundet, m.wage_cent);
     const tg = trinkgeld[m.id] || 0;
     const unterMindest = m.wage_cent && m.wage_cent < MINDESTLOHN_CENT;
@@ -279,39 +265,31 @@ export async function onRequestGet({ request, env, data }) {
 
     return `<div class="card">
       <h2>${esc(m.name)}${m.active ? '' : ' (ausgeschieden)'}
-        <em>${dezimal(g.gerundet)} Std. an ${g.tage} ${g.tage === 1 ? 'Tag' : 'Tagen'}</em></h2>
-      <div class="body" style="padding-bottom:.3rem">
-        <div class="stats" style="margin-bottom:.6rem">
-          <div class="stat hot"><b>${dezimal(g.gerundet)}</b><span>Stunden abgerechnet</span></div>
-          <div class="stat"><b>${hhmm(g.pause)}</b><span>Pause gesamt</span></div>
-          <div class="stat"><b>${dezimal(g.sonntag)}</b><span>davon Sonntag</span></div>
-          <div class="stat"><b>${dezimal(g.nacht)}</b><span>davon 20–6 Uhr</span></div>
-          ${m.wage_cent ? `<div class="stat"><b>${euro(bruttoLohn)} €</b><span>Lohn brutto, geschätzt</span></div>` : ''}
-          ${tg ? `<div class="stat"><b>${euro(tg)} €</b><span>Trinkgeld-Anteil</span></div>` : ''}
-        </div>
-        ${g.gerundet !== g.arbeit ? `<p class="hint" style="margin:0 0 .5rem">Gestempelt sind
-           ${dezimal(g.arbeit)} Std.; abgerechnet wird auf ${RUNDUNG_MIN} Minuten gerundet.
-           Die gestempelten Zeiten bleiben unverändert in der Aufzeichnung.</p>` : ''}
-        ${unterMindest ? `<div class="msg warn" style="margin:.2rem 0 .6rem">
+        <em>${dezimal(g.gerundet)} Std. an ${g.tage} ${g.tage === 1 ? 'Tag' : 'Tagen'}${
+          m.wage_cent ? ` · ${euro(bruttoLohn)} € brutto` : ''}${
+          tg ? ` · ${euro(tg)} € Trinkgeld` : ''}</em></h2>
+      ${unterMindest || ueberMinijob ? `<div class="body" style="padding-bottom:0">
+        ${unterMindest ? `<div class="msg warn" style="margin:0 0 .6rem">
            <b>${euro(m.wage_cent)} €</b> je Stunde liegt unter dem gesetzlichen Mindestlohn von
            ${euro(MINDESTLOHN_CENT)} € (2026).</div>` : ''}
-        ${ueberMinijob ? `<div class="msg warn" style="margin:.2rem 0 .6rem">
+        ${ueberMinijob ? `<div class="msg warn" style="margin:0 0 .6rem">
            Über der Minijob-Grenze von ${euro(MINIJOB_CENT)} € im Monat — bitte mit dem
-           Steuerberater klären, ob das so gewollt ist.</div>` : ''}
-      </div>
-      ${zeilen ? `<table><tbody>${zeilen}</tbody></table>`
-        : '<div class="empty">In diesem Monat keine Zeiten erfasst.</div>'}
-      <div class="body">
-        ${nachtragenForm(m, {
-          monat,
-          heute: now.date,
-          letzte: [...s].reverse().find(x => x.end_at) || null,
-          schichten: s,
-          zu: zuTage,
-        })}
-        <div class="row" style="margin-top:1rem">
-          <a class="btn sm ghost" href="/admin/zeitzettel?m=${esc(monat)}&p=${esc(m.id)}">
-            Monatszettel zum Unterschreiben</a>
+           Steuerberater klären.</div>` : ''}
+      </div>` : ''}
+      ${eigene.length ? `<div class="zt-huelle"><table class="zt">
+        <thead><tr>
+          <th>Tag</th><th>Zeit</th><th class="opt">Pause</th><th>Abgerechnet</th>
+          <th class="opt">Lohn</th><th class="opt">Hinweis</th><th></th>
+        </tr></thead>
+        <tbody>${eigene.map(x => schichtZeile(x, m)).join('')}</tbody>
+      </table></div>` : '<div class="empty">In diesem Monat keine Zeiten erfasst.</div>'}
+      <div class="body" style="padding-top:.9rem">
+        <div class="row">
+          <button type="button" class="btn sm ghost" data-zd-neu data-wer="${esc(m.id)}">+ Zeit nachtragen</button>
+          <a class="btn sm ghost" href="/admin/zeitzettel?m=${esc(monat)}&p=${esc(m.id)}">Monatszettel</a>
+          <span class="spacer"></span>
+          <span class="meta">${dezimal(g.arbeit)} Std. gestempelt · ${hhmm(g.pause)} Pause ·
+            ${dezimal(g.sonntag)} Std. Sonntag · ${dezimal(g.nacht)} Std. 20–6 Uhr</span>
         </div>
       </div>
     </div>`;
@@ -323,41 +301,71 @@ export async function onRequestGet({ request, env, data }) {
         class="ktab ${nurWer === m.id ? 'on' : ''}">${esc(m.name)}</a>`).join('')}
   </div>`;
 
-  const body = `
-    <h1>Arbeitszeit</h1>
-    <p class="sub">${esc(monatLabel(monat))}${nurWer ? ' · ' + esc(namen[nurWer] || '') : ''}
-       — erfasste Zeiten, Korrekturen und der Auszug für den Steuerberater.</p>
-    ${flash(url)}
+  /* Offene Schichten nach oben: das Einzige auf dieser Seite, was wirklich eine
+     Handlung verlangt — ohne Ende fehlt die Dauer in der Aufzeichnung. */
+  const offeneListe = alle.filter(x => !x.end_at);
+  const offenKarte = offeneListe.length ? `
+    <div class="az-offen">
+      <h3>${offeneListe.length === 1 ? 'Eine Schicht ohne Feierabend'
+                                     : offeneListe.length + ' Schichten ohne Feierabend'}</h3>
+      <p>Ohne Ende fehlt die Dauer in der Aufzeichnung — und der Abend fällt aus der
+         Trinkgeldverteilung heraus.</p>
+      <ul>
+        ${offeneListe.map(x => {
+          const m = leute.find(l => l.id === x.staff_id) || { name: '—', id: x.staff_id };
+          return `<li><b>${esc(m.name)}</b>
+            <span class="meta">${esc(tagKurz(x.work_date))} ab ${esc(x.start_at)} Uhr</span>
+            <button type="button" class="btn sm ghost" data-zd-aendern
+              data-zid="${esc(x.id)}" data-wer="${esc(m.id)}" data-name="${esc(m.name)}"
+              data-tag="${esc(x.work_date)}" data-von="${esc(x.start_at)}" data-bis=""
+              data-pause="${esc(String(x.break_min || 0))}" data-notiz="${esc(x.note || '')}"
+            >Ende eintragen</button></li>`;
+        }).join('')}
+      </ul>
+    </div>` : '';
 
-    <div class="row" style="margin-bottom:1.2rem">
-      <a class="btn ghost" href="/admin/arbeitszeit?m=${monatVerschieben(monat, -1)}${nurWer ? '&p=' + encodeURIComponent(nurWer) : ''}">&larr; ${esc(monatLabel(monatVerschieben(monat, -1)))}</a>
-      <a class="btn ghost" href="/admin/arbeitszeit?m=${esc(now.date.slice(0, 7))}">Aktueller Monat</a>
-      <a class="btn ghost" href="/admin/arbeitszeit?m=${monatVerschieben(monat, 1)}${nurWer ? '&p=' + encodeURIComponent(nurWer) : ''}">${esc(monatLabel(monatVerschieben(monat, 1)))} &rarr;</a>
+  const gesamtLohn = leute.reduce((sum, m) =>
+    sum + lohnCent(summe(alle.filter(x => x.staff_id === m.id)).gerundet, m.wage_cent), 0);
+
+  const body = `
+    <div class="row" style="align-items:flex-start">
+      <div>
+        <h1>Arbeitszeit</h1>
+        <p class="sub" style="margin-bottom:0">${esc(monatLabel(monat))}${nurWer ? ' · ' + esc(namen[nurWer] || '') : ''}
+           — erfasste Zeiten, Korrekturen und der Auszug für den Steuerberater.</p>
+      </div>
       <span class="spacer"></span>
-      <a class="btn" href="/admin/arbeitszeit?m=${esc(monat)}&csv=1">CSV für den Steuerberater</a>
-      <a class="btn ghost" href="/admin/trinkgeld?m=${esc(monat)}">Trinkgeld</a>
-      <a class="btn ghost" href="/admin/stempel">Stempeluhr</a>
+      <button type="button" class="btn" data-zd-neu${nurWer ? ` data-wer="${esc(nurWer)}"` : ''}>+ Zeit nachtragen</button>
     </div>
+
+    <div class="row" style="margin:1.3rem 0 1.2rem">
+      <a class="btn sm ghost" href="/admin/arbeitszeit?m=${monatVerschieben(monat, -1)}${nurWer ? '&p=' + encodeURIComponent(nurWer) : ''}">&larr; ${esc(monatLabel(monatVerschieben(monat, -1)).split(' ')[0])}</a>
+      <a class="btn sm ghost" href="/admin/arbeitszeit?m=${esc(now.date.slice(0, 7))}">Aktueller Monat</a>
+      <a class="btn sm ghost" href="/admin/arbeitszeit?m=${monatVerschieben(monat, 1)}${nurWer ? '&p=' + encodeURIComponent(nurWer) : ''}">${esc(monatLabel(monatVerschieben(monat, 1)).split(' ')[0])} &rarr;</a>
+      <span class="spacer"></span>
+      <a class="btn sm ghost" href="/admin/arbeitszeit?m=${esc(monat)}&csv=1">CSV für den Steuerberater</a>
+      <a class="btn sm ghost" href="/admin/trinkgeld?m=${esc(monat)}">Trinkgeld</a>
+      <a class="btn sm ghost" href="/admin/stempel">Stempeluhr</a>
+    </div>
+
+    ${flash(url)}
 
     <div class="stats">
       <div class="stat hot"><b>${dezimal(gesamt.gerundet)}</b><span>Stunden im Monat</span></div>
       <div class="stat"><b>${gesamt.anzahl}</b><span>Schichten</span></div>
       <div class="stat"><b>${dezimal(gesamt.sonntag)}</b><span>Sonntagsstunden</span></div>
-      ${lohnBekannt ? `<div class="stat"><b>${euro(leute.reduce((sum, m) =>
-          sum + lohnCent(summe(alle.filter(x => x.staff_id === m.id)).gerundet, m.wage_cent), 0))} €</b>
-        <span>Lohn brutto, geschätzt</span></div>` : ''}
+      ${lohnBekannt ? `<div class="stat"><b>${euro(gesamtLohn)} €</b><span>Lohn brutto, geschätzt</span></div>` : ''}
       <div class="stat ${gesamt.offen ? 'hot' : ''}"><b>${gesamt.offen}</b><span>ohne Feierabend</span></div>
     </div>
 
-    ${gesamt.offen ? `<div class="msg warn">Es ${gesamt.offen === 1 ? 'gibt eine Schicht' : `gibt ${gesamt.offen} Schichten`}
-       ohne Feierabend. Bitte unten das Ende eintragen — sonst fehlt die Dauer in der Aufzeichnung.</div>` : ''}
+    ${offenKarte}
 
     ${auswahl}
 
     ${leute.map(personKarte).join('') || '<div class="card"><div class="empty">Noch niemand angelegt.</div></div>'}
 
-    <div class="card">
-      <h2>Was diese Seite ist — und was nicht</h2>
+    <details class="card az-info">
+      <summary>Was diese Seite ist — und was nicht</summary>
       <div class="body meta">
         <p style="margin:0 0 .6rem">Das hier ist die <b>Arbeitszeitaufzeichnung</b> nach
            § 17 Mindestlohngesetz: Beginn, Ende und Dauer je Tag, innerhalb von sieben Tagen
@@ -368,27 +376,37 @@ export async function onRequestGet({ request, env, data }) {
            Steuerberater — sie beziehen sich auf die Anwesenheit ohne Pausenabzug, weil sich
            eine Pause keiner Tageszeit zuordnen lässt. Was daraus an Zuschlägen wird,
            entscheidet der Steuerberater.</p>
-        <p style="margin:0 0 .6rem"><b>Gerundet wird auf ${RUNDUNG_MIN} Minuten</b> — und zwar
-           kaufmännisch, zur nächsten Stufe: 5:16 wird 5:15, 5:18 wird 5:20. Wer den Beginn hoch
-           und das Ende herunter rundet, kürzt systematisch die Arbeitszeit; das ist
-           arbeitsrechtlich unwirksam und beim Zoll ein Fehlbetrag, kein Rundungsfehler.
-           <b>Die gestempelten Zeiten bleiben unverändert gespeichert</b> — sie sind die
-           Aufzeichnung, die Rundung ist nur die Rechengrundlage. Im CSV stehen beide Werte.</p>
+        <p style="margin:0 0 .6rem"><b>Gerundet wird auf ${RUNDUNG_MIN} Minuten</b>, kaufmännisch
+           zur nächsten Stufe: 5:16 wird 5:15, 5:18 wird 5:20. Wer den Beginn hoch und das Ende
+           herunter rundet, kürzt systematisch die Arbeitszeit; das ist arbeitsrechtlich
+           unwirksam und beim Zoll ein Fehlbetrag, kein Rundungsfehler.
+           <b>Die gestempelten Zeiten bleiben unverändert gespeichert</b> — in der Tabelle steht
+           die gerundete Dauer, die gestempelte daneben, sobald sie abweicht. Im CSV stehen beide.</p>
         <p style="margin:0 0 .6rem"><b>Der Lohnbetrag ist eine Schätzung.</b> Stunden mal
            Stundenlohn, brutto — ohne Steuern, ohne Sozialabgaben, ohne Zuschläge für Sonntag und
            Nacht. Das Panel warnt nur, wenn der Stundenlohn unter dem Mindestlohn liegt oder der
-           Monatsbetrag über der Minijob-Grenze. Gerechnet wird die Abrechnung beim Steuerberater.</p>
+           Monatsbetrag über der Minijob-Grenze.</p>
         <p style="margin:0"><b>Korrekturen</b> sind erlaubt und normal — wer das Stempeln
            vergisst, trägt nach. Nachgetragene und geänderte Einträge werden als solche
            gekennzeichnet, damit die Aufzeichnung ehrlich bleibt.</p>
       </div>
-    </div>`;
+    </details>
+
+    ${zeitDialog({
+      leute,
+      proPerson: Object.fromEntries(leute.map(m => [m.id,
+        alle.filter(x => x.staff_id === m.id)
+            .map(x => ({ id: x.id, d: x.work_date, a: x.start_at, b: x.end_at || null }))])),
+      letzte: Object.fromEntries(leute.map(m => {
+        const l = [...alle].reverse().find(x => x.staff_id === m.id && x.end_at);
+        return [m.id, l ? { start_at: l.start_at, end_at: l.end_at, break_min: l.break_min || 0 } : null];
+      })),
+      monat, heute: now.date, zu: zuTage,
+    })}`;
 
   return layout({ user: data?.user, title: 'Arbeitszeit', active: '/admin/arbeitszeit',
-                  body: body + NACHTRAGEN_JS });
+                  body: body + ZEITDIALOG_JS });
 }
-
-/* ------------------------------------------------------------------ */
 
 export async function onRequestPost({ request, env }) {
   let d = {}, roh = new FormData();
