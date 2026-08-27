@@ -22,6 +22,14 @@ body{margin:0;background:#f2f1ea;color:#14120F;
 .bar .sp{flex:1}
 .sheet{width:min(100% - 1.4rem,900px);margin:1.2rem auto 4rem;background:#fff;
   border:1px solid #d9d3c4;padding:1.6rem 1.5rem 2rem}
+/* Briefkopf: Logo links, Anschrift rechts — das Blatt geht unterschrieben aus
+   dem Haus, also soll man auf den ersten Blick sehen, von wem es kommt. */
+.brief{display:flex;justify-content:space-between;align-items:flex-start;gap:1.4rem;
+  padding-bottom:1rem;margin-bottom:1.1rem;border-bottom:1px solid #d9d3c4}
+.brief img{height:58px;width:auto;display:block}
+.brief .adr{text-align:right;font-size:.7rem;line-height:1.65;color:#6E675A}
+.brief .adr b{display:block;color:#14120F;font-size:.76rem;letter-spacing:.1em;
+  text-transform:uppercase;margin-bottom:.15rem}
 .head{display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;
   border-bottom:2px solid #14120F;padding-bottom:.7rem;margin-bottom:.4rem}
 .head h1{font-size:1.35rem;margin:0}
@@ -35,6 +43,7 @@ td{padding:.42rem .4rem;border-bottom:1px solid #eee9dc;font-variant-numeric:tab
 td.tag{white-space:nowrap;width:92px}
 td.so{color:#6D1826;font-weight:700}
 th.z,td.z{text-align:right}
+th.hw,td.hw{padding-left:1rem;white-space:normal}
 tr.leer td{color:#b6afa2}
 tfoot td{border-top:2px solid #14120F;border-bottom:0;font-weight:700;padding-top:.6rem}
 .zus{margin-top:1rem;display:flex;gap:.4rem 1.6rem;flex-wrap:wrap;font-size:.85rem;color:#6E675A}
@@ -49,8 +58,16 @@ tfoot td{border-top:2px solid #14120F;border-bottom:0;font-weight:700;padding-to
   body{background:#fff}
   .bar{display:none}
   .sheet{width:auto;margin:0;border:0;padding:0}
-  td,th{padding-left:0;padding-right:0}
+  /* Nicht die ganze Polsterung wegnehmen: bei acht Spalten kleben sonst
+     „Dezimal" und „Hinweis" aneinander („5,17korrigiert"). Aussen buendig,
+     innen ein schmaler Abstand. */
+  td,th{padding-left:0;padding-right:.55rem}
+  td:last-child,th:last-child{padding-right:0}
   tr{break-inside:avoid}
+  /* Ohne das lassen manche Browser Bilder und Flächen beim Drucken weg. */
+  .brief{-webkit-print-color-adjust:exact;print-color-adjust:exact;
+    padding-bottom:.7rem;margin-bottom:.9rem}
+  .brief img{height:48px}
 }`;
 
 export async function onRequestGet({ request, env }) {
@@ -116,8 +133,11 @@ export async function onRequestGet({ request, env }) {
       <td class="z">${n === null ? '—' : esc(hhmm(n))}</td>
       <td class="z">${n === null ? '—' : esc(hhmm(runde(n)))}</td>
       <td class="z">${n === null ? '—' : esc(dezimal(runde(n)))}</td>
-      <td>${s.source === 'admin' ? 'nachgetragen' : ''}${s.corrected ? ' korrigiert' : ''}
-          ${s.note ? esc(s.note) : ''}</td>
+      <td class="hw">${[
+        s.source === 'admin' ? 'nachgetragen' : '',
+        s.corrected ? 'korrigiert' : '',
+        s.note ? esc(s.note) : '',
+      ].filter(Boolean).join(' · ')}</td>
     </tr>`;
   }).join('');
 
@@ -133,6 +153,14 @@ export async function onRequestGet({ request, env }) {
   <button type="button" onclick="window.print()">Drucken</button>
 </div>
 <div class="sheet">
+  <div class="brief">
+    <img src="/assets/logo-dark.png" alt="${esc(HOUSE.name)}">
+    <div class="adr">
+      <b>${esc(HOUSE.name)}</b>
+      ${esc(HOUSE.addr)}<br>
+      ${esc(HOUSE.phone)} · ${esc(HOUSE.mail)}
+    </div>
+  </div>
   <div class="head">
     <div>
       <h1>${esc(m.name)}</h1>
@@ -144,7 +172,7 @@ export async function onRequestGet({ request, env }) {
   ${rows.length ? `<table>
     <thead><tr>
       <th>Tag</th><th class="z">Beginn</th><th class="z">Ende</th><th class="z">Pause</th>
-      <th class="z">Dauer</th><th class="z">gerundet</th><th class="z">Dezimal</th><th>Hinweis</th>
+      <th class="z">Dauer</th><th class="z">gerundet</th><th class="z">Dezimal</th><th class="hw">Hinweis</th>
     </tr></thead>
     <tbody>${zeilen}</tbody>
     <tfoot><tr>
