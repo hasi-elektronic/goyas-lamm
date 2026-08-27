@@ -589,6 +589,39 @@ footer a:hover{color:var(--gold)}
   *{animation:none!important;transition:none!important}
   .reveal{opacity:1;transform:none}
 }
+
+/* ---------- Echte Teller ---------- */
+.teller-head{max-width:58ch;margin:0 0 clamp(2.4rem,4.5vw,3.4rem)}
+.teller-head h2{margin-bottom:1rem}
+.teller-head .lead{margin:0}
+.teller-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(.9rem,1.7vw,1.5rem)}
+.teller{display:flex;flex-direction:column;background:var(--paper,#FBFAF3);
+  border:1px solid var(--sand,#E4DED0);border-radius:var(--r);overflow:hidden;text-align:left;
+  padding:0;cursor:zoom-in;-webkit-tap-highlight-color:transparent;
+  transition:transform .4s cubic-bezier(.2,.6,.2,1),box-shadow .4s}
+.teller:hover,.teller:focus-visible{transform:translateY(-4px);
+  box-shadow:0 18px 40px -22px rgba(20,18,15,.55)}
+.teller:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.teller-bild{position:relative;aspect-ratio:1/1;overflow:hidden;background:#0d0c0a}
+.teller-bild img{width:100%;height:100%;object-fit:cover;display:block;
+  transition:transform .8s cubic-bezier(.2,.6,.2,1)}
+.teller:hover .teller-bild img,.teller:focus-visible .teller-bild img{transform:scale(1.06)}
+.teller-txt{padding:1.05rem 1.15rem 1.2rem;display:flex;flex-direction:column;gap:.35rem;flex:1}
+.teller-txt h3{font-size:1.06rem;margin:0;line-height:1.25}
+.teller-txt p{margin:0;font-size:.86rem;color:var(--muted,#6E675A);line-height:1.55;flex:1}
+.teller-preis{font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;
+  color:var(--wine);margin-top:.35rem}
+.teller-fuss{margin:clamp(2rem,3.6vw,2.8rem) 0 0;display:flex;gap:1.2rem;flex-wrap:wrap;
+  align-items:center;justify-content:space-between}
+.teller-fuss .echt{margin:0;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--muted,#6E675A)}
+.teller-fuss .echt span{color:var(--wine)}
+@media(max-width:900px){.teller-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){
+  .teller-grid{grid-template-columns:1fr;gap:1rem}
+  .teller-txt{padding:1rem 1.1rem 1.15rem}
+  .teller-fuss{justify-content:flex-start}
+}
 </style>
 </head>
 <body>
@@ -604,6 +637,7 @@ footer a:hover{color:var(--gold)}
         <li><a href="#konzept">Restaurant</a></li>
         <li><a href="#inhaber">Inhaber</a></li>
         <li><a href="#steak">Steak</a></li>
+        <li><a href="#teller">Gerichte</a></li>
         <li><a href="#karte">Speisekarte</a></li>
         <li><a href="#galerie">Galerie</a></li>
         <li><a href="#kontakt">Kontakt</a></li>
@@ -619,6 +653,7 @@ footer a:hover{color:var(--gold)}
   <a href="#konzept">Restaurant</a>
   <a href="#inhaber">Der Inhaber</a>
   <a href="#steak">Steak vom heißen Stein</a>
+  <a href="#teller">Gerichte</a>
   <a href="#karte">Speisekarte</a>
   <a href="#galerie">Galerie</a>
   <a href="#reservieren">Reservieren</a>
@@ -849,6 +884,110 @@ footer a:hover{color:var(--gold)}
 </section>
 
 <!-- ================= SPEISEKARTE ================= -->
+
+<section id="teller">
+  <div class="wrap">
+    <div class="teller-head reveal">
+      <p class="eyebrow">Vom Teller</p>
+      <h2>Nicht nur Steak.</h2>
+      <p class="lead">Vier Gerichte, wie sie bei uns herauskommen — fotografiert im Gastraum,
+         nicht gestellt. Preise und Beschreibungen stehen so auch auf der Karte.</p>
+    </div>
+
+    <div class="teller-grid">
+        <button class="teller reveal" type="button"
+                data-src="/assets/img/creme-brulee-1000.jpg"
+                data-title="Crème brûlée" data-sub="hausgemacht mit Zitronenzeste und Vanille"
+                aria-label="Crème brûlée — Bild vergrößern">
+          <span class="teller-bild">
+            <picture>
+              <source type="image/webp"
+                      srcset="/assets/img/creme-brulee-600.webp 600w, /assets/img/creme-brulee-800.webp 800w"
+                      sizes="(max-width:520px) 92vw, (max-width:900px) 46vw, 23vw">
+              <img src="/assets/img/creme-brulee-600.jpg"
+                   srcset="/assets/img/creme-brulee-600.jpg 600w, /assets/img/creme-brulee-800.jpg 800w"
+                   sizes="(max-width:520px) 92vw, (max-width:900px) 46vw, 23vw"
+                   alt="Crème brûlée mit karamellisierter Zuckerkruste, frischen Beeren und Minze" width="1000" height="1000" loading="lazy" decoding="async">
+            </picture>
+          </span>
+          <span class="teller-txt">
+            <h3>Crème brûlée</h3>
+            <p>hausgemacht mit Zitronenzeste und Vanille</p>
+            <span class="teller-preis">7,50 €</span>
+          </span>
+        </button>
+        <button class="teller reveal" type="button"
+                data-src="/assets/img/salat-omega-1000.jpg"
+                data-title="Salat Omega" data-sub="mit Lachsfilet und Avocado"
+                aria-label="Salat Omega — Bild vergrößern">
+          <span class="teller-bild">
+            <picture>
+              <source type="image/webp"
+                      srcset="/assets/img/salat-omega-600.webp 600w, /assets/img/salat-omega-800.webp 800w"
+                      sizes="(max-width:520px) 92vw, (max-width:900px) 46vw, 23vw">
+              <img src="/assets/img/salat-omega-600.jpg"
+                   srcset="/assets/img/salat-omega-600.jpg 600w, /assets/img/salat-omega-800.jpg 800w"
+                   sizes="(max-width:520px) 92vw, (max-width:900px) 46vw, 23vw"
+                   alt="Großer Salat mit gebratenem Lachsfilet, Avocado, Mais, Rotkohl und Kirschtomaten" width="1000" height="1000" loading="lazy" decoding="async">
+            </picture>
+          </span>
+          <span class="teller-txt">
+            <h3>Salat Omega</h3>
+            <p>mit Lachsfilet und Avocado</p>
+            <span class="teller-preis">24,50 €</span>
+          </span>
+        </button>
+        <button class="teller reveal" type="button"
+                data-src="/assets/img/pasta-omega-1000.jpg"
+                data-title="Pasta Omega" data-sub="mit Lachsfilet und Spinat in Weißwein-Sahne-Soße"
+                aria-label="Pasta Omega — Bild vergrößern">
+          <span class="teller-bild">
+            <picture>
+              <source type="image/webp"
+                      srcset="/assets/img/pasta-omega-600.webp 600w, /assets/img/pasta-omega-800.webp 800w"
+                      sizes="(max-width:520px) 92vw, (max-width:900px) 46vw, 23vw">
+              <img src="/assets/img/pasta-omega-600.jpg"
+                   srcset="/assets/img/pasta-omega-600.jpg 600w, /assets/img/pasta-omega-800.jpg 800w"
+                   sizes="(max-width:520px) 92vw, (max-width:900px) 46vw, 23vw"
+                   alt="Penne mit Lachsfilet, Blattspinat, Pesto und geriebenem Parmesan" width="1000" height="1000" loading="lazy" decoding="async">
+            </picture>
+          </span>
+          <span class="teller-txt">
+            <h3>Pasta Omega</h3>
+            <p>mit Lachsfilet und Spinat in Weißwein-Sahne-Soße</p>
+            <span class="teller-preis">18,50 €</span>
+          </span>
+        </button>
+        <button class="teller reveal" type="button"
+                data-src="/assets/img/buratta-1000.jpg"
+                data-title="Buratta" data-sub="mit gebratener Zucchini, Tomaten, Rucola und Pinienkernen"
+                aria-label="Buratta — Bild vergrößern">
+          <span class="teller-bild">
+            <picture>
+              <source type="image/webp"
+                      srcset="/assets/img/buratta-600.webp 600w, /assets/img/buratta-800.webp 800w"
+                      sizes="(max-width:520px) 92vw, (max-width:900px) 46vw, 23vw">
+              <img src="/assets/img/buratta-600.jpg"
+                   srcset="/assets/img/buratta-600.jpg 600w, /assets/img/buratta-800.jpg 800w"
+                   sizes="(max-width:520px) 92vw, (max-width:900px) 46vw, 23vw"
+                   alt="Burrata mit gegrillten Tomaten, Zucchinistreifen, Pinienkernen und Basilikum" width="1000" height="1000" loading="lazy" decoding="async">
+            </picture>
+          </span>
+          <span class="teller-txt">
+            <h3>Buratta</h3>
+            <p>mit gebratener Zucchini, Tomaten, Rucola und Pinienkernen</p>
+            <span class="teller-preis">14,50 €</span>
+          </span>
+        </button>
+    </div>
+
+    <div class="teller-fuss reveal">
+      <p class="echt"><span>Echte Aufnahmen</span> aus unserer Küche</p>
+      <a class="btn btn-outline" href="#karte">Ganze Karte ansehen</a>
+    </div>
+  </div>
+</section>
+
 <section id="karte" style="background:var(--cream)">
   <div class="wrap">
     <div style="text-align:center;max-width:64ch;margin:0 auto" class="reveal">
@@ -1389,6 +1528,7 @@ footer a:hover{color:var(--gold)}
           <li><a href="#konzept">Über uns</a></li>
           <li><a href="#inhaber">Der Inhaber</a></li>
           <li><a href="#steak">Steak vom heißen Stein</a></li>
+          <li><a href="#teller">Gerichte</a></li>
           <li><a href="#karte">Speisekarte</a></li>
           <li><a href="#galerie">Galerie</a></li>
           <li><a href="#reservieren">Reservieren</a></li>
@@ -1802,7 +1942,9 @@ footer a:hover{color:var(--gold)}
   })();
 
   /* ---- Galerie: Lightbox + Mobile-Fortschritt ---- */
-  var gItems=[].slice.call(document.querySelectorAll('.g-item'));
+  // Teller-Karten hängen mit in der Lightbox, tragen aber eigene Optik —
+  // deshalb hier zwei Selektoren statt einer gemeinsamen Klasse.
+  var gItems=[].slice.call(document.querySelectorAll('.teller[data-src], .g-item'));
   var lb=document.getElementById('lb'), lbImg=document.getElementById('lbImg'),
       lbCap=document.getElementById('lbCap'), lbCount=document.getElementById('lbCount'),
       gi=0, lastFocus=null;
