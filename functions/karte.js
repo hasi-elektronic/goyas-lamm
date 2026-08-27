@@ -279,32 +279,58 @@ a{color:var(--gold)}
 .gericht .mehr:hover{color:var(--creme)}
 
 /* ---------- Detailtafel ---------- */
+/* Kein Blatt mehr, das von unten einfährt und die halbe Karte stehen lässt.
+   Die Tafel übernimmt den Bildschirm ganz: Der Grund blendet dunkel auf, die
+   Tafel kommt aus einer Spur zu groß zur Ruhe, und das Bild fährt dabei
+   langsam aus der Vergrößerung zurück — die Bewegung, mit der im Kino eine
+   Einstellung steht. Der Text setzt sich Block für Block darunter.
+   Insgesamt eine knappe halbe Sekunde; wer prefers-reduced-motion gesetzt
+   hat, bekommt die Tafel ohne jede Bewegung. */
 dialog.tafel{border:0;padding:0;background:transparent;max-width:100%;max-height:100%;
   width:100%;height:100%;margin:0;overflow:visible;color:var(--creme)}
-dialog.tafel::backdrop{background:rgba(6,5,4,.72);backdrop-filter:blur(3px)}
-.tafel-innen{position:fixed;left:0;right:0;bottom:0;max-height:92svh;overflow-y:auto;
-  background:var(--nacht-2);border-top:1px solid var(--rand);
-  border-radius:20px 20px 0 0;box-shadow:0 -24px 60px -20px rgba(0,0,0,.9);
-  padding-bottom:calc(1.6rem + env(safe-area-inset-bottom));
+dialog.tafel::backdrop{background:rgba(6,5,4,.88);backdrop-filter:blur(6px)}
+.js dialog.tafel[open]::backdrop{animation:tafelGrund .3s ease both}
+@keyframes tafelGrund{from{opacity:0}to{opacity:1}}
+.tafel-innen{position:fixed;inset:0;overflow-y:auto;overscroll-behavior:contain;
+  background:var(--nacht-2);
+  padding-bottom:calc(2.4rem + env(safe-area-inset-bottom));
   -webkit-overflow-scrolling:touch}
-.js dialog.tafel[open] .tafel-innen{animation:rauf .34s cubic-bezier(.2,.7,.2,1)}
-@keyframes rauf{from{transform:translateY(100%)}to{transform:none}}
-.tafel-griff{position:sticky;top:0;z-index:2;padding:.7rem 0 .5rem;
-  background:linear-gradient(180deg,var(--nacht-2) 62%,transparent);
-  display:flex;justify-content:center}
-.tafel-griff i{width:42px;height:4px;border-radius:100px;background:var(--rand);display:block}
-.tafel-zu{position:absolute;top:.7rem;right:.9rem;z-index:3;width:36px;height:36px;
-  border-radius:50%;border:1px solid var(--rand);background:rgba(11,10,8,.72);
-  color:var(--creme);font:inherit;font-size:1rem;line-height:1;cursor:pointer;
+.js dialog.tafel[open] .tafel-innen{animation:tafelAuf .42s cubic-bezier(.16,.84,.28,1) both}
+@keyframes tafelAuf{from{opacity:0;transform:scale(1.025)}to{opacity:1;transform:none}}
+.js dialog.tafel.zu[open] .tafel-innen{animation:tafelWeg .2s ease both}
+@keyframes tafelWeg{to{opacity:0;transform:scale(.99)}}
+.tafel-zu{position:fixed;top:calc(.9rem + env(safe-area-inset-top));right:.9rem;z-index:4;
+  width:40px;height:40px;
+  border-radius:50%;border:1px solid rgba(255,255,255,.22);background:rgba(11,10,8,.55);
+  backdrop-filter:blur(8px);
+  color:var(--creme);font:inherit;font-size:1.05rem;line-height:1;cursor:pointer;
   display:grid;place-items:center}
 .tafel-zu:hover{border-color:var(--gold);color:var(--gold)}
-.tafel-bild{aspect-ratio:3/2;overflow:hidden;background:#0F0D0C;margin:0 0 1.2rem;
+/* Das Bild läuft bis unter den Text aus, statt als Kachel mit Abstand darüber
+   zu stehen. Der Verlauf am Fuß ist das, was den Übergang weich macht. */
+.tafel-bild{aspect-ratio:3/2;overflow:hidden;background:#0F0D0C;margin:0;
   position:relative}
+.tafel-bild::after{content:"";position:absolute;inset:auto 0 -1px 0;height:42%;
+  background:linear-gradient(180deg,rgba(17,15,13,0),var(--nacht-2))}
 .tafel-bild img{width:100%;height:100%;object-fit:cover}
+.js dialog.tafel[open] .tafel-bild img{animation:tafelBild 1.2s cubic-bezier(.2,.7,.2,1) both}
+@keyframes tafelBild{from{transform:scale(1.1)}to{transform:none}}
+.tafel-bild + .tafel-koerper{margin-top:-2.6rem;position:relative;z-index:1}
+.js dialog.tafel[open] .tafel-koerper > *{animation:tafelZeile .5s cubic-bezier(.2,.7,.2,1) both}
+@keyframes tafelZeile{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.js dialog.tafel[open] .tafel-koerper > *:nth-child(1){animation-delay:.08s}
+.js dialog.tafel[open] .tafel-koerper > *:nth-child(2){animation-delay:.13s}
+.js dialog.tafel[open] .tafel-koerper > *:nth-child(3){animation-delay:.18s}
+.js dialog.tafel[open] .tafel-koerper > *:nth-child(4){animation-delay:.23s}
+.js dialog.tafel[open] .tafel-koerper > *:nth-child(5){animation-delay:.28s}
+.js dialog.tafel[open] .tafel-koerper > *:nth-child(n+6){animation-delay:.32s}
 /* Auf dem großen Bild darf die Marke etwas mehr Luft und Größe haben als auf
    einer 112px-Vorschau. */
 .tafel-bild .echt{top:.8rem;left:.8rem;font-size:.62rem;padding:.22rem .6rem}
-.tafel-koerper{width:min(100% - 2.4rem,700px);margin-inline:auto}
+/* Ohne Bild beginnt die Tafel oben — dann braucht der Kopf Platz, sonst steht
+   er unter dem Schließen-Knopf. */
+.tafel-koerper{width:min(100% - 2.4rem,700px);margin-inline:auto;padding-top:4.2rem}
+.tafel-bild + .tafel-koerper{padding-top:0}
 .tafel-kopf{display:flex;align-items:baseline;gap:1rem;margin-bottom:.5rem}
 .tafel-kopf h2{font-family:var(--serif);font-weight:400;font-size:1.7rem;line-height:1.15;
   margin:0;flex:1;min-width:0}
@@ -344,15 +370,27 @@ dialog.tafel::backdrop{background:rgba(6,5,4,.72);backdrop-filter:blur(3px)}
   color:var(--gedaempft);margin:0 0 .5rem;font-weight:700}
 
 @media(min-width:620px){
-  .tafel-innen{left:50%;right:auto;transform:translateX(-50%);width:min(100% - 3rem,720px);
-    bottom:0;border-radius:20px 20px 0 0;max-height:88svh}
-  .js dialog.tafel[open] .tafel-innen{animation:rauf2 .34s cubic-bezier(.2,.7,.2,1)}
-  @keyframes rauf2{from{transform:translate(-50%,100%)}to{transform:translateX(-50%)}}
+  /* Am Rechner ist Vollbild zu viel — dort steht die Tafel als Karte in der
+     Mitte und kommt aus derselben leichten Vergrößerung zur Ruhe. */
+  .tafel-innen{inset:auto;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:min(100% - 3rem,760px);max-height:92svh;border-radius:22px;
+    border:1px solid var(--rand);box-shadow:0 40px 100px -30px rgba(0,0,0,.95);
+    padding-bottom:2.4rem}
+  .tafel-zu{position:absolute;top:.9rem;right:.9rem}
+  .js dialog.tafel[open] .tafel-innen{animation:tafelAuf2 .42s cubic-bezier(.16,.84,.28,1) both}
+  @keyframes tafelAuf2{from{opacity:0;transform:translate(-50%,-47%) scale(.97)}
+                       to{opacity:1;transform:translate(-50%,-50%)}}
+  .js dialog.tafel.zu[open] .tafel-innen{animation:tafelWeg2 .2s ease both}
+  @keyframes tafelWeg2{to{opacity:0;transform:translate(-50%,-50%) scale(.985)}}
   .legende-spalten{grid-template-columns:1fr 1fr;gap:2.4rem}
   .legende ul{columns:1}
 }
 @media(prefers-reduced-motion:reduce){
-  .js dialog.tafel[open] .tafel-innen{animation:none}
+  .js dialog.tafel[open]::backdrop,
+  .js dialog.tafel[open] .tafel-innen,
+  .js dialog.tafel.zu[open] .tafel-innen,
+  .js dialog.tafel[open] .tafel-bild img,
+  .js dialog.tafel[open] .tafel-koerper > *{animation:none}
 }
 
 @media(min-width:620px){
@@ -607,7 +645,6 @@ function seite(karte, sprache, stand) {
   <div class="tafel-innen">
     <button type="button" class="tafel-zu" id="tafelZu"
       aria-label="${esc(t.schliessen)}">✕</button>
-    <div class="tafel-griff"><i></i></div>
     <div id="tafelInhalt"></div>
   </div>
 </dialog>
@@ -774,9 +811,24 @@ const SKRIPT = `
     document.body.style.overflow = 'hidden';
   }
 
-  function schliesse(){
-    if (!tafel) return;
+  /* Zugehen darf man sehen. Ohne die kurze Rückblende springt die Tafel weg
+     und die Karte darunter erscheint schlagartig — genau der Bruch, den das
+     Aufblenden vermeidet. Wer keine Bewegung will, bekommt sie auch hier nicht. */
+  var ruhig = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var schliesst = false;
+
+  function zuMachen(){
+    schliesst = false;
+    if (tafel.classList) tafel.classList.remove('zu');
     if (tafel.close) tafel.close(); else tafel.removeAttribute('open');
+  }
+
+  function schliesse(){
+    if (!tafel || schliesst) return;
+    if (ruhig || !tafel.classList) { zuMachen(); return; }
+    schliesst = true;
+    tafel.classList.add('zu');
+    setTimeout(zuMachen, 190);
   }
 
   document.addEventListener('click', function(e){
@@ -790,8 +842,17 @@ const SKRIPT = `
   var zu = document.getElementById('tafelZu');
   if (zu) zu.addEventListener('click', schliesse);
 
+  /* Escape schließt das <dialog> von selbst und sofort. Wir fangen das ab,
+     damit auch dieser Weg dieselbe Rückblende bekommt. */
+  if (tafel) tafel.addEventListener('cancel', function(e){
+    if (ruhig || schliesst) return;
+    e.preventDefault();
+    schliesse();
+  });
+
   if (tafel) tafel.addEventListener('close', function(){
     document.body.style.overflow = '';
+    if (tafel.classList) tafel.classList.remove('zu');
     /* Zurück auf den Knopf, von dem aus geöffnet wurde — sonst steht der
        Fokus am Seitenanfang und man scrollt sich neu zurecht. */
     if (zurueckZu && zurueckZu.focus) { zurueckZu.focus(); zurueckZu = null; }
