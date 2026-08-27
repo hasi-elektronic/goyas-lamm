@@ -168,21 +168,24 @@ schließt sie sich, ein Tippen geht auch. Grund für das Ganze ist nüchtern —
 den ganzen Abend auf derselben Seite, ohne Meldung fällt eine Buchung erst auf, wenn jemand
 nachsieht.
 
-- Das Panel fragt alle 20 Sekunden `/admin/melder` — nur solange die Seite sichtbar ist.
+- Das Panel fragt alle 15 Sekunden `/admin/melder` — nur solange die Seite sichtbar ist.
   Gepollt statt dauerhaft verbunden, weil Pages Functions zustandslos sind; eine offene
   Verbindung bräuchte Durable Objects und würde jeden WLAN-Aussetzer nicht überleben.
 - **Nur Buchungen des Gastes** (`source = 'web'`) und neue Wartelisten-Einträge melden sich.
   Was das Personal selbst einträgt, bleibt still.
-- Beim Laden der Seite holt sich das Panel nur einen Startpunkt — alte Buchungen fliegen
-  nicht noch einmal durchs Bild. Lag das Tablet länger als eine Stunde im Standby, wird
-  ebenfalls nichts nachgemeldet.
+- **Beim Öffnen des Panels werden die letzten 20 Minuten nachgeholt** (`?start=1`) — sonst
+  ginge der häufigste Fall verloren: Gast bucht, erst danach schaut jemand ins Panel.
+  Welche Meldungen schon gezeigt wurden, merkt sich **jedes Gerät selbst** (`localStorage`,
+  die letzten 40 Kennungen). Kein doppeltes Melden beim Neuladen — aber Küchentablet und
+  Handy bekommen beide Bescheid. Lag das Tablet länger als eine Stunde im Standby, wird
+  nichts nachgemeldet.
 - **Ton** ist je Gerät abschaltbar (Lautsprecher-Schalter im Kopf, Einstellung im Browser
   gespeichert). Die Fanfare wird per Web Audio erzeugt — keine Tondatei.
 - `prefers-reduced-motion` schaltet Konfetti und Animation ab, die Meldung bleibt.
 - Für die Demo-Rolle sind Gastname abgekürzt und die Anmerkung leer.
 
-Zum Ausprobieren ohne echten Gast: `/admin?probe=1` aufrufen oder in der Konsole
-`goyaProbe()` (bzw. `goyaProbe('warteliste')`).
+Zum Ausprobieren ohne echten Gast: der Knopf **„Meldung testen"** unten auf der Übersicht,
+`/admin?probe=1`, oder in der Konsole `goyaProbe()` bzw. `goyaProbe('warteliste')`.
 
 ### Arbeitszeiterfassung
 
