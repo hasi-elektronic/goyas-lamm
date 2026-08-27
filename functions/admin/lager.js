@@ -53,9 +53,16 @@ export async function onRequestGet({ request, env, data }) {
   const klassen = tempKlassen(await einstellung(db, 'ware_temp'));
   const proz = schwelle(await einstellung(db, 'ware_schwelle'));
 
+  /* Reihenfolge der Warengruppen wie in `ware.js` definiert, nicht alphabetisch:
+     sonst stünde „Fisch" vor „Fleisch" und die Liste hätte eine andere Ordnung
+     als die Reiter darüber. */
+  const gruppenRang = Object.keys(GRUPPEN);
+  const rang = g => { const i = gruppenRang.indexOf(g); return i < 0 ? 99 : i; };
   const gefiltert = artikel
     .filter(a => zeigeAlle || a.active)
-    .filter(a => !gruppe || a.gruppe === gruppe);
+    .filter(a => !gruppe || a.gruppe === gruppe)
+    .sort((a, b) => (b.active - a.active) || (rang(a.gruppe) - rang(b.gruppe))
+      || (a.sort - b.sort) || a.name.localeCompare(b.name, 'de'));
 
   const liefName = Object.fromEntries(lieferanten.map(l => [l.id, l.name]));
   const aktiveLief = lieferanten.filter(l => l.active);

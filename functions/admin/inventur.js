@@ -286,21 +286,24 @@ export async function onRequestPost({ request, env, data }) {
     const wer = data?.user?.name || data?.user?.username || null;
 
     /* Eine Zählung ersetzt die vorige desselben Tages vollständig — sonst
-       bliebe ein Artikel stehen, der beim zweiten Durchgang leer war. */
-    await db.prepare(`DELETE FROM stock_counts WHERE day = ?`).bind(tag).run();
+       bliebe ein Artikel stehen, der beim zweiten Durchgang leer war.
+       Alles in einem `batch()`: Bei über hundert Artikeln wären hundert
+       einzelne Fahrten zur Datenbank innerhalb einer Anfrage zu langsam, und
+       ein Abbruch mittendrin hinterließe eine halb gelöschte Inventur. */
+    const schritte = [db.prepare(`DELETE FROM stock_counts WHERE day = ?`).bind(tag)];
 
-    let n = 0;
     for (let i = 0; i < arts.length; i++) {
       const id = clean(arts[i], 40);
       const m = mengeAus(mengen[i]);
       if (!id || m === null || m < 0) continue;
       if (m === 0 && !String(mengen[i] ?? '').trim()) continue;   // leer ≠ null gezählt
-      await db.prepare(
+      schritte.push(db.prepare(
         `INSERT INTO stock_counts (id,day,article_id,menge_milli,ep_cent,erfasst_von,created_at)
          VALUES (?,?,?,?,?,?,?)`)
-        .bind(kennung('z'), tag, id, m, centAus(preise[i]), wer, jetzt).run();
-      n++;
+        .bind(kennung('z'), tag, id, m, centAus(preise[i]), wer, jetzt));
     }
+    await db.batch(schritte);
+    const n = schritte.length - 1;
     return redirect(`${zurueck}&t=${tag}`,
       `Zählung vom ${tag} gespeichert — ${n} ${n === 1 ? 'Posten' : 'Posten'}.`);
   } catch {
