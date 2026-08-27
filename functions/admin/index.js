@@ -89,6 +89,12 @@ export async function onRequestGet({ request, env, data }) {
 
     <h2 style="margin:2rem 0 .9rem">Nächste Tage</h2>
     ${upcoming}
+
+    <p class="hint" style="margin:2.2rem 0 0;text-align:center">
+      Bucht ein Gast online, meldet sich diese Seite von selbst.
+      <button type="button" class="btn sm ghost" data-probe
+              style="margin-left:.5rem">Meldung testen</button>
+    </p>
   `;
 
   return layout({ user: data?.user, title: 'Übersicht', active: '/admin', body });

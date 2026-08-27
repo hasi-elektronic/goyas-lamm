@@ -24,17 +24,31 @@ const json = (obj, status = 200) => new Response(JSON.stringify(obj), {
 const istISO = v => typeof v === 'string' && v.length >= 20 && v.length <= 30
   && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(v) && !Number.isNaN(Date.parse(v));
 
+/** Wie weit der erste Aufruf beim Öffnen des Panels zurückschaut. */
+const NACHZUEGLER_MIN = 20;
+
 export async function onRequestGet({ request, env, data }) {
   const url = new URL(request.url);
   const jetzt = new Date().toISOString();
-  const seit = url.searchParams.get('seit');
+  let seit = url.searchParams.get('seit');
 
-  // Erster Aufruf: nur den Startpunkt zurückgeben.
-  if (!istISO(seit)) return json({ jetzt, neu: [] });
-
-  // Mehr als eine Stunde Rückstand? Dann lag das Tablet im Standby — nicht nachträglich
-  // ein Feuerwerk für zehn alte Buchungen abbrennen, sondern still weiterzählen.
-  if (Date.parse(jetzt) - Date.parse(seit) > 3600e3) return json({ jetzt, neu: [] });
+  /*
+   * Beim Öffnen des Panels: die letzten Minuten mitnehmen.
+   *
+   * Vorher holte der erste Aufruf nur den Startpunkt. Wer aber erst bucht und dann das
+   * Panel öffnet — der häufigste Fall überhaupt — bekam nie eine Meldung. Jetzt schaut
+   * der erste Aufruf 20 Minuten zurück; welche davon auf diesem Gerät schon gezeigt
+   * wurden, entscheidet das Panel selbst anhand der Kennungen.
+   */
+  if (url.searchParams.get('start') === '1' && !istISO(seit)) {
+    seit = new Date(Date.now() - NACHZUEGLER_MIN * 60000).toISOString();
+  } else if (!istISO(seit)) {
+    return json({ jetzt, neu: [] });
+  } else if (Date.parse(jetzt) - Date.parse(seit) > 3600e3) {
+    // Mehr als eine Stunde Rückstand? Dann lag das Tablet im Standby — nicht nachträglich
+    // ein Feuerwerk für zehn alte Buchungen abbrennen, sondern still weiterzählen.
+    return json({ jetzt, neu: [] });
+  }
 
   const db = env.DB;
   const klartext = darfPersonendaten(data?.user?.role);

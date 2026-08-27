@@ -302,20 +302,45 @@ export const fanfareMarkup = () => `
     uhr = setTimeout(schliessen, 8000);
   }
 
+  /* ---------- Was dieses Gerät schon gesehen hat ----------
+     Damit eine Buchung, die vor dem Öffnen des Panels ankam, genau einmal gemeldet wird —
+     und beim nächsten Neuladen nicht noch einmal. Je Gerät eigene Liste: das Tablet in der
+     Küche und das Handy vom Chef sollen beide Bescheid bekommen. */
+  var GES_KEY = 'goya.gesehen';
+  function gesehenListe(){
+    try { return JSON.parse(localStorage.getItem(GES_KEY) || '[]') || []; } catch (e) { return []; }
+  }
+  function merken(id){
+    try {
+      var l = gesehenListe();
+      if (l.indexOf(id) > -1) return;
+      l.push(id);
+      if (l.length > 40) l = l.slice(-40);
+      localStorage.setItem(GES_KEY, JSON.stringify(l));
+    } catch (e) {}
+  }
+
   /* ---------- Abfrage ---------- */
-  var stand = null, ABSTAND = 20000, timer = null, laeuftAbfrage = false;
+  var stand = null, ABSTAND = 15000, timer = null, laeuftAbfrage = false;
 
   function fragen(){
     if (laeuftAbfrage) return;
     laeuftAbfrage = true;
-    var u = '/admin/melder' + (stand ? '?seit=' + encodeURIComponent(stand) : '');
+    var u = stand ? '/admin/melder?seit=' + encodeURIComponent(stand) : '/admin/melder?start=1';
     fetch(u, { headers: { accept: 'application/json' }, credentials: 'same-origin' })
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){
         if (!d) return;                       // abgemeldet oder Fehler: still weiter
         stand = d.jetzt || stand;
-        if (d.neu && d.neu.length) {
-          for (var i = 0; i < d.neu.length; i++) schlange.push(d.neu[i]);
+        var alt = gesehenListe(), frisch = [];
+        for (var i = 0; i < (d.neu || []).length; i++) {
+          var m = d.neu[i];
+          if (m.id && alt.indexOf(m.id) > -1) continue;   // auf diesem Gerät schon gezeigt
+          if (m.id) merken(m.id);
+          frisch.push(m);
+        }
+        if (frisch.length) {
+          schlange = schlange.concat(frisch);
           if (schlange.length > 6) schlange = schlange.slice(-6);
           naechste();
         }
@@ -333,17 +358,22 @@ export const fanfareMarkup = () => `
     if (document.visibilityState === 'visible') fragen();
   });
 
-  fragen();   // holt beim Laden nur den Startpunkt, meldet nichts Altes
+  fragen();   // nimmt beim Laden die letzten 20 Minuten mit, aber nichts doppelt
   takt();
 
-  /* Zum Ausprobieren, ohne auf einen echten Gast zu warten: in der Konsole
-     goyaProbe() aufrufen — oder /admin?probe=1 öffnen. */
+  /* Zum Ausprobieren, ohne auf einen echten Gast zu warten: der Knopf „Meldung testen"
+     unten auf der Übersicht, /admin?probe=1 — oder goyaProbe() in der Konsole. */
   window.goyaProbe = function(art){
-    schlange.push({ art: art || 'reservierung', name: 'Familie Müller',
+    schlange.push({ art: (art === 'warteliste' ? 'warteliste' : 'reservierung'),
+      name: 'Familie Müller',
       datum: new Date(Date.now() + 864e5).toISOString().slice(0,10),
       zeit: '19:00', gaeste: 4, notiz: 'Kinderstuhl, bitte am Fenster' });
     naechste();
   };
-  if (location.search.indexOf('probe=1') > -1) setTimeout(window.goyaProbe, 600);
+  document.addEventListener('click', function(e){
+    var k = e.target.closest && e.target.closest('[data-probe]');
+    if (k) { e.preventDefault(); window.goyaProbe(); }
+  });
+  if (location.search.indexOf('probe=1') > -1) setTimeout(function(){ window.goyaProbe(); }, 600);
 })();
 </script>`;
