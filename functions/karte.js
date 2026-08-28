@@ -559,7 +559,13 @@ function gruppeHtml(g, sprache) {
      erzeugte, zum anderen aus einem schlichten Grund: Die Marke „Echte
      Aufnahme" verdeckt auf einer 112px breiten Vorschau das halbe Bild.
      Sonst das erste Gericht, das überhaupt eins hat. */
-  const grossId = (gerichte.find(i => i.bild && ECHTE_FOTOS.has(i.bild))
+  /* Zuerst zählt der Stern aus /admin/karte: Gökhan entscheidet, welches
+     Gericht seiner Gruppe groß erscheint. Vorher steuerte der Stern die
+     Auswahl auf der Startseite; seit dort drei Spezialitäten mit eigenen
+     Texten stehen, hat er hier seine Aufgabe — an der Stelle, die der Gast
+     tatsächlich liest. */
+  const grossId = (gerichte.find(i => i.highlight && i.bild)
+    || gerichte.find(i => i.bild && ECHTE_FOTOS.has(i.bild))
     || gerichte.find(i => i.bild))?.id;
   return `<section class="gruppe">
     <h3 class="auf">${esc(titel)}</h3>

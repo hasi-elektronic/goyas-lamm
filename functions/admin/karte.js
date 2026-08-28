@@ -51,8 +51,8 @@ function gerichtZeile(i) {
           <input type="hidden" name="do" value="${i.highlight ? 'schau-aus' : 'schau-an'}">
           <input type="hidden" name="id" value="${esc(i.id)}">
           <button class="btn sm ${i.highlight ? '' : 'ghost'}" type="submit"
-            title="Steht auf der Startseite in der Auswahl">
-            ${i.highlight ? '★ Im Schaufenster' : '☆ Ins Schaufenster'}</button></form>
+            title="Wird auf der digitalen Karte als großes Bild seiner Gruppe gezeigt">
+            ${i.highlight ? '★ Groß auf der Karte' : '☆ Groß auf der Karte'}</button></form>
         <form method="post" action="/admin/karte" style="display:inline"
               onsubmit="return confirm('Gericht ' + ${jsq(i.name)} + ' endgültig löschen?')">
           <input type="hidden" name="do" value="item-del">

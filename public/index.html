@@ -597,21 +597,40 @@ footer a:hover{color:var(--gold)}
   .teller-fuss{justify-content:flex-start}
 }
 
-/* Schaufenster: eine Auswahl statt der ganzen Karte. Die vollständige Karte
-   hat seit der QR-Fassung eine eigene Seite — hier steht nur noch, wofür das
-   Haus steht, damit die Startseite wieder überschaubar ist. */
-.schau-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-  gap:1rem;margin:clamp(2.2rem,4vw,3rem) 0 0}
-.schau{background:var(--paper,#FBFAF3);border:1px solid var(--sand,#E8E2D2);
-  padding:1.15rem 1.25rem 1rem;display:flex;flex-direction:column;gap:.7rem;
-  justify-content:space-between}
-.schau-kopf{display:flex;align-items:baseline;gap:1rem}
-.schau-kopf h3{margin:0;font-size:1.12rem;line-height:1.25;flex:1;min-width:0}
-.schau-preis{font-size:.92rem;font-weight:700;color:var(--wine);white-space:nowrap;
+/* Spezialitäten: drei Gerichte mit Bild und Geschichte, im Wechsel links und
+   rechts. Vorher stand hier ein Auszug der Karte in Kartenform — neben dem
+   Abschnitt „Vom Teller" darüber wirkte das wie zwei Speisekarten auf einer
+   Seite. Die Karte selbst hat seit der QR-Fassung ihre eigene Seite; hier
+   erzählen wir nur noch, was man kennen sollte. */
+.spezi{display:flex;flex-direction:column;gap:clamp(2.4rem,5vw,4.2rem);
+  margin:clamp(2.6rem,5vw,4rem) 0 0}
+.spezi-zeile{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);
+  gap:clamp(1.4rem,3.5vw,3.2rem);align-items:center}
+/* Hochformat, aber gedeckelt: Bei 4:5 und halber Seitenbreite wird das Bild am
+   Rechner über 700 px hoch — daneben stehen vier Zeilen Text und viel Luft. */
+.spezi-bild{position:relative;overflow:hidden;background:#0d0c0a;aspect-ratio:4/5;
+  max-height:560px}
+.spezi-bild img{width:100%;height:100%;object-fit:cover;display:block}
+.spezi-nr{position:absolute;left:0;top:0;background:var(--wine);color:#fff;
+  font-size:.68rem;letter-spacing:.2em;font-weight:700;padding:.5rem .85rem}
+.spezi-txt h3{font-size:clamp(1.5rem,3vw,2rem);margin:.55rem 0 .8rem;line-height:1.15}
+.spezi-txt p{margin:0 0 .9rem;line-height:1.7}
+.spezi-txt p:last-of-type{margin-bottom:0}
+.spezi-sub{color:var(--muted,#6E675A);font-size:.95rem}
+.spezi-meta{display:flex;align-items:baseline;gap:.8rem;flex-wrap:wrap;
+  margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--sand,#E8E2D2)}
+.spezi-preis{font-size:1.1rem;font-weight:700;color:var(--wine);
   font-variant-numeric:tabular-nums}
-.schau-txt p{margin:.35rem 0 0;font-size:.88rem;line-height:1.55;color:var(--muted,#6E675A)}
-.schau-gruppe{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;
+.spezi-tag{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;
   color:var(--muted,#6E675A)}
+/* Im Wechsel: bei jeder zweiten Zeile steht das Bild rechts. */
+.spezi-zeile:nth-child(even) .spezi-bild{order:2}
+.spezi-zeile:nth-child(even){grid-template-columns:minmax(0,6fr) minmax(0,5fr)}
+@media(max-width:820px){
+  .spezi-zeile,.spezi-zeile:nth-child(even){grid-template-columns:1fr;gap:1.2rem}
+  .spezi-zeile:nth-child(even) .spezi-bild{order:0}
+  .spezi-bild{aspect-ratio:3/2}
+}
 .karte-cta{display:flex;gap:.7rem;flex-wrap:wrap;justify-content:center;
   margin-top:clamp(2rem,3.5vw,2.6rem)}
 </style>
@@ -630,7 +649,7 @@ footer a:hover{color:var(--gold)}
         <li><a href="#inhaber">Inhaber</a></li>
         <li><a href="#steak">Steak</a></li>
         <li><a href="#teller">Gerichte</a></li>
-        <li><a href="#karte">Speisekarte</a></li>
+        <li><a href="/karte">Speisekarte</a></li>
         <li><a href="#galerie">Galerie</a></li>
         <li><a href="#kontakt">Kontakt</a></li>
       </ul>
@@ -646,7 +665,7 @@ footer a:hover{color:var(--gold)}
   <a href="#inhaber">Der Inhaber</a>
   <a href="#steak">Steak vom heißen Stein</a>
   <a href="#teller">Gerichte</a>
-  <a href="#karte">Speisekarte</a>
+  <a href="/karte">Speisekarte</a>
   <a href="#galerie">Galerie</a>
   <a href="#reservieren">Reservieren</a>
   <a href="#kontakt">Kontakt</a>
@@ -665,7 +684,7 @@ footer a:hover{color:var(--gold)}
     </p>
     <div class="cta">
       <a class="btn btn-primary" href="#reservieren">Tisch reservieren</a>
-      <a class="btn btn-ghost" href="#karte">Zur Speisekarte</a>
+      <a class="btn btn-ghost" href="/karte">Zur Speisekarte</a>
     </div>
   </div>
   <div class="scrollhint">Entdecken</div>
@@ -744,7 +763,7 @@ footer a:hover{color:var(--gold)}
       <p style="color:var(--muted)">
         Kein Schnickschnack, keine Show. Regional, lecker, locker.
       </p>
-      <a class="btn btn-outline" href="#karte" style="margin-top:1rem">Speisekarte ansehen</a>
+      <a class="btn btn-outline" href="/karte" style="margin-top:1rem">Speisekarte ansehen</a>
     </div>
     <div class="figure reveal">
       <img src="/assets/img/klassiker.jpg" alt="Rostbraten mit Maultasche, Lemberger-Jus und handgeschabten Spätzle" width="1200" height="1500" loading="lazy">
@@ -976,53 +995,145 @@ footer a:hover{color:var(--gold)}
     <div class="teller-fuss reveal">
       <p class="echt"><span>Echte Aufnahmen</span> aus unserer Küche</p>
       <div class="teller-tasten">
-        <a class="btn" href="/karte">Karte mit Bildern</a>
-        <a class="btn btn-outline" href="#karte">Ganze Karte ansehen</a>
+        <a class="btn btn-primary" href="/karte">Ganze Speisekarte mit Bildern</a>
+        <a class="btn btn-outline" href="#spezialitaeten">Unsere Spezialitäten</a>
       </div>
     </div>
   </div>
 </section>
 
-<section id="karte" style="background:var(--cream)">
+<section id="spezialitaeten" style="background:var(--cream)">
   <div class="wrap">
     <div style="text-align:center;max-width:64ch;margin:0 auto" class="reveal">
-      <p class="eyebrow">Speisen &amp; Getränke</p>
-      <h2>Unsere Karte</h2>
+      <p class="eyebrow">Drei, die man kennen sollte</p>
+      <h2>Nicht auf jeder Karte.</h2>
       <p class="lead" style="margin:1rem auto 0">
-        Eine Auswahl aus dem, wofür wir stehen. Die vollständige Karte mit allen
-        Speisen, Weinen und Getränken — mit Bildern und auf Wunsch auf Englisch —
-        finden Sie auf einer eigenen Seite.
+        Der heiße Stein ist der Grund, warum die meisten kommen. Diese drei sind der
+        Grund, warum viele wiederkommen — und keines davon steht auf jeder Karte
+        zwischen Vaihingen und Sachsenheim.
       </p>
     </div>
 
-    <!-- Wird aus der Datenbank ersetzt; die Auswahl darunter ist die
-         Rückfallfassung, falls die Datenbank nicht antwortet. -->
-    <div class="schau-grid reveal" id="karte-schaufenster">
-      <div class="schau">
-        <div class="schau-txt">
-          <div class="schau-kopf"><h3>Filet</h3><div class="schau-preis">200 g 31,00 €</div></div>
-          <p>zart und mager</p>
+    <div class="spezi">
+      <article class="spezi-zeile reveal">
+        <div class="spezi-bild">
+          <span class="spezi-nr">01</span>
+          <picture>
+            <source type="image/webp"
+                    srcset="/assets/img/spezi-manti-600.webp 600w, /assets/img/spezi-manti-1100.webp 1100w"
+                    sizes="(max-width:820px) 92vw, 42vw">
+            <img src="/assets/img/spezi-manti-600.jpg"
+                 srcset="/assets/img/spezi-manti-600.jpg 600w, /assets/img/spezi-manti-1100.jpg 1100w"
+                 sizes="(max-width:820px) 92vw, 42vw"
+                 alt="Manti — kleine gefüllte Teigtaschen mit Knoblauch-Joghurt und Tomatenbutter"
+                 width="1100" height="1375" loading="lazy" decoding="async">
+          </picture>
         </div>
-        <span class="schau-gruppe">Steak auf heißem Stein</span>
-      </div>
-      <div class="schau">
-        <div class="schau-txt">
-          <div class="schau-kopf"><h3>Rostbraten</h3><div class="schau-preis">32,50 €</div></div>
-          <p>mit Maultasche und Lemberger-Jus, dazu handgeschabte Spätzle oder Bratkartoffeln</p>
+        <div class="spezi-txt">
+          <span class="kicker">Die andere Teigtasche</span>
+          <h3>Manti</h3>
+          <p class="spezi-sub">kleine mit Hackfleisch gefüllte Teigtaschen mit
+             Knoblauch-Joghurt-Soße und in Butter geschmolzenem Tomatenmark</p>
+          <p>Sie sind so klein, dass jede einzeln von Hand geschlossen wird. Wer bei uns
+             Maultaschen mag, sollte sie einmal bestellen: derselbe Gedanke — Teig, Fleisch,
+             Geduld —, nur aus einer anderen Küche. Am Ende kommt heiße Butter mit
+             Tomatenmark darüber, dazu Joghurt mit Knoblauch.</p>
+          <div class="spezi-meta">
+            <span class="spezi-preis">16,50 €</span>
+            <span class="spezi-tag">Hausgemacht</span>
+          </div>
         </div>
-        <span class="schau-gruppe">Klassiker</span>
-      </div>
-      <div class="schau">
-        <div class="schau-txt">
-          <div class="schau-kopf"><h3>Maultaschen</h3><div class="schau-preis">13,50 €</div></div>
-          <p>hausgemacht mit Zwiebelschmelze</p>
+      </article>
+
+      <article class="spezi-zeile reveal">
+        <div class="spezi-bild">
+          <span class="spezi-nr">02</span>
+          <picture>
+            <source type="image/webp"
+                    srcset="/assets/img/spezi-rostbraten-600.webp 600w, /assets/img/spezi-rostbraten-1100.webp 1100w"
+                    sizes="(max-width:820px) 92vw, 42vw">
+            <img src="/assets/img/spezi-rostbraten-600.jpg"
+                 srcset="/assets/img/spezi-rostbraten-600.jpg 600w, /assets/img/spezi-rostbraten-1100.jpg 1100w"
+                 sizes="(max-width:820px) 92vw, 42vw"
+                 alt="Rostbraten mit Lemberger-Jus, Maultasche und handgeschabten Spätzle"
+                 width="1100" height="1375" loading="lazy" decoding="async">
+          </picture>
         </div>
-        <span class="schau-gruppe">Schwäbische Teigwaren</span>
-      </div>
+        <div class="spezi-txt">
+          <span class="kicker">Aus der Nachbarschaft</span>
+          <h3>Rostbraten mit Lemberger-Jus</h3>
+          <p class="spezi-sub">mit Maultasche und Lemberger-Jus, dazu handgeschabte Spätzle
+             oder Bratkartoffeln</p>
+          <p>Der Jus wird mit Lemberger angesetzt — mit demselben Wein, den Sie hier auch im
+             Glas bekommen. Die Reben dafür stehen ein paar Kilometer weiter an denselben
+             Hängen; einen Wein von weit her hineinzugießen, wäre hier ein bisschen absurd.</p>
+          <div class="spezi-meta">
+            <span class="spezi-preis">32,50 €</span>
+            <span class="spezi-tag">Aus der Region</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="spezi-zeile reveal">
+        <div class="spezi-bild">
+          <span class="spezi-nr">03</span>
+          <picture>
+            <source type="image/webp"
+                    srcset="/assets/img/spezi-schnitzel-600.webp 600w, /assets/img/spezi-schnitzel-1100.webp 1100w"
+                    sizes="(max-width:820px) 92vw, 42vw">
+            <img src="/assets/img/spezi-schnitzel-600.jpg"
+                 srcset="/assets/img/spezi-schnitzel-600.jpg 600w, /assets/img/spezi-schnitzel-1100.jpg 1100w"
+                 sizes="(max-width:820px) 92vw, 42vw"
+                 alt="Wiener Schnitzel vom Kalb mit Preiselbeeren und handgeschabten Spätzle"
+                 width="1100" height="1375" loading="lazy" decoding="async">
+          </picture>
+        </div>
+        <div class="spezi-txt">
+          <span class="kicker">Vom Rücken, bei uns geschnitten</span>
+          <h3>Wiener Schnitzel vom Kalb</h3>
+          <p class="spezi-sub">hausgemacht vom Rücken, mit Preiselbeeren und handgeschabten
+             Spätzle oder Bratkartoffeln</p>
+          <p>Geschnitten, geklopft und paniert wird bei uns — nicht angeliefert. Das ist der
+             Unterschied, den man an der Kruste sieht: Sie liegt in Wellen auf dem Fleisch,
+             statt daran zu kleben. Dazu Preiselbeeren und Spätzle, die vom Brett kommen.</p>
+          <div class="spezi-meta">
+            <span class="spezi-preis">32,50 €</span>
+            <span class="spezi-tag">Hausgemacht</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="spezi-zeile reveal">
+        <div class="spezi-bild">
+          <span class="spezi-nr">Dazu</span>
+          <picture>
+            <source type="image/webp"
+                    srcset="/assets/img/spezi-wein-600.webp 600w, /assets/img/spezi-wein-1100.webp 1100w"
+                    sizes="(max-width:820px) 92vw, 42vw">
+            <img src="/assets/img/spezi-wein-600.jpg"
+                 srcset="/assets/img/spezi-wein-600.jpg 600w, /assets/img/spezi-wein-1100.jpg 1100w"
+                 sizes="(max-width:820px) 92vw, 42vw"
+                 alt="Ein Glas Rotwein im Kerzenlicht auf dem Holztisch im Gastraum"
+                 width="1100" height="1375" loading="lazy" decoding="async">
+          </picture>
+        </div>
+        <div class="spezi-txt">
+          <span class="kicker">Und dazu</span>
+          <h3>Wein von hier</h3>
+          <p class="spezi-sub">Riesling, Trollinger, Lemberger, Spätburgunder — offen im Glas
+             und in der Flasche</p>
+          <p>Unsere Weinkarte ist kurz und fast vollständig aus der Umgebung: Allmendinger,
+             Weingärtner, Faigle und Der Fischer. Das ist keine Marketingidee, sondern die
+             nächstgelegene Antwort auf die Frage, was zum Rostbraten passt.</p>
+          <div class="spezi-meta">
+            <span class="spezi-tag">Vier Weingüter aus der Nachbarschaft</span>
+          </div>
+        </div>
+      </article>
     </div>
 
     <div class="karte-cta reveal">
-      <a class="btn" href="/karte">Ganze Karte mit Bildern</a>
+      <a class="btn btn-primary" href="/karte">Ganze Speisekarte mit Bildern</a>
       <a class="btn btn-outline" href="/karte?l=en" hreflang="en">Menu in English</a>
     </div>
 
@@ -1030,7 +1141,9 @@ footer a:hover{color:var(--gold)}
       Alle Preise in Euro, inklusive Mehrwertsteuer. Eine separate Karte mit Allergenen und
       Zusatzstoffen erhalten Sie gerne von unserem Personal.
       Änderungen und Druckfehler vorbehalten. Stand der Karte:
-      <span id="karte-stand">August 2026</span>.
+      <span id="karte-stand">August 2026</span>.<br>
+      Die Bilder in diesem Abschnitt sind digital erstellt und zeigen eine beispielhafte
+      Anrichtung. Die Aufnahmen unter „Vom Teller" stammen aus unserer Küche.
     </p>
   </div>
 </section>
@@ -1200,7 +1313,7 @@ footer a:hover{color:var(--gold)}
           <div class="dl" id="doneDl"></div>
           <p class="res-hint" id="doneNote"></p>
           <p style="margin-top:1.2rem">
-            <a class="btn btn-outline" href="#karte">Schon mal die Karte ansehen</a>
+            <a class="btn btn-outline" href="/karte">Schon mal die Karte ansehen</a>
           </p>
         </div>
 
@@ -1278,7 +1391,7 @@ footer a:hover{color:var(--gold)}
           <li><a href="#inhaber">Der Inhaber</a></li>
           <li><a href="#steak">Steak vom heißen Stein</a></li>
           <li><a href="#teller">Gerichte</a></li>
-          <li><a href="#karte">Speisekarte</a></li>
+          <li><a href="/karte">Speisekarte</a></li>
           <li><a href="#galerie">Galerie</a></li>
           <li><a href="#reservieren">Reservieren</a></li>
         </ul>
@@ -1338,7 +1451,7 @@ footer a:hover{color:var(--gold)}
   "priceRange":"€€",
   "servesCuisine":["Schwäbisch","Deutsch","Steakhouse","Mediterran"],
   "acceptsReservations":"https://lammm.de/#reservieren",
-  "hasMenu":"https://lammm.de/#karte",
+  "hasMenu":"https://lammm.de/karte",
   "sameAs":["https://www.instagram.com/goyas.lamm/"],
   "address":{
     "@type":"PostalAddress",
