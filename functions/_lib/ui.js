@@ -458,7 +458,11 @@ ${rolle === 'demo' ? `<div class="demobar">Demo-Zugang · nur ansehen ·
 <nav class="tabs"><div class="in">
   ${gruppen.map(g => g.pfad
     ? `<a href="${g.pfad}" class="${active === g.pfad ? 'on' : ''}">${esc(g.titel)}</a>`
-    : `<details class="tmehr">
+    /* name="hauptnav" macht die Klappmenüs von Haus aus gegenseitig
+       ausschließend — in Browsern, die es können, ohne eine Zeile JavaScript.
+       Für die übrigen und fürs Zuklappen bei einem Klick daneben sorgt das
+       Skript am Seitenende. */
+    : `<details class="tmehr" name="hauptnav">
     <summary class="${g.eintraege.some(([h]) => h === active) ? 'on' : ''}">${esc(g.titel)}</summary>
     <div class="tliste">
       ${g.eintraege.map(([h, t]) =>
@@ -489,6 +493,43 @@ ${rolle === 'demo' ? `<div class="demobar">Demo-Zugang · nur ansehen ·
   </details>
 </nav>
 ${fanfareMarkup()}
+<script>
+/* Klappmenüs schließen.
+   Ein <details> bleibt offen, bis man es wieder antippt — beim Durchsehen der
+   Reiterleiste standen deshalb nach kurzer Zeit fünf Menüs gleichzeitig offen
+   und verdeckten die halbe Seite. Drei Regeln beheben das:
+     1. Öffnet eines, schließen die anderen (das name-Attribut macht das in
+        neuen Browsern schon selbst; hier für die übrigen).
+     2. Ein Klick daneben schließt alles — auch der auf den abgedunkelten
+        Rand des Handy-Blatts, der innerhalb des Elements liegt.
+     3. Escape schließt alles.
+   Ohne JavaScript bleibt es beim alten Verhalten: Antippen öffnet, Antippen
+   schließt. Nichts ist dadurch unerreichbar. */
+(function(){
+  var alle = [].slice.call(document.querySelectorAll('nav.tabs details, nav.bnav details'));
+  if (!alle.length) return;
+
+  function zu(ausser){
+    alle.forEach(function(d){ if (d !== ausser && d.open) d.open = false; });
+  }
+
+  alle.forEach(function(d){
+    d.addEventListener('toggle', function(){ if (d.open) zu(d); });
+  });
+
+  document.addEventListener('click', function(e){
+    var rand = e.target.classList && e.target.classList.contains('sheet-bg');
+    alle.forEach(function(d){
+      if (!d.open) return;
+      if (rand || !d.contains(e.target)) d.open = false;
+    });
+  });
+
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' || e.key === 'Esc') zu(null);
+  });
+})();
+</script>
 </body></html>`,
     { status, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } }
   );
