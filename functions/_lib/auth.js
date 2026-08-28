@@ -212,6 +212,7 @@ const GESPERRT = {
   demo: ['/admin/karte', '/admin/gericht', '/admin/suche', '/admin/zettel', '/admin/neu', '/admin/r', '/admin/warteliste',
          '/admin/personal', '/admin/arbeitszeit', '/admin/zeitzettel', '/admin/stempel',
          '/admin/benutzer', '/admin/preise', '/admin/inventur', '/admin/trinkgeld',
+         '/admin/dienstplan',
          /* Der Demo-Zugang zeigt das Reservierungssystem. Einkaufspreise und
             Lieferantenkonditionen des Hauses gehören nicht dazu. */
          '/admin/ware', '/admin/lager', '/admin/warenblatt', '/admin/aufsteller'],

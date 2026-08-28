@@ -366,6 +366,7 @@ const NAV = [
   ['/admin/preise',    'Einkaufspreise',    'etikett',  'Preise'],
   ['/admin/warenblatt','Kontrollblatt',     'druck',    'Blatt'],
   ['/admin/personal',  'Personal',          'leute',    'Team'],
+  ['/admin/dienstplan','Dienstplan',        'kalender', 'Plan'],
   ['/admin/arbeitszeit','Arbeitszeit',      'sanduhr',  'Zeit'],
   /* Es gab zwei „Zettel" — einen für die Küche, einen für die Stunden. */
   ['/admin/zeitzettel','Stundennachweis',   'druck',    'Nachweis'],
@@ -406,7 +407,7 @@ const GRUPPEN = [
   { titel: 'Speisekarte', kinder: ['/admin/karte', '/admin/aufsteller'] },
   { titel: 'Warenwirtschaft', kinder: ['/admin/ware', '/admin/lager', '/admin/inventur',
                                        '/admin/preise', '/admin/warenblatt'] },
-  { titel: 'Team', kinder: ['/admin/personal', '/admin/arbeitszeit', '/admin/zeitzettel',
+  { titel: 'Team', kinder: ['/admin/personal', '/admin/dienstplan', '/admin/arbeitszeit', '/admin/zeitzettel',
                             '/admin/trinkgeld', '/admin/stempel'] },
   { titel: 'Einstellungen', kinder: ['/admin/tische', '/admin/zeiten', '/admin/benutzer'] },
 ];
