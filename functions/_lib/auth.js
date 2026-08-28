@@ -215,7 +215,8 @@ const GESPERRT = {
          '/admin/dienstplan',
          /* Der Demo-Zugang zeigt das Reservierungssystem. Einkaufspreise und
             Lieferantenkonditionen des Hauses gehören nicht dazu. */
-         '/admin/ware', '/admin/lager', '/admin/warenblatt', '/admin/aufsteller'],
+         '/admin/ware', '/admin/lager', '/admin/warenblatt', '/admin/aufsteller',
+         '/admin/hygiene', '/admin/hygieneblatt'],
 };
 
 export const darfSeite = (role, pfad) =>

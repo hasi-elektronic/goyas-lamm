@@ -358,6 +358,7 @@ const NAV = [
   ['/admin/karte',     'Speisekarte',       'karte',    'Karte'],
   ['/admin/aufsteller','QR-Aufsteller',     'qr',       'QR'],
   ['/admin/ware',      'Wareneingang',      'kiste',    'Ware'],
+  ['/admin/hygiene',   'Hygiene-Kontrolle', 'liste',    'Hygiene'],
   /* Hieß „Lager". Falscher Name: Auf der Seite stehen Lieferanten, Artikel und
      Grenzwerte — ein Bestand entsteht erst mit der Inventur. */
   ['/admin/lager',     'Artikel & Lieferanten', 'regal', 'Artikel'],
@@ -405,7 +406,7 @@ const GRUPPEN = [
   { titel: 'Gäste', kinder: ['/admin/kalender', '/admin/warteliste', '/admin/neu',
                              '/admin/suche', '/admin/zettel', '/admin/auswertung'] },
   { titel: 'Speisekarte', kinder: ['/admin/karte', '/admin/aufsteller'] },
-  { titel: 'Warenwirtschaft', kinder: ['/admin/ware', '/admin/lager', '/admin/inventur',
+  { titel: 'Warenwirtschaft', kinder: ['/admin/ware', '/admin/hygiene', '/admin/lager', '/admin/inventur',
                                        '/admin/preise', '/admin/warenblatt'] },
   { titel: 'Team', kinder: ['/admin/personal', '/admin/dienstplan', '/admin/arbeitszeit', '/admin/zeitzettel',
                             '/admin/trinkgeld', '/admin/stempel'] },
