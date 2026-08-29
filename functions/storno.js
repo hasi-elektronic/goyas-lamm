@@ -48,7 +48,7 @@ const notFound = () => page('Nicht gefunden', `
   <p>Dieser Link ist nicht mehr gültig. Möglicherweise wurde die Reservierung bereits storniert.</p>
   <div class="row">
     <a class="btn" href="tel:${HOUSE.tel}">${esc(HOUSE.phone)} anrufen</a>
-    <a class="btn ghost" href="/#reservieren">Neu reservieren</a>
+    <a class="btn ghost" href="/reservieren">Neu reservieren</a>
   </div>`, 404);
 
 const detailRows = r => `<div class="dl">
@@ -76,7 +76,7 @@ export async function onRequestGet({ request, env }) {
       <h1>Bereits storniert</h1>
       <p>Diese Reservierung wurde bereits aufgehoben.</p>
       ${detailRows(r)}
-      <div class="row"><a class="btn" href="/#reservieren">Neuen Tisch reservieren</a></div>`);
+      <div class="row"><a class="btn" href="/reservieren">Neuen Tisch reservieren</a></div>`);
   }
 
   const past = diffDays(nowBerlin().date, r.res_date) < 0;
@@ -85,7 +85,7 @@ export async function onRequestGet({ request, env }) {
       <h1>Dieser Termin liegt zurück</h1>
       ${detailRows(r)}
       <p>Eine Stornierung ist nicht mehr nötig. Wir hoffen, es hat geschmeckt.</p>
-      <div class="row"><a class="btn" href="/#reservieren">Wieder reservieren</a></div>`);
+      <div class="row"><a class="btn" href="/reservieren">Wieder reservieren</a></div>`);
   }
 
   return page('Reservierung stornieren', `
@@ -122,7 +122,7 @@ export async function onRequestPost({ request, env }) {
       <h1>Dieser Termin liegt zurück</h1>
       ${detailRows(r)}
       <p>Eine Stornierung ist nicht mehr nötig. Wir hoffen, es hat geschmeckt.</p>
-      <div class="row"><a class="btn" href="/#reservieren">Wieder reservieren</a></div>`);
+      <div class="row"><a class="btn" href="/reservieren">Wieder reservieren</a></div>`);
   }
 
   if (r.status === 'confirmed') {
@@ -137,7 +137,7 @@ export async function onRequestPost({ request, env }) {
     <p>Ihr Tisch ist wieder frei. Danke, dass Sie uns Bescheid gegeben haben.</p>
     ${detailRows(r)}
     <div class="row">
-      <a class="btn" href="/#reservieren">Neuen Termin wählen</a>
+      <a class="btn" href="/reservieren">Neuen Termin wählen</a>
       <a class="btn ghost" href="/">Zur Startseite</a>
     </div>`);
 }

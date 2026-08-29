@@ -12,12 +12,24 @@
 /* Beim Neuladen soll die Seite oben beginnen — nicht dort, wo zuletzt gescrollt wurde. */
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 </script>
-
+<script>
+/* Bis August 2026 war alles eine Seite. Wer noch einen alten Link mit
+   Sprungmarke hat — aus einer E-Mail, einem Beitrag, einem Lesezeichen —,
+   landet damit hier und wird auf die neue Seite geschickt. */
+(function(){
+  var neu={'#konzept':'/restaurant#konzept','#inhaber':'/restaurant#inhaber',
+           '#galerie':'/restaurant#galerie','#steak':'/steak',
+           '#spezialitaeten':'/steak#spezialitaeten','#reservieren':'/reservieren',
+           '#kontakt':'/kontakt'};
+  var z=neu[location.hash];
+  if(z) location.replace(z);
+})();
+</script>
 <meta property="og:type" content="restaurant">
 <meta property="og:locale" content="de_DE">
 <meta property="og:site_name" content="Goya´s Lamm Horrheim">
-<meta property="og:title" content="Goya´s Lamm Horrheim — Steak vom heißen Stein">
-<meta property="og:description" content="Steak auf heißem Stein, hausgemachte Maultaschen, handgeschabte Spätzle. Regional, lecker, locker.">
+<meta property="og:title" content="Goya´s Lamm Horrheim — Steak vom heißen Stein | Restaurant in Vaihingen an der Enz">
+<meta property="og:description" content="Goya´s Lamm in Horrheim: Steak auf heißem Stein, hausgemachte Maultaschen, handgeschabte Spätzle und Cocktails. Regional, lecker, locker. Jetzt Tisch reservieren – Klosterbergstraße 45, 71665 Vaihingen an der Enz.">
 <meta property="og:url" content="https://lammm.de/">
 <meta property="og:image" content="https://lammm.de/assets/img/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
@@ -29,666 +41,36 @@ if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 
 <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/playfair-display-latin-600-normal.woff2" crossorigin>
 <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/inter-latin-400-normal.woff2" crossorigin>
-
-<style>
-/* Selbst gehostete Schriften — keine Verbindung zu Google (DSGVO) */
-@font-face{font-family:'Inter';font-style:normal;font-weight:300;font-display:swap;src:url(/assets/fonts/inter-latin-300-normal.woff2) format('woff2')}
-@font-face{font-family:'Inter';font-style:normal;font-weight:400;font-display:swap;src:url(/assets/fonts/inter-latin-400-normal.woff2) format('woff2')}
-@font-face{font-family:'Inter';font-style:normal;font-weight:500;font-display:swap;src:url(/assets/fonts/inter-latin-500-normal.woff2) format('woff2')}
-@font-face{font-family:'Inter';font-style:normal;font-weight:600;font-display:swap;src:url(/assets/fonts/inter-latin-600-normal.woff2) format('woff2')}
-@font-face{font-family:'Playfair Display';font-style:normal;font-weight:400;font-display:swap;src:url(/assets/fonts/playfair-display-latin-400-normal.woff2) format('woff2')}
-@font-face{font-family:'Playfair Display';font-style:italic;font-weight:400;font-display:swap;src:url(/assets/fonts/playfair-display-latin-400-italic.woff2) format('woff2')}
-@font-face{font-family:'Playfair Display';font-style:normal;font-weight:600;font-display:swap;src:url(/assets/fonts/playfair-display-latin-600-normal.woff2) format('woff2')}
-@font-face{font-family:'Playfair Display';font-style:normal;font-weight:700;font-display:swap;src:url(/assets/fonts/playfair-display-latin-700-normal.woff2) format('woff2')}
-
-:root{
-  --wine:#6D1826; --wine-dark:#4E101C; --wine-soft:#8C2436;
-  --ink:#14120F; --ink-soft:#2A2622;
-  --cream:#F4F7EA; --paper:#FBFAF3; --sand:#E8E2D2;
-  --gold:#C0A062;
-  --muted:#6E675A;
-  --max:1180px;
-  --r:2px;
-  --shadow:0 24px 60px -24px rgba(20,18,15,.45);
-}
-*,*::before,*::after{box-sizing:border-box}
-[hidden]{display:none!important}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-body{
-  margin:0;background:var(--paper);color:var(--ink);
-  font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
-  font-size:17px;line-height:1.65;font-weight:400;
-  -webkit-font-smoothing:antialiased;overflow-x:hidden;
-}
-img{max-width:100%;display:block;height:auto}
-a{color:inherit}
-h1,h2,h3,h4{font-family:'Playfair Display',Georgia,serif;font-weight:600;line-height:1.12;margin:0;letter-spacing:-.01em}
-h1{font-size:clamp(2.6rem,7vw,5rem)}
-h2{font-size:clamp(2rem,4.6vw,3.15rem)}
-h3{font-size:clamp(1.25rem,2.4vw,1.65rem)}
-p{margin:0 0 1em}
-.wrap{width:min(100% - 2.6rem,var(--max));margin-inline:auto}
-.eyebrow{
-  font-family:'Inter',sans-serif;font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;
-  font-weight:600;color:var(--wine);margin:0 0 1rem
-}
-.eyebrow.light{color:var(--gold)}
-.lead{font-size:clamp(1.05rem,1.7vw,1.22rem);color:var(--muted);max-width:62ch}
-section{padding:clamp(4.5rem,9vw,8rem) 0;position:relative}
-
-/* ---------- buttons ---------- */
-.btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:.6rem;
-  padding:.95rem 1.9rem;border-radius:var(--r);border:1px solid transparent;
-  font-size:.82rem;letter-spacing:.16em;text-transform:uppercase;font-weight:600;
-  text-decoration:none;cursor:pointer;transition:.25s cubic-bezier(.4,0,.2,1);white-space:nowrap;
-}
-.btn-primary{background:var(--wine);color:#fff}
-.btn-primary:hover{background:var(--wine-dark);transform:translateY(-2px);box-shadow:0 12px 28px -12px rgba(109,24,38,.7)}
-.btn-ghost{border-color:currentColor;color:var(--cream)}
-.btn-ghost:hover{background:var(--cream);color:var(--ink);border-color:var(--cream)}
-.btn-outline{border-color:var(--ink);color:var(--ink)}
-.btn-outline:hover{background:var(--ink);color:var(--cream)}
-
-/* ---------- header ---------- */
-header{
-  position:fixed;inset:0 0 auto;z-index:90;
-  transition:background .35s,box-shadow .35s,padding .35s;
-  padding:1.15rem 0;
-}
-header.solid{background:rgba(251,250,243,.96);backdrop-filter:blur(14px);box-shadow:0 1px 0 rgba(20,18,15,.09);padding:.7rem 0}
-.nav{display:flex;align-items:center;justify-content:space-between;gap:2rem}
-.brand{display:block;flex-shrink:0}
-.brand img{height:52px;width:auto;transition:height .35s,opacity .3s}
-header.solid .brand img{height:42px}
-.brand .l-white{display:block}.brand .l-dark{display:none}
-header.solid .brand .l-white{display:none}header.solid .brand .l-dark{display:block}
-.navlinks{display:flex;align-items:center;gap:2.1rem;list-style:none;margin:0;padding:0}
-.navlinks a{
-  text-decoration:none;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;font-weight:500;
-  color:var(--cream);opacity:.92;position:relative;padding-bottom:3px;transition:.25s
-}
-header.solid .navlinks a{color:var(--ink-soft)}
-.navlinks a::after{content:"";position:absolute;left:0;bottom:0;width:0;height:1px;background:currentColor;transition:width .3s}
-.navlinks a:hover::after{width:100%}
-.nav .btn{padding:.72rem 1.35rem;font-size:.72rem}
-header:not(.solid) .nav .btn-primary{background:var(--wine);color:#fff}
-.burger{display:none;background:none;border:0;padding:.5rem;cursor:pointer;flex-direction:column;gap:5px}
-.burger span{display:block;width:26px;height:2px;background:var(--cream);transition:.3s}
-header.solid .burger span{background:var(--ink)}
-.mobilemenu{
-  position:fixed;inset:0;z-index:95;background:var(--ink);color:var(--cream);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;
-  opacity:0;pointer-events:none;transition:opacity .35s
-}
-.mobilemenu.open{opacity:1;pointer-events:auto}
-.mobilemenu a{font-family:'Playfair Display',serif;font-size:1.75rem;text-decoration:none;color:var(--cream)}
-.mobilemenu .close{position:absolute;top:1.5rem;right:1.7rem;background:none;border:0;color:var(--cream);font-size:2.2rem;line-height:1;cursor:pointer}
-
-/* ---------- hero ---------- */
-.hero{
-  min-height:100svh;display:flex;align-items:center;position:relative;
-  padding:8rem 0 7rem;background:var(--ink);overflow:hidden
-}
-.hero-bg{position:absolute;inset:0}
-.hero-bg img{width:100%;height:100%;object-fit:cover;opacity:.62;transform:scale(1.04)}
-.hero::after{
-  content:"";position:absolute;inset:0;
-  background:linear-gradient(180deg,rgba(20,18,15,.86) 0%,rgba(20,18,15,.55) 40%,rgba(20,18,15,.93) 100%)
-}
-.hero .wrap{position:relative;z-index:2;color:var(--cream);text-align:center}
-.hero-logo{width:min(420px,74vw);margin:0 auto 2.2rem}
-.hero h1{
-  font-size:clamp(2.1rem,5.6vw,4.1rem);color:#fff;margin-bottom:1.2rem;font-weight:400;font-style:italic
-}
-.hero .tag{
-  font-size:.8rem;letter-spacing:.42em;text-transform:uppercase;color:var(--gold);
-  margin-bottom:2.4rem;font-weight:500
-}
-.hero .cta{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:.5rem}
-.scrollhint{
-  position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);z-index:3;
-  color:rgba(244,247,234,.55);font-size:.65rem;letter-spacing:.24em;text-transform:uppercase;
-  display:flex;flex-direction:column;align-items:center;gap:.6rem
-}
-.scrollhint::after{content:"";width:1px;height:38px;background:linear-gradient(var(--gold),transparent);animation:drop 2.2s infinite}
-@keyframes drop{0%{opacity:0;transform:scaleY(.2)}45%{opacity:1}100%{opacity:0;transform:scaleY(1)}}
-
-/* ---------- signatur ---------- */
-.signature{
-  background:var(--ink);color:var(--cream);
-  padding:clamp(4.2rem,8vw,7rem) 0 clamp(4.5rem,9vw,7.5rem);
-  overflow:hidden
-}
-.signature::before{
-  content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);
-  width:min(100% - 2.6rem,var(--max));height:1px;
-  background:linear-gradient(90deg,transparent,rgba(192,160,98,.55),transparent)
-}
-.sig-head{max-width:58ch;margin:0 0 clamp(2.6rem,5vw,3.8rem)}
-.sig-head .eyebrow{color:var(--gold)}
-.sig-head h2{color:#fff;margin-bottom:1.1rem}
-.sig-head .lead{color:rgba(244,247,234,.68);margin:0}
-.sig-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(.9rem,1.6vw,1.4rem)}
-.sig{
-  position:relative;overflow:hidden;isolation:isolate;
-  min-height:clamp(400px,42vw,520px);display:flex;align-items:flex-end;
-  background:#0d0c0a;border:1px solid rgba(244,247,234,.08)
-}
-.sig img{
-  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;
-  transform:scale(1.02);transition:transform 1.1s cubic-bezier(.2,.6,.2,1);
-  filter:saturate(.94)
-}
-.sig::after{
-  content:"";position:absolute;inset:0;z-index:-1;
-  background:linear-gradient(180deg,rgba(13,12,10,.14) 0%,rgba(13,12,10,.4) 42%,
-             rgba(13,12,10,.88) 76%,rgba(13,12,10,.97) 100%)
-}
-.sig:hover img,.sig:focus-within img{transform:scale(1.09)}
-.sig-txt{padding:clamp(1.6rem,2.4vw,2.2rem);width:100%}
-.sig .kicker{
-  display:inline-block;font-size:.66rem;letter-spacing:.28em;text-transform:uppercase;
-  font-weight:600;color:var(--gold);margin-bottom:.8rem;position:relative;padding-top:1.1rem
-}
-.sig .kicker::before{
-  content:"";position:absolute;top:0;left:0;width:34px;height:2px;background:var(--gold);
-  transition:width .55s cubic-bezier(.2,.6,.2,1)
-}
-.sig:hover .kicker::before{width:64px}
-.sig h3{color:#fff;font-size:clamp(1.4rem,2.1vw,1.8rem);margin-bottom:.5rem}
-.sig p{color:rgba(244,247,234,.74);font-size:.94rem;line-height:1.6;margin:0;max-width:34ch}
-.sig-note{
-  margin:clamp(2.2rem,4vw,3rem) 0 0;text-align:center;
-  font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;
-  color:rgba(244,247,234,.44)
-}
-.sig-note span{color:var(--gold)}
-
-/* ---------- küchenchef ---------- */
-.chef{background:var(--cream);border-top:1px solid var(--sand);border-bottom:1px solid var(--sand)}
-.chef .figure img{aspect-ratio:4/5}
-.chef .caption{background:var(--ink);color:var(--cream)}
-.chef h2{margin-bottom:.4rem}
-.chef .role{
-  font-size:.74rem;letter-spacing:.26em;text-transform:uppercase;color:var(--muted);
-  margin:0 0 1.5rem;font-weight:600
-}
-.vita{list-style:none;margin:2rem 0 0;padding:0;position:relative}
-.vita::before{content:"";position:absolute;left:5px;top:.55rem;bottom:.9rem;width:1px;background:var(--sand)}
-.vita li{position:relative;padding:0 0 1.5rem 2.1rem}
-.vita li:last-child{padding-bottom:0}
-.vita li::before{
-  content:"";position:absolute;left:0;top:.5rem;width:11px;height:11px;border-radius:50%;
-  background:var(--paper);border:2px solid var(--gold)
-}
-.vita li:first-child::before{background:var(--wine);border-color:var(--wine)}
-.vita .st{
-  display:block;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;
-  color:var(--wine);font-weight:700;margin-bottom:.25rem
-}
-.vita b{display:block;font-family:'Playfair Display',Georgia,serif;font-weight:600;
-  font-size:1.12rem;line-height:1.25;margin-bottom:.3rem}
-.vita p{margin:0;color:var(--muted);font-size:.95rem}
-
-/* ---------- split ---------- */
-.split{display:grid;grid-template-columns:1.05fr 1fr;gap:clamp(2.5rem,6vw,5.5rem);align-items:center}
-.split.rev>*:first-child{order:2}
-.figure{position:relative}
-.figure img{width:100%;aspect-ratio:4/5;object-fit:cover;box-shadow:var(--shadow)}
-.figure .caption{
-  position:absolute;bottom:-1px;left:-1px;background:var(--wine);color:#fff;
-  padding:1rem 1.6rem;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;font-weight:600
-}
-.rule{width:52px;height:2px;background:var(--gold);margin:0 0 1.6rem}
-
-/* ---------- steak feature ---------- */
-.feature{background:var(--ink);color:var(--cream)}
-.feature h2{color:#fff}
-.feature .lead{color:rgba(244,247,234,.68)}
-.pricecard{
-  border:1px solid rgba(244,247,234,.16);padding:1.9rem 1.7rem;background:rgba(244,247,234,.03);
-  transition:.3s
-}
-.pricecard:hover{background:rgba(192,160,98,.07);border-color:rgba(192,160,98,.45);transform:translateY(-4px)}
-.pricecard h3{color:#fff;margin-bottom:.25rem}
-.pricecard .sub{color:var(--gold);font-size:.76rem;letter-spacing:.16em;text-transform:uppercase;margin-bottom:1.3rem}
-.pricecard table{width:100%;border-collapse:collapse;font-size:.95rem}
-.pricecard td{padding:.42rem 0;border-bottom:1px dashed rgba(244,247,234,.14);color:rgba(244,247,234,.8)}
-.pricecard tr:last-child td{border-bottom:0}
-.pricecard td:last-child{text-align:right;color:#fff;font-weight:500;font-variant-numeric:tabular-nums}
-.cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.4rem;margin-top:3rem}
-
-/* .note wird noch vom Hinweis unter dem Schaufenster gebraucht;
-   der Rest des alten Karten-CSS ist mit der vollen Karte weggefallen. */
-.note{font-size:.86rem;color:var(--muted);font-style:italic;margin-top:-.6rem;margin-bottom:1.4rem}
-
-/* ---------- gallery ---------- */
-#galerie{background:var(--ink);color:var(--cream)}
-#galerie h2{color:#fff}
-#galerie .eyebrow{color:var(--gold)}
-.gallery{
-  display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:172px;gap:.6rem;
-}
-.g-item{
-  position:relative;overflow:hidden;display:block;background:#0d0c0a;padding:0;border:0;
-  cursor:zoom-in;-webkit-tap-highlight-color:transparent
-}
-.g-item img{width:100%;height:100%;object-fit:cover;transition:transform .8s cubic-bezier(.2,.6,.2,1)}
-.g-item::after{
-  content:"";position:absolute;inset:0;
-  background:linear-gradient(to top,rgba(10,9,8,.88) 0%,rgba(10,9,8,.18) 45%,transparent 70%);
-  opacity:0;transition:opacity .45s
-}
-.g-cap{
-  position:absolute;left:1.1rem;right:1.1rem;bottom:1rem;z-index:2;color:#fff;text-align:left;
-  font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;font-weight:600;
-  opacity:0;transform:translateY(10px);transition:opacity .45s,transform .45s
-}
-.g-cap small{display:block;font-size:.66rem;letter-spacing:.1em;text-transform:none;
-  font-weight:400;color:var(--gold);margin-top:.3rem;opacity:.95}
-.g-item:hover img,.g-item:focus-visible img{transform:scale(1.07)}
-.g-item:hover::after,.g-item:focus-visible::after{opacity:1}
-.g-item:hover .g-cap,.g-item:focus-visible .g-cap{opacity:1;transform:none}
-.g-item:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-.ga{grid-column:span 3;grid-row:span 2}
-.gb{grid-column:span 3;grid-row:span 1}
-.gc{grid-column:span 3;grid-row:span 1}
-.gd{grid-column:span 2;grid-row:span 2}
-.ge{grid-column:span 2;grid-row:span 2}
-.gf{grid-column:span 2;grid-row:span 2}
-.gg{grid-column:span 4;grid-row:span 2}
-.gh{grid-column:span 2;grid-row:span 2}
-.g-progress{display:none}
-
-/* ---------- lightbox ---------- */
-.lb{
-  position:fixed;inset:0;z-index:999;background:#0a0908;
-  display:flex;align-items:center;justify-content:center;
-  opacity:0;visibility:hidden;pointer-events:none;transition:opacity .3s,visibility .3s
-}
-.lb.open{opacity:1;visibility:visible;pointer-events:auto}
-.lb figure{margin:0;max-width:94vw;max-height:88vh;display:flex;flex-direction:column;align-items:center;gap:1rem}
-.lb img{max-width:94vw;max-height:78vh;object-fit:contain;box-shadow:0 30px 90px -30px rgba(0,0,0,.9)}
-.lb figcaption{
-  color:var(--cream);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;font-weight:600;text-align:center
-}
-.lb figcaption small{display:block;font-size:.72rem;letter-spacing:.04em;text-transform:none;
-  font-weight:400;color:rgba(244,247,234,.6);margin-top:.35rem}
-.lb-btn{
-  position:absolute;background:none;border:1px solid rgba(244,247,234,.28);color:var(--cream);
-  width:48px;height:48px;display:grid;place-items:center;cursor:pointer;transition:.25s;font-size:1.4rem;line-height:1
-}
-.lb-btn:hover{background:var(--gold);border-color:var(--gold);color:var(--ink)}
-.lb-close{top:1.4rem;right:1.4rem;font-size:1.8rem}
-.lb-prev{left:1.4rem;top:50%;transform:translateY(-50%)}
-.lb-next{right:1.4rem;top:50%;transform:translateY(-50%)}
-.lb-count{position:absolute;bottom:1.6rem;left:50%;transform:translateX(-50%);
-  color:rgba(244,247,234,.5);font-size:.72rem;letter-spacing:.2em;font-variant-numeric:tabular-nums}
-
-/* ---------- reservation ---------- */
-.reserve{background:var(--cream)}
-.reserve-box{
-  background:var(--paper);border:1px solid var(--sand);padding:clamp(1.7rem,4vw,3.2rem);
-  display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:clamp(2rem,5vw,4rem);
-  align-items:start;box-shadow:var(--shadow)
-}
-.reserve-box > *{min-width:0}
-.res-grid .field{min-width:0}
-.field input,.field textarea{min-width:0}
-.res-side .mini{
-  list-style:none;margin:1.6rem 0 1.8rem;padding:0;border-top:1px solid var(--sand);font-size:.92rem
-}
-.res-side .mini li{display:flex;justify-content:space-between;gap:1rem;padding:.5rem 0;border-bottom:1px solid var(--sand)}
-.res-side .mini li span:last-child{font-weight:500;font-variant-numeric:tabular-nums}
-.res-side .mini li.zu span:last-child{color:var(--muted);font-weight:400}
-
-/* Formular */
-.res-form{display:block}
-.kal{border:1px solid var(--sand);background:var(--paper);padding:.9rem .9rem 1rem;margin-top:.7rem}
-.kal-kopf{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-bottom:.7rem}
-.kal-kopf strong{font-family:'Playfair Display',Georgia,serif;font-size:1.08rem;font-weight:600}
-.kal-pfeil{width:38px;height:38px;flex:0 0 auto;border:1px solid var(--sand);background:#fff;
-  color:var(--ink);font:inherit;font-size:1rem;cursor:pointer;border-radius:2px;line-height:1}
-.kal-pfeil:hover:not(:disabled){border-color:var(--wine);color:var(--wine)}
-.kal-pfeil:disabled{opacity:.3;cursor:not-allowed}
-.kal-wt{display:grid;grid-template-columns:repeat(7,1fr);gap:.25rem;margin-bottom:.3rem}
-.kal-wt span{text-align:center;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--muted);font-weight:600}
-.kal-tage{display:grid;grid-template-columns:repeat(7,1fr);gap:.25rem}
-.kal-tage button,.kal-tage span{
-  display:flex;align-items:center;justify-content:center;aspect-ratio:1/1;
-  min-width:0;min-height:36px;
-  border:1px solid transparent;background:#fff;color:var(--ink);font:inherit;font-size:.95rem;
-  font-variant-numeric:tabular-nums;border-radius:2px;cursor:pointer;padding:0;
-  transition:background .15s,border-color .15s,color .15s}
-.kal-tage button:hover{border-color:var(--wine);color:var(--wine)}
-.kal-tage button[aria-pressed="true"]{background:var(--wine);border-color:var(--wine);color:#fff;font-weight:700}
-.kal-tage .leer{background:none;border:0;cursor:default}
-.kal-tage .zu,.kal-tage .weg{background:var(--cream);color:#b9b2a4;cursor:not-allowed;border-color:transparent}
-.kal-tage .voll{background:#fff;color:#b9b2a4;cursor:not-allowed;text-decoration:line-through;
-  border-color:var(--sand)}
-.kal-tage .heute{box-shadow:inset 0 0 0 1px var(--gold)}
-.kal-legende{display:flex;align-items:center;gap:.4rem 1rem;flex-wrap:wrap;margin:.9rem 0 0;
-  font-size:.76rem;color:var(--muted)}
-.kal-legende .l{width:13px;height:13px;border-radius:2px;display:inline-block;margin-right:-.2rem}
-.kal-legende .l.frei{background:#fff;border:1px solid var(--sand)}
-.kal-legende .l.voll{background:#fff;border:1px solid var(--sand);position:relative}
-.kal-legende .l.voll::after{content:"";position:absolute;left:1px;right:1px;top:50%;height:1px;background:#b9b2a4}
-.kal-legende .l.zu{background:var(--cream);border:1px solid var(--cream)}
-.kal-laedt{opacity:.45;pointer-events:none}
-/* Schmale Handys: sieben Spalten passen nur mit kleineren Abständen hinein */
-@media (max-width:480px){
-  .kal{padding:.7rem .5rem .8rem}
-  .kal-tage,.kal-wt{gap:.16rem}
-  .kal-tage button,.kal-tage span{min-height:32px;font-size:.9rem}
-  .kal-pfeil{width:34px;height:34px}
-  .kal-legende{font-size:.72rem;gap:.35rem .8rem}
-}
-
-.warte-box{border:1px solid var(--sand);background:var(--cream);padding:1.1rem 1.2rem;margin-top:.8rem}
-.warte-box p{font-size:.93rem;color:var(--muted);margin:0 0 .9rem}
-.warte-box .btn{padding:.7rem 1.4rem;font-size:.72rem}
-.linkbtn{background:none;border:0;padding:0;font:inherit;font-size:inherit;color:var(--wine);
-  text-decoration:underline;cursor:pointer}
-.res-form.warte .res-submit{background:var(--ink);border-color:var(--ink)}
-.res-form.warte .res-submit:hover{background:#000;border-color:#000}
-.res-step{margin-bottom:1.5rem}
-.res-lab{
-  display:block;font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;font-weight:700;
-  color:var(--wine);margin-bottom:.7rem
-}
-.res-lab em{font-style:normal;color:var(--muted);font-weight:500;letter-spacing:.1em}
-.chips{display:flex;flex-wrap:wrap;gap:.42rem}
-.chip{
-  background:var(--paper);border:1px solid var(--sand);color:var(--ink);
-  padding:.6rem .95rem;font-family:inherit;font-size:.92rem;font-weight:500;cursor:pointer;
-  transition:.2s;font-variant-numeric:tabular-nums;line-height:1.15;border-radius:var(--r)
-}
-.chip:hover{border-color:var(--wine);color:var(--wine)}
-.chip[aria-pressed="true"]{background:var(--wine);border-color:var(--wine);color:#fff}
-.chip:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-.chip.wide{padding-inline:1.15rem}
-.chips.times .chip{min-width:78px;text-align:center}
-.res-hint{font-size:.88rem;color:var(--muted);margin:.1rem 0 0;line-height:1.55}
-.res-hint a{color:var(--wine)}
-.res-hint.warn{color:var(--wine);font-weight:500}
-input[type="date"].res-date{
-  width:100%;max-width:260px;font-family:inherit;font-size:1rem;color:var(--ink);
-  background:var(--paper);border:1px solid var(--sand);border-radius:var(--r);
-  padding:.72rem .85rem;transition:.2s
-}
-input[type="date"].res-date:focus{outline:0;border-color:var(--wine);box-shadow:0 0 0 3px rgba(109,24,38,.09)}
-.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem 1.1rem;margin-bottom:1.3rem}
-.field.full{grid-column:1 / -1}
-.field label{
-  display:block;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--muted);font-weight:600;margin-bottom:.35rem
-}
-.field label em{font-style:normal;text-transform:none;letter-spacing:.02em}
-.field input,.field textarea{
-  width:100%;font-family:inherit;font-size:1rem;color:var(--ink);background:var(--paper);
-  border:1px solid var(--sand);border-radius:var(--r);padding:.72rem .85rem;transition:.2s
-}
-.field textarea{resize:vertical;min-height:76px;line-height:1.55}
-.field input:focus,.field textarea:focus{outline:0;border-color:var(--wine);box-shadow:0 0 0 3px rgba(109,24,38,.09)}
-.field input[aria-invalid="true"],.field textarea[aria-invalid="true"]{border-color:var(--wine-soft)}
-.hp{position:absolute!important;left:-9999px!important;width:1px;height:1px;opacity:0}
-.res-legal{font-size:.78rem;color:var(--muted);line-height:1.55;margin:0 0 1.1rem}
-.res-legal a{color:var(--wine)}
-.res-submit{width:100%;padding:1.05rem 1.6rem}
-.res-submit[disabled]{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
-.res-msg{margin:.9rem 0 0;font-size:.9rem;line-height:1.55;min-height:1px}
-.res-msg.err{color:var(--wine);font-weight:500}
-.res-summary{
-  margin:1.4rem 0 0;padding:.9rem 1.1rem;background:var(--cream);border-left:3px solid var(--gold);
-  font-size:.92rem;line-height:1.6
-}
-.res-summary b{font-weight:600}
-/* Bestätigung */
-.res-done{text-align:left}
-.res-done .tick{
-  width:54px;height:54px;border-radius:50%;background:var(--wine);color:#fff;display:grid;place-items:center;
-  font-size:1.6rem;margin-bottom:1.2rem
-}
-.res-done h3{font-size:clamp(1.5rem,3vw,2rem);margin-bottom:.6rem}
-.res-done .dl{margin:1.4rem 0;border-top:1px solid var(--sand)}
-.res-done .dl div{display:flex;justify-content:space-between;gap:1rem;padding:.6rem 0;border-bottom:1px solid var(--sand)}
-.res-done .dl span:first-child{font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);padding-top:.2rem}
-.res-done .dl span:last-child{font-weight:600;text-align:right}
-
-/* ---------- info ---------- */
-.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(2rem,5vw,4rem)}
-.hours{width:100%;border-collapse:collapse}
-.hours td{padding:.72rem 0;border-bottom:1px solid var(--sand);font-size:.98rem}
-.hours td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabular-nums}
-.hours tr.today td{color:var(--wine);font-weight:700}
-.hours tr.closed td:last-child{color:var(--muted);font-weight:400}
-.contact-list{list-style:none;margin:0;padding:0}
-.contact-list li{padding:.72rem 0;border-bottom:1px solid var(--sand);display:flex;gap:1.2rem}
-.contact-list .k{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);width:100px;flex-shrink:0;padding-top:.28rem}
-.contact-list a{text-decoration:none;font-weight:500}
-.contact-list a:hover{color:var(--wine)}
-/* Die Karte ist ein Bild bei uns, kein eingebetteter Dienst — deshalb ein
-   Link mit Bild statt eines iframes. Der Hinweis „In Google Maps öffnen"
-   liegt sichtbar darauf, damit niemand vergeblich zu ziehen versucht. */
-.mapbox{display:block;position:relative;margin-top:2.5rem;border:1px solid var(--sand);
-  overflow:hidden;line-height:0}
-.mapbox img{width:100%;height:auto;display:block;filter:grayscale(.28) contrast(1.04);
-  transition:transform .5s cubic-bezier(.2,.7,.2,1),filter .3s}
-.mapbox:hover img,.mapbox:focus-visible img{transform:scale(1.02);filter:grayscale(0) contrast(1.04)}
-.mapbox:focus-visible{outline:2px solid var(--wine);outline-offset:2px}
-.map-cta{position:absolute;right:1rem;bottom:1rem;background:var(--wine);color:#fff;
-  font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;
-  padding:.7rem 1.1rem;line-height:1;box-shadow:0 10px 24px -12px rgba(0,0,0,.6)}
-.anfahrt{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-  gap:1.4rem 2rem;margin-top:1.8rem}
-.anfahrt .k{display:block;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;
-  font-weight:700;color:var(--wine);margin-bottom:.45rem}
-.anfahrt p{margin:0;font-size:.92rem;line-height:1.65;color:var(--muted,#6E675A)}
-.map-quelle{margin-top:1.6rem;text-align:right}
-.routen{display:flex;gap:.6rem;flex-wrap:wrap}
-@media(max-width:560px){
-  .map-cta{left:1rem;right:auto;bottom:.8rem;text-align:center}
-}
-
-/* ---------- footer ---------- */
-footer{background:var(--ink);color:rgba(244,247,234,.62);padding:4.5rem 0 6.5rem;font-size:.9rem}
-.foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:3rem;padding-bottom:3rem;border-bottom:1px solid rgba(244,247,234,.12)}
-footer img.flogo{width:230px;margin-bottom:1.4rem}
-footer h4{font-family:'Inter',sans-serif;font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin:0 0 1.1rem;font-weight:600}
-footer ul{list-style:none;margin:0;padding:0}
-footer li{margin-bottom:.55rem}
-footer a{text-decoration:none;transition:.2s}
-footer a:hover{color:var(--gold)}
-.foot-bottom{display:flex;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;padding-top:1.8rem;font-size:.82rem}
-.social{display:flex;gap:1rem;margin-top:1.4rem}
-.social a{
-  width:40px;height:40px;border:1px solid rgba(244,247,234,.22);display:grid;place-items:center;
-  transition:.25s
-}
-.social a:hover{background:var(--gold);border-color:var(--gold);color:var(--ink)}
-.social svg{width:18px;height:18px;fill:currentColor}
-
-/* ---------- mobile sticky ---------- */
-.stickybar{
-  position:fixed;left:0;right:0;bottom:0;z-index:80;display:none;
-  background:rgba(20,18,15,.97);backdrop-filter:blur(10px);
-  padding:.6rem .8rem calc(.6rem + env(safe-area-inset-bottom));gap:.6rem
-}
-.stickybar a{
-  flex:1;display:flex;align-items:center;justify-content:center;gap:.5rem;padding:.9rem;
-  text-decoration:none;font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600
-}
-.stickybar .call{color:var(--cream);border:1px solid rgba(244,247,234,.3)}
-.stickybar .res{background:var(--wine);color:#fff}
-
-/* ---------- reveal ---------- */
-.reveal{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.2,.6,.2,1),transform .8s cubic-bezier(.2,.6,.2,1)}
-.reveal.in{opacity:1;transform:none}
-
-/* ---------- responsive ---------- */
-@media (max-width:960px){
-  header:not(.solid) .brand{opacity:0;pointer-events:none}
-  .hero .tag{letter-spacing:.24em;font-size:.72rem}
-  .hero-logo{width:min(340px,78vw)}
-  .navlinks{display:none}
-  .nav .btn{display:none}
-  .burger{display:flex}
-  .sig-grid{grid-template-columns:1fr;gap:1rem}
-  .sig{min-height:0;aspect-ratio:4/5}
-  .sig-txt{padding:1.6rem 1.4rem}
-  .sig p{max-width:none}
-  .sig-note{letter-spacing:.16em;line-height:2.1}
-  .split{grid-template-columns:1fr;gap:2.5rem}
-  .split.rev>*:first-child{order:0}
-  .cards3{grid-template-columns:1fr}
-  .dishes{grid-template-columns:1fr;gap:0}
-  .drinks{columns:1}
-  .gallery{
-    display:flex;grid-template-columns:none;grid-auto-rows:auto;gap:.75rem;
-    overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;
-    -webkit-overflow-scrolling:touch;scrollbar-width:none;
-    padding:0 1.3rem 0;margin:0 -1.3rem;
-  }
-  .gallery::-webkit-scrollbar{display:none}
-  .gallery::after{content:"";flex:0 0 .55rem}
-  .g-item{
-    flex:0 0 78%;max-width:340px;height:auto;aspect-ratio:4/5;
-    scroll-snap-align:center;grid-column:auto!important;grid-row:auto!important
-  }
-  .g-item.gg{aspect-ratio:4/5}
-  .g-item::after{opacity:1}
-  .g-cap{opacity:1;transform:none}
-  .g-progress{
-    display:block;height:2px;background:rgba(244,247,234,.14);margin:1.4rem auto 0;
-    width:min(160px,40%);position:relative;overflow:hidden
-  }
-  .g-progress span{position:absolute;left:0;top:0;height:100%;background:var(--gold);width:22%;transition:left .12s linear}
-  .lb-prev,.lb-next{display:none}
-  .lb-close{top:1rem;right:1rem;width:42px;height:42px}
-  .lb img{max-height:72vh}
-  .reserve-box{grid-template-columns:minmax(0,1fr);gap:2.2rem}
-  .res-grid{grid-template-columns:1fr}
-  input[type="date"].res-date{max-width:100%}
-  .chips.times .chip{flex:1 0 calc(33.333% - .3rem);min-width:0}
-  .info-grid{grid-template-columns:1fr}
-  .foot-grid{grid-template-columns:1fr;gap:2.4rem}
-  .stickybar{display:flex}
-  body{padding-bottom:0}
-  footer{padding-bottom:7.5rem}
-}
-@media (prefers-reduced-motion:reduce){
-  *{animation:none!important;transition:none!important}
-  .reveal{opacity:1;transform:none}
-}
-
-/* ---------- Echte Teller ---------- */
-.teller-head{max-width:58ch;margin:0 0 clamp(2.4rem,4.5vw,3.4rem)}
-.teller-head h2{margin-bottom:1rem}
-.teller-head .lead{margin:0}
-.teller-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(.9rem,1.7vw,1.5rem)}
-.teller{display:flex;flex-direction:column;background:var(--paper,#FBFAF3);
-  border:1px solid var(--sand,#E4DED0);border-radius:var(--r);overflow:hidden;text-align:left;
-  padding:0;cursor:zoom-in;-webkit-tap-highlight-color:transparent;
-  transition:transform .4s cubic-bezier(.2,.6,.2,1),box-shadow .4s}
-.teller:hover,.teller:focus-visible{transform:translateY(-4px);
-  box-shadow:0 18px 40px -22px rgba(20,18,15,.55)}
-.teller:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-.teller-bild{position:relative;aspect-ratio:1/1;overflow:hidden;background:#0d0c0a}
-.teller-bild img{width:100%;height:100%;object-fit:cover;display:block;
-  transition:transform .8s cubic-bezier(.2,.6,.2,1)}
-.teller:hover .teller-bild img,.teller:focus-visible .teller-bild img{transform:scale(1.06)}
-.teller-txt{padding:1.05rem 1.15rem 1.2rem;display:flex;flex-direction:column;gap:.35rem;flex:1}
-.teller-txt h3{font-size:1.06rem;margin:0;line-height:1.25}
-.teller-txt p{margin:0;font-size:.86rem;color:var(--muted,#6E675A);line-height:1.55;flex:1}
-.teller-preis{font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;
-  color:var(--wine);margin-top:.35rem}
-.teller-fuss{margin:clamp(2rem,3.6vw,2.8rem) 0 0;display:flex;gap:1.2rem;flex-wrap:wrap;
-  align-items:center;justify-content:space-between}
-.teller-fuss .echt{margin:0;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;
-  color:var(--muted,#6E675A)}
-.teller-fuss .echt span{color:var(--wine)}
-.teller-tasten{display:flex;gap:.6rem;flex-wrap:wrap}
-@media(max-width:900px){.teller-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:520px){
-  .teller-grid{grid-template-columns:1fr;gap:1rem}
-  .teller-txt{padding:1rem 1.1rem 1.15rem}
-  .teller-fuss{justify-content:flex-start}
-}
-
-/* Spezialitäten: drei Gerichte mit Bild und Geschichte, im Wechsel links und
-   rechts. Vorher stand hier ein Auszug der Karte in Kartenform — neben dem
-   Abschnitt „Vom Teller" darüber wirkte das wie zwei Speisekarten auf einer
-   Seite. Die Karte selbst hat seit der QR-Fassung ihre eigene Seite; hier
-   erzählen wir nur noch, was man kennen sollte. */
-.spezi{display:flex;flex-direction:column;gap:clamp(2.4rem,5vw,4.2rem);
-  margin:clamp(2.6rem,5vw,4rem) 0 0}
-.spezi-zeile{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);
-  gap:clamp(1.4rem,3.5vw,3.2rem);align-items:center}
-/* Hochformat, aber gedeckelt: Bei 4:5 und halber Seitenbreite wird das Bild am
-   Rechner über 700 px hoch — daneben stehen vier Zeilen Text und viel Luft. */
-.spezi-bild{position:relative;overflow:hidden;background:#0d0c0a;aspect-ratio:4/5;
-  max-height:560px}
-.spezi-bild img{width:100%;height:100%;object-fit:cover;display:block}
-.spezi-nr{position:absolute;left:0;top:0;background:var(--wine);color:#fff;
-  font-size:.68rem;letter-spacing:.2em;font-weight:700;padding:.5rem .85rem}
-.spezi-txt h3{font-size:clamp(1.5rem,3vw,2rem);margin:.55rem 0 .8rem;line-height:1.15}
-.spezi-txt p{margin:0 0 .9rem;line-height:1.7}
-.spezi-txt p:last-of-type{margin-bottom:0}
-.spezi-sub{color:var(--muted,#6E675A);font-size:.95rem}
-.spezi-meta{display:flex;align-items:baseline;gap:.8rem;flex-wrap:wrap;
-  margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--sand,#E8E2D2)}
-.spezi-preis{font-size:1.1rem;font-weight:700;color:var(--wine);
-  font-variant-numeric:tabular-nums}
-.spezi-tag{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--muted,#6E675A)}
-/* Im Wechsel: bei jeder zweiten Zeile steht das Bild rechts. */
-.spezi-zeile:nth-child(even) .spezi-bild{order:2}
-.spezi-zeile:nth-child(even){grid-template-columns:minmax(0,6fr) minmax(0,5fr)}
-@media(max-width:820px){
-  .spezi-zeile,.spezi-zeile:nth-child(even){grid-template-columns:1fr;gap:1.2rem}
-  .spezi-zeile:nth-child(even) .spezi-bild{order:0}
-  .spezi-bild{aspect-ratio:3/2}
-}
-.karte-cta{display:flex;gap:.7rem;flex-wrap:wrap;justify-content:center;
-  margin-top:clamp(2rem,3.5vw,2.6rem)}
-</style>
+<link rel="stylesheet" href="/css/site.css">
 </head>
 <body>
 
 <header id="hdr">
   <div class="wrap nav">
-    <a class="brand" href="#top" aria-label="Goya´s Lamm Horrheim — Startseite">
+    <a class="brand" href="/" aria-label="Goya´s Lamm Horrheim — Startseite">
       <img class="l-white" src="/assets/logo-white.png" alt="Goya´s Lamm Horrheim" width="1155" height="450">
       <img class="l-dark" src="/assets/logo-dark.png" alt="Goya´s Lamm Horrheim" width="1155" height="450">
     </a>
     <nav>
       <ul class="navlinks">
-        <li><a href="#konzept">Restaurant</a></li>
-        <li><a href="#inhaber">Inhaber</a></li>
-        <li><a href="#steak">Steak</a></li>
-        <li><a href="#teller">Gerichte</a></li>
+        <li><a href="/restaurant">Restaurant</a></li>
+        <li><a href="/steak">Steak</a></li>
         <li><a href="/karte">Speisekarte</a></li>
-        <li><a href="#galerie">Galerie</a></li>
-        <li><a href="#kontakt">Kontakt</a></li>
+        <li><a href="/kontakt">Kontakt</a></li>
       </ul>
     </nav>
-    <a class="btn btn-primary" href="#reservieren">Tisch reservieren</a>
+    <a class="btn btn-primary" href="/reservieren">Tisch reservieren</a>
     <button class="burger" id="burger" aria-label="Menü öffnen" aria-expanded="false"><span></span><span></span><span></span></button>
   </div>
 </header>
 
 <div class="mobilemenu" id="mmenu">
   <button class="close" id="mclose" aria-label="Menü schließen">&times;</button>
-  <a href="#konzept">Restaurant</a>
-  <a href="#inhaber">Der Inhaber</a>
-  <a href="#steak">Steak vom heißen Stein</a>
-  <a href="#teller">Gerichte</a>
+  <a href="/restaurant">Das Restaurant</a>
+  <a href="/steak">Steak &amp; Spezialitäten</a>
   <a href="/karte">Speisekarte</a>
-  <a href="#galerie">Galerie</a>
-  <a href="#reservieren">Reservieren</a>
-  <a href="#kontakt">Kontakt</a>
+  <a href="/reservieren">Reservieren</a>
+  <a href="/kontakt">Kontakt &amp; Anfahrt</a>
 </div>
 
 <!-- ================= HERO ================= -->
@@ -703,7 +85,7 @@ footer a:hover{color:var(--gold)}
       Im historischen Lamm in Horrheim.
     </p>
     <div class="cta">
-      <a class="btn btn-primary" href="#reservieren">Tisch reservieren</a>
+      <a class="btn btn-primary" href="/reservieren">Tisch reservieren</a>
       <a class="btn btn-ghost" href="/karte">Zur Speisekarte</a>
     </div>
   </div>
@@ -761,161 +143,7 @@ footer a:hover{color:var(--gold)}
   </div>
 </section>
 
-<!-- ================= KONZEPT ================= -->
-<section id="konzept">
-  <div class="wrap split">
-    <div class="reveal">
-      <p class="eyebrow">Das Restaurant</p>
-      <div class="rule"></div>
-      <h2>Gute Küche braucht keine Bühne.</h2>
-      <p class="lead" style="margin-bottom:1.6rem">
-        Goya´s Lamm ist das Restaurant im Landidyll Hotel Lamm mitten in Horrheim. Inhaber
-        <strong>Gökhan Yavuz</strong> — bekannt aus der Sonne in Sersheim — kocht hier das, was er
-        selbst am liebsten isst: ehrliche schwäbische Klassiker, mediterrane Pasta und Steaks,
-        die den Namen verdienen.
-      </p>
-      <p style="color:var(--muted)">
-        Die Maultaschen sind hausgemacht, die Spätzle handgeschabt, der Rostbraten kommt mit
-        Lemberger-Jus aus der Region. Dazu eine Weinkarte mit Gewächsen von Allmendinger,
-        Faigle, Walz und den Weingärtnern — und eine Bar, die auch nach dem Essen noch Gründe zum
-        Bleiben liefert.
-      </p>
-      <p style="color:var(--muted)">
-        Kein Schnickschnack, keine Show. Regional, lecker, locker.
-      </p>
-      <a class="btn btn-outline" href="/karte" style="margin-top:1rem">Speisekarte ansehen</a>
-    </div>
-    <div class="figure reveal">
-      <img src="/assets/img/klassiker.jpg" alt="Rostbraten mit Maultasche, Lemberger-Jus und handgeschabten Spätzle" width="1200" height="1500" loading="lazy">
-      <div class="caption">Rostbraten &amp; Maultasche</div>
-    </div>
-  </div>
-</section>
-
-<!-- ================= INHABER =================
-     HINWEIS für Hasi Elektronic: Hier stehen nur Angaben, die entweder belegbar sind
-     (Sonne Sersheim, Wechsel ins Lamm, heutige Küche) oder direkt von Hamdi kommen
-     (Hayal Bar in Stuttgart vor Sersheim). Sobald Gökhan die genauen Jahreszahlen
-     nennt — Ausbildung, Jahre in Stuttgart, seit wann die Sonne —, gehören sie in
-     die Liste <ul class="vita">.
-     Und: das Foto unten ist ein Stimmungsbild. Ein echtes Porträt von Gökhan
-     gehört an diese Stelle, sobald eines vorliegt. -->
-<section class="chef" id="inhaber">
-  <div class="wrap split rev">
-    <div class="reveal">
-      <p class="eyebrow">Der Inhaber</p>
-      <div class="rule"></div>
-      <h2>Gökhan Yavuz.</h2>
-      <p class="role">Inhaber &amp; Gastgeber</p>
-      <p class="lead" style="margin-bottom:1.4rem">
-        Wer rund um Vaihingen an der Enz essen geht, kennt den Namen. Gökhan Yavuz führt
-        Gastronomie seit vielen Jahren — angefangen in <strong>Stuttgart</strong>, wo er die
-        <strong>Hayal Bar</strong> betrieb, danach in Sersheim mit der eigenen
-        <strong>Sonne</strong>.
-      </p>
-      <p style="color:var(--muted)">
-        In der Sonne machte er etwas bekannt, das man in der Gegend sonst kaum bekam: Steak,
-        das auf einem glühenden Stein am eigenen Tisch fertig gebraten wird. Seine Gäste sind
-        ihm treu geblieben. Als sich die Gelegenheit ergab, das historische Lamm in Horrheim
-        zu übernehmen, nahm er sie an — mit seiner Küche und dem heißen Stein im Gepäck.
-        Aus der Sonne wurde Goya´s Lamm.
-      </p>
-
-      <ul class="vita reveal">
-        <li>
-          <span class="st">Heute</span>
-          <b>Goya´s Lamm, Horrheim</b>
-          <p>Inhaber des Restaurants im historischen Lamm. Schwäbische Klassiker und
-             mediterrane Küche nebeneinander — und der heiße Stein als Spezialität
-             des Hauses.</p>
-        </li>
-        <li>
-          <span class="st">Der Wechsel</span>
-          <b>Aus der Sonne wird Goya´s Lamm</b>
-          <p>Der Umzug nach Horrheim. Gleiche Handschrift, größeres Haus: Gastraum,
-             Nebenzimmer und Bar unter einem Dach.</p>
-        </li>
-        <li>
-          <span class="st">Davor</span>
-          <b>Restaurant Sonne, Sersheim</b>
-          <p>Eigenes Haus, eigene Karte. Bewusst überschaubar gehalten — dafür jeder Teller
-             so, wie er sein soll. Das Braten auf dem heißen Stein war schon dort das,
-             wofür die Gäste kamen.</p>
-        </li>
-        <li>
-          <span class="st">Die Anfänge</span>
-          <b>Hayal Bar, Stuttgart</b>
-          <p>Der Start in der Stadt. Bar und Gastronomie in Stuttgart — Jahre, in denen er
-             gelernt hat, was ein Gastgeber im vollen Haus können muss. Diese Schule merkt
-             man dem Service in Horrheim bis heute an.</p>
-        </li>
-      </ul>
-    </div>
-
-    <div class="figure reveal">
-      <img src="/assets/img/kuechenchef.jpg" alt="Am Pass in der Küche des Goya´s Lamm" width="1200" height="1500" loading="lazy">
-      <div class="caption">Am Pass</div>
-    </div>
-  </div>
-</section>
-
-<!-- ================= STEAK ================= -->
-<section class="feature" id="steak">
-  <div class="wrap split rev" style="margin-bottom:1rem">
-    <div class="reveal">
-      <p class="eyebrow light">Unsere Spezialität</p>
-      <div class="rule"></div>
-      <h2>Steak auf heißem Stein.</h2>
-      <p class="lead">
-        Der Stein kommt glühend an den Tisch, das Fleisch roh dazu. Sie entscheiden, wann es
-        fertig ist — Scheibe für Scheibe, so lange es Ihnen schmeckt. Das Steak ist beim
-        letzten Bissen so heiß wie beim ersten.
-      </p>
-      <p style="color:rgba(244,247,234,.55);font-size:.93rem">
-        Alle Steaks servieren wir mit einer Beilage Ihrer Wahl. Empfehlung des Hauses:
-        Süßkartoffel-Pommes und die hausgemachte Kräuterbutter.
-      </p>
-    </div>
-    <div class="figure reveal">
-      <img src="/assets/img/steak-stein.jpg" alt="Filetsteak auf heißem Stein mit Lemberger-Jus" width="1200" height="1500" loading="lazy">
-      <div class="caption">Filet · 200–400 g</div>
-    </div>
-  </div>
-  <div class="wrap">
-    <div class="cards3">
-      <div class="pricecard reveal">
-        <h3>Hüftesteak</h3>
-        <p class="sub">mager und intensiv</p>
-        <table><tbody>
-          <tr><td>200 g</td><td>22,00 €</td></tr>
-          <tr><td>300 g</td><td>29,00 €</td></tr>
-          <tr><td>400 g</td><td>36,00 €</td></tr>
-        </tbody></table>
-      </div>
-      <div class="pricecard reveal">
-        <h3>Rumpsteak</h3>
-        <p class="sub">mit typischem Fettrand</p>
-        <table><tbody>
-          <tr><td>200 g</td><td>25,00 €</td></tr>
-          <tr><td>300 g</td><td>33,00 €</td></tr>
-          <tr><td>400 g</td><td>41,00 €</td></tr>
-        </tbody></table>
-      </div>
-      <div class="pricecard reveal">
-        <h3>Filet</h3>
-        <p class="sub">zart und mager</p>
-        <table><tbody>
-          <tr><td>200 g</td><td>31,00 €</td></tr>
-          <tr><td>300 g</td><td>40,00 €</td></tr>
-          <tr><td>400 g</td><td>49,00 €</td></tr>
-        </tbody></table>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ================= SPEISEKARTE ================= -->
-
+<!-- ================= VOM TELLER ================= -->
 <section id="teller">
   <div class="wrap">
     <div class="teller-head reveal">
@@ -1016,345 +244,77 @@ footer a:hover{color:var(--gold)}
       <p class="echt"><span>Echte Aufnahmen</span> aus unserer Küche</p>
       <div class="teller-tasten">
         <a class="btn btn-primary" href="/karte">Ganze Speisekarte mit Bildern</a>
-        <a class="btn btn-outline" href="#spezialitaeten">Unsere Spezialitäten</a>
+        <a class="btn btn-outline" href="/steak#spezialitaeten">Unsere Spezialitäten</a>
       </div>
     </div>
   </div>
 </section>
 
-<section id="spezialitaeten" style="background:var(--cream)">
+<!-- ================= WEGWEISER ================= -->
+<section class="weiter">
   <div class="wrap">
-    <div style="text-align:center;max-width:64ch;margin:0 auto" class="reveal">
-      <p class="eyebrow">Drei, die man kennen sollte</p>
-      <h2>Nicht auf jeder Karte.</h2>
-      <p class="lead" style="margin:1rem auto 0">
-        Der heiße Stein ist der Grund, warum die meisten kommen. Diese drei sind der
-        Grund, warum viele wiederkommen — und keines davon steht auf jeder Karte
-        zwischen Vaihingen und Sachsenheim.
-      </p>
+    <div class="weiter-kopf reveal">
+      <p class="eyebrow">Weiter im Haus</p>
+      <h2>Was Sie noch wissen sollten.</h2>
     </div>
-
-    <div class="spezi">
-      <article class="spezi-zeile reveal">
-        <div class="spezi-bild">
-          <span class="spezi-nr">01</span>
-          <picture>
-            <source type="image/webp"
-                    srcset="/assets/img/spezi-manti-600.webp 600w, /assets/img/spezi-manti-1100.webp 1100w"
-                    sizes="(max-width:820px) 92vw, 42vw">
-            <img src="/assets/img/spezi-manti-600.jpg"
-                 srcset="/assets/img/spezi-manti-600.jpg 600w, /assets/img/spezi-manti-1100.jpg 1100w"
-                 sizes="(max-width:820px) 92vw, 42vw"
-                 alt="Manti — kleine gefüllte Teigtaschen mit Knoblauch-Joghurt und Tomatenbutter"
-                 width="1100" height="1375" loading="lazy" decoding="async">
-          </picture>
-        </div>
-        <div class="spezi-txt">
-          <span class="kicker">Die andere Teigtasche</span>
-          <h3>Manti</h3>
-          <p class="spezi-sub">kleine mit Hackfleisch gefüllte Teigtaschen mit
-             Knoblauch-Joghurt-Soße und in Butter geschmolzenem Tomatenmark</p>
-          <p>Sie sind so klein, dass jede einzeln von Hand geschlossen wird. Wer bei uns
-             Maultaschen mag, sollte sie einmal bestellen: derselbe Gedanke — Teig, Fleisch,
-             Geduld —, nur aus einer anderen Küche. Am Ende kommt heiße Butter mit
-             Tomatenmark darüber, dazu Joghurt mit Knoblauch.</p>
-          <div class="spezi-meta">
-            <span class="spezi-preis">16,50 €</span>
-            <span class="spezi-tag">Hausgemacht</span>
-          </div>
-        </div>
-      </article>
-
-      <article class="spezi-zeile reveal">
-        <div class="spezi-bild">
-          <span class="spezi-nr">02</span>
-          <picture>
-            <source type="image/webp"
-                    srcset="/assets/img/spezi-rostbraten-600.webp 600w, /assets/img/spezi-rostbraten-1100.webp 1100w"
-                    sizes="(max-width:820px) 92vw, 42vw">
-            <img src="/assets/img/spezi-rostbraten-600.jpg"
-                 srcset="/assets/img/spezi-rostbraten-600.jpg 600w, /assets/img/spezi-rostbraten-1100.jpg 1100w"
-                 sizes="(max-width:820px) 92vw, 42vw"
-                 alt="Rostbraten mit Lemberger-Jus, Maultasche und handgeschabten Spätzle"
-                 width="1100" height="1375" loading="lazy" decoding="async">
-          </picture>
-        </div>
-        <div class="spezi-txt">
-          <span class="kicker">Aus der Nachbarschaft</span>
-          <h3>Rostbraten mit Lemberger-Jus</h3>
-          <p class="spezi-sub">mit Maultasche und Lemberger-Jus, dazu handgeschabte Spätzle
-             oder Bratkartoffeln</p>
-          <p>Der Jus wird mit Lemberger angesetzt — mit demselben Wein, den Sie hier auch im
-             Glas bekommen. Die Reben dafür stehen ein paar Kilometer weiter an denselben
-             Hängen; einen Wein von weit her hineinzugießen, wäre hier ein bisschen absurd.</p>
-          <div class="spezi-meta">
-            <span class="spezi-preis">32,50 €</span>
-            <span class="spezi-tag">Aus der Region</span>
-          </div>
-        </div>
-      </article>
-
-      <article class="spezi-zeile reveal">
-        <div class="spezi-bild">
-          <span class="spezi-nr">03</span>
-          <picture>
-            <source type="image/webp"
-                    srcset="/assets/img/spezi-schnitzel-600.webp 600w, /assets/img/spezi-schnitzel-1100.webp 1100w"
-                    sizes="(max-width:820px) 92vw, 42vw">
-            <img src="/assets/img/spezi-schnitzel-600.jpg"
-                 srcset="/assets/img/spezi-schnitzel-600.jpg 600w, /assets/img/spezi-schnitzel-1100.jpg 1100w"
-                 sizes="(max-width:820px) 92vw, 42vw"
-                 alt="Wiener Schnitzel vom Kalb mit Preiselbeeren und handgeschabten Spätzle"
-                 width="1100" height="1375" loading="lazy" decoding="async">
-          </picture>
-        </div>
-        <div class="spezi-txt">
-          <span class="kicker">Vom Rücken, bei uns geschnitten</span>
-          <h3>Wiener Schnitzel vom Kalb</h3>
-          <p class="spezi-sub">hausgemacht vom Rücken, mit Preiselbeeren und handgeschabten
-             Spätzle oder Bratkartoffeln</p>
-          <p>Geschnitten, geklopft und paniert wird bei uns — nicht angeliefert. Das ist der
-             Unterschied, den man an der Kruste sieht: Sie liegt in Wellen auf dem Fleisch,
-             statt daran zu kleben. Dazu Preiselbeeren und Spätzle, die vom Brett kommen.</p>
-          <div class="spezi-meta">
-            <span class="spezi-preis">32,50 €</span>
-            <span class="spezi-tag">Hausgemacht</span>
-          </div>
-        </div>
-      </article>
-
-      <article class="spezi-zeile reveal">
-        <div class="spezi-bild">
-          <span class="spezi-nr">Dazu</span>
-          <picture>
-            <source type="image/webp"
-                    srcset="/assets/img/spezi-wein-600.webp 600w, /assets/img/spezi-wein-1100.webp 1100w"
-                    sizes="(max-width:820px) 92vw, 42vw">
-            <img src="/assets/img/spezi-wein-600.jpg"
-                 srcset="/assets/img/spezi-wein-600.jpg 600w, /assets/img/spezi-wein-1100.jpg 1100w"
-                 sizes="(max-width:820px) 92vw, 42vw"
-                 alt="Ein Glas Rotwein im Kerzenlicht auf dem Holztisch im Gastraum"
-                 width="1100" height="1375" loading="lazy" decoding="async">
-          </picture>
-        </div>
-        <div class="spezi-txt">
-          <span class="kicker">Und dazu</span>
-          <h3>Wein von hier</h3>
-          <p class="spezi-sub">Riesling, Trollinger, Lemberger, Spätburgunder — offen im Glas
-             und in der Flasche</p>
-          <p>Unsere Weinkarte ist kurz und fast vollständig aus der Umgebung: Allmendinger,
-             Weingärtner, Faigle und Der Fischer. Das ist keine Marketingidee, sondern die
-             nächstgelegene Antwort auf die Frage, was zum Rostbraten passt.</p>
-          <div class="spezi-meta">
-            <span class="spezi-tag">Vier Weingüter aus der Nachbarschaft</span>
-          </div>
-        </div>
-      </article>
-    </div>
-
-    <div class="karte-cta reveal">
-      <a class="btn btn-primary" href="/karte">Ganze Speisekarte mit Bildern</a>
-      <a class="btn btn-outline" href="/karte?l=en" hreflang="en">Menu in English</a>
-    </div>
-
-    <p class="note" style="text-align:center;margin-top:1.6rem">
-      Alle Preise in Euro, inklusive Mehrwertsteuer. Eine separate Karte mit Allergenen und
-      Zusatzstoffen erhalten Sie gerne von unserem Personal.
-      Änderungen und Druckfehler vorbehalten. Stand der Karte:
-      <span id="karte-stand">August 2026</span>.<br>
-      Die Bilder in diesem Abschnitt sind digital erstellt und zeigen eine beispielhafte
-      Anrichtung. Die Aufnahmen unter „Vom Teller" stammen aus unserer Küche.
-    </p>
-  </div>
-</section>
-
-<!-- ================= GALERIE ================= -->
-<section id="galerie">
-  <div class="wrap">
-    <div style="text-align:center;max-width:60ch;margin:0 auto 3rem" class="reveal">
-      <p class="eyebrow">Eindrücke</p>
-      <h2>Bei uns im Lamm</h2>
-    </div>
-    <div class="gallery reveal" id="gallery">
-      <button class="g-item ga" type="button" data-src="/assets/img/steak-rump.jpg" data-title="Rumpsteak" data-sub="Mit typischem Fettrand · 200–400 g" aria-label="Rumpsteak — Bild vergrößern">
-        <img src="/assets/img/steak-rump.jpg" alt="Rumpsteak — Mit typischem Fettrand · 200–400 g" width="1200" height="1500" loading="lazy" decoding="async">
-        <span class="g-cap">Rumpsteak<small>Mit typischem Fettrand · 200–400 g</small></span>
-      </button>
-      <button class="g-item gb" type="button" data-src="/assets/img/steak-macro.jpg" data-title="Vom heißen Stein" data-sub="Kruste, Salz, Rauch" aria-label="Vom heißen Stein — Bild vergrößern">
-        <img src="/assets/img/steak-macro.jpg" alt="Vom heißen Stein — Kruste, Salz, Rauch" width="1200" height="1500" loading="lazy" decoding="async">
-        <span class="g-cap">Vom heißen Stein<small>Kruste, Salz, Rauch</small></span>
-      </button>
-      <button class="g-item gc" type="button" data-src="/assets/img/steak-table.jpg" data-title="Am Tisch gebraten" data-sub="Der Stein kommt glühend zu Ihnen" aria-label="Am Tisch gebraten — Bild vergrößern">
-        <img src="/assets/img/steak-table.jpg" alt="Am Tisch gebraten — Der Stein kommt glühend zu Ihnen" width="1200" height="1500" loading="lazy" decoding="async">
-        <span class="g-cap">Am Tisch gebraten<small>Der Stein kommt glühend zu Ihnen</small></span>
-      </button>
-      <button class="g-item gd" type="button" data-src="/assets/img/klassiker.jpg" data-title="Rostbraten" data-sub="Mit Maultasche und Lemberger-Jus" aria-label="Rostbraten — Bild vergrößern">
-        <img src="/assets/img/klassiker.jpg" alt="Rostbraten — Mit Maultasche und Lemberger-Jus" width="1200" height="1500" loading="lazy" decoding="async">
-        <span class="g-cap">Rostbraten<small>Mit Maultasche und Lemberger-Jus</small></span>
-      </button>
-      <button class="g-item ge" type="button" data-src="/assets/img/steak-cuts.jpg" data-title="Beste Zuschnitte" data-sub="Hüfte · Rumpsteak · Filet" aria-label="Beste Zuschnitte — Bild vergrößern">
-        <img src="/assets/img/steak-cuts.jpg" alt="Beste Zuschnitte — Hüfte, Rumpsteak und Filet" width="1200" height="1500" loading="lazy" decoding="async">
-        <span class="g-cap">Beste Zuschnitte<small>Hüfte · Rumpsteak · Filet</small></span>
-      </button>
-      <button class="g-item gf" type="button" data-src="/assets/img/cocktail.jpg" data-title="An der Bar" data-sub="Cocktails, Gin und Whisk(e)y" aria-label="An der Bar — Bild vergrößern">
-        <img src="/assets/img/cocktail.jpg" alt="An der Bar — Cocktails, Gin und Whisk(e)y" width="1200" height="1500" loading="lazy" decoding="async">
-        <span class="g-cap">An der Bar<small>Cocktails, Gin und Whisk(e)y</small></span>
-      </button>
-      <button class="g-item gg" type="button" data-src="/assets/img/steak-scene.jpg" data-title="Steakhouse-Abend" data-sub="Horrheim, ab 17 Uhr" aria-label="Steakhouse-Abend — Bild vergrößern">
-        <img src="/assets/img/steak-scene.jpg" alt="Steakhouse-Abend — Horrheim, ab 17 Uhr" width="1800" height="1013" loading="lazy" decoding="async">
-        <span class="g-cap">Steakhouse-Abend<small>Horrheim, ab 17 Uhr</small></span>
-      </button>
-      <button class="g-item gh" type="button" data-src="/assets/img/interieur.jpg" data-title="Unser Gastraum" data-sub="Auch für Feiern und Gesellschaften" aria-label="Unser Gastraum — Bild vergrößern">
+    <div class="weiter-grid">
+      <a class="wkarte reveal" href="/restaurant">
         <img src="/assets/img/interieur.jpg" alt="Gastraum im Goya´s Lamm Horrheim" width="1600" height="900" loading="lazy" decoding="async">
-        <span class="g-cap">Unser Gastraum<small>Auch für Feiern und Gesellschaften</small></span>
-      </button>
+        <span class="wtxt">
+          <span class="kicker">Das Haus</span>
+          <b>Restaurant &amp; Inhaber</b>
+          <span class="t">Wie aus der Sonne in Sersheim Goya´s Lamm wurde — und wer hier am Pass steht.</span>
+          <span class="pfeil">Ansehen &#8594;</span>
+        </span>
+      </a>
+      <a class="wkarte reveal" href="/steak">
+        <img src="/assets/img/steak-stein.jpg" alt="Steak auf dem heißen Stein" width="1200" height="1500" loading="lazy" decoding="async">
+        <span class="wtxt">
+          <span class="kicker">Die Spezialität</span>
+          <b>Steak vom heißen Stein</b>
+          <span class="t">Größen, Preise und die drei Gerichte, die sonst kaum jemand in der Gegend hat.</span>
+          <span class="pfeil">Ansehen &#8594;</span>
+        </span>
+      </a>
+      <a class="wkarte reveal" href="/karte">
+        <img src="/assets/img/hausgemacht.jpg" alt="Handgeschabte Spätzle und hausgemachte Maultaschen" width="1200" height="1500" loading="lazy" decoding="async">
+        <span class="wtxt">
+          <span class="kicker">Alles auf einen Blick</span>
+          <b>Die ganze Speisekarte</b>
+          <span class="t">132 Gerichte mit Bild, Beschreibung und Preis — auch auf Englisch.</span>
+          <span class="pfeil">Ansehen &#8594;</span>
+        </span>
+      </a>
     </div>
-    <div class="g-progress" aria-hidden="true"><span></span></div>
-    <p style="text-align:center;margin-top:2.5rem">
-      <a class="btn btn-ghost" href="https://www.instagram.com/goyas.lamm/" target="_blank" rel="noopener">Mehr auf Instagram</a>
-    </p>
   </div>
 </section>
 
-<!-- ================= RESERVIERUNG ================= -->
-<section class="reserve" id="reservieren">
+<!-- ================= RESERVIERUNGSBAND ================= -->
+<section class="resband">
   <div class="wrap">
-    <div class="reserve-box reveal">
-
-      <div class="res-side">
-        <p class="eyebrow">Reservierung</p>
-        <h2 style="margin-bottom:1rem">Tisch sichern.</h2>
-        <p class="lead" style="margin-bottom:0">
-          Reservieren Sie direkt hier — rund um die Uhr, in unter einer Minute.
-          Sie erhalten die Bestätigung sofort per E-Mail.
-        </p>
-        <ul class="mini">
-          <li><span>Montag &amp; Dienstag</span><span>17 – 22 Uhr</span></li>
-          <li class="zu"><span>Mittwoch</span><span>Ruhetag</span></li>
-          <li><span>Donnerstag – Samstag</span><span>17 – 22 Uhr</span></li>
-          <li><span>Sonntag</span><span>12 – 20 Uhr</span></li>
-        </ul>
-        <p class="res-hint" style="margin-bottom:1.2rem">
-          Ab 11 Personen, für Feiern und Gesellschaften rufen Sie uns bitte an —
-          dann planen wir den Raum gemeinsam.
-        </p>
-        <a class="btn btn-outline" href="tel:+497042832282">07042 83 22 82 anrufen</a>
-      </div>
-
+    <div class="resband-in reveal">
       <div>
-        <form class="res-form" id="resForm" novalidate>
-          <div class="res-step">
-            <span class="res-lab" id="lblGuests">Für wie viele Personen?</span>
-            <div class="chips" id="guestChips" role="group" aria-labelledby="lblGuests"></div>
-            <p class="res-hint" id="guestHint" hidden>
-              Ab 11 Personen reservieren wir gerne persönlich:
-              <a href="tel:+497042832282">07042 83 22 82</a>
-            </p>
-          </div>
-
-          <div class="res-step">
-            <span class="res-lab" id="lblDate">An welchem Tag?</span>
-            <div class="chips" id="dateQuick"></div>
-            <div class="kal" role="group" aria-labelledby="lblDate">
-              <div class="kal-kopf">
-                <button type="button" class="kal-pfeil" id="kalZurueck" aria-label="Vorheriger Monat">&#8592;</button>
-                <strong id="kalMonat" aria-live="polite">&nbsp;</strong>
-                <button type="button" class="kal-pfeil" id="kalVor" aria-label="Nächster Monat">&#8594;</button>
-              </div>
-              <div class="kal-wt" aria-hidden="true">
-                <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span>
-              </div>
-              <div class="kal-tage" id="kalTage"></div>
-              <p class="kal-legende">
-                <span class="l frei"></span> frei
-                <span class="l voll"></span> ausgebucht
-                <span class="l zu"></span> Ruhetag oder geschlossen
-              </p>
-            </div>
-            <input type="hidden" id="resDate" name="date">
-            <p class="res-hint" id="dateHint" style="margin-top:.6rem"></p>
-          </div>
-
-          <div class="res-step">
-            <span class="res-lab" id="lblTime">Um wie viel Uhr?</span>
-            <div class="chips times" id="timeChips" role="group" aria-labelledby="lblTime"></div>
-            <p class="res-hint" id="timeHint">Bitte wählen Sie zuerst ein Datum.</p>
-            <div class="warte-box" id="warteBox" hidden>
-              <p><b>Der Abend ist online ausgebucht.</b> Wir setzen Sie gerne auf die Warteliste —
-                 wird ein Tisch frei, rufen wir Sie an. Ein Anruf unter <a href="tel:+497042832282">07042 83 22 82</a>
-                 lohnt sich ebenfalls, oft geht doch noch etwas.</p>
-              <button type="button" class="btn btn-outline" id="warteAn">Auf die Warteliste</button>
-            </div>
-            <p class="res-hint warte-an" id="warteHint" hidden>
-              Warteliste für <b id="warteTag"></b>. Wir melden uns telefonisch — eine Uhrzeit
-              brauchen wir nicht, schreiben Sie einen Wunsch gerne in die Anmerkung.
-              <button type="button" class="linkbtn" id="warteAus">Doch eine Uhrzeit wählen</button>
-            </p>
-          </div>
-
-          <div class="res-grid">
-            <div class="field">
-              <label for="resName">Name</label>
-              <input id="resName" name="name" type="text" autocomplete="name" required maxlength="80">
-            </div>
-            <div class="field">
-              <label for="resPhone">Telefon</label>
-              <input id="resPhone" name="phone" type="tel" autocomplete="tel" required maxlength="40">
-            </div>
-            <div class="field full">
-              <label for="resMail">E-Mail <em class="mail-opt" hidden>(optional)</em></label>
-              <input id="resMail" name="email" type="email" autocomplete="email" required maxlength="254">
-            </div>
-            <div class="field full">
-              <label for="resNote">Anmerkung <em>(optional)</em></label>
-              <textarea id="resNote" name="note" maxlength="500"
-                placeholder="Kinderstuhl, Allergie, Geburtstag, Tischwunsch …"></textarea>
-            </div>
-          </div>
-
-          <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-          <input type="hidden" name="ts" id="resTs">
-
-          <p class="res-legal">
-            Mit dem Absenden speichern wir Ihre Angaben, um den Tisch zu reservieren und Sie bei
-            Rückfragen zu erreichen. Näheres in der <a href="/datenschutz">Datenschutzerklärung</a>.
-          </p>
-
-          <button class="btn btn-primary res-submit" id="resSubmit" type="submit">
-            Tisch verbindlich reservieren
-          </button>
-          <p class="res-msg" id="resMsg" role="status" aria-live="polite"></p>
-        </form>
-
-        <div class="res-done" id="resDone" hidden>
-          <div class="tick" aria-hidden="true">&#10003;</div>
-          <h3>Ihr Tisch ist reserviert.</h3>
-          <p class="lead" id="doneLead" style="margin-bottom:0"></p>
-          <div class="dl" id="doneDl"></div>
-          <p class="res-hint" id="doneNote"></p>
-          <p style="margin-top:1.2rem">
-            <a class="btn btn-outline" href="/karte">Schon mal die Karte ansehen</a>
-          </p>
-        </div>
-
-        <noscript>
-          <p class="res-hint">Für die Online-Reservierung wird JavaScript benötigt.
-            Rufen Sie uns gerne an: <a href="tel:+497042832282">07042 83 22 82</a></p>
-        </noscript>
+        <p class="eyebrow light">Reservierung</p>
+        <h2>Tisch sichern.</h2>
+        <p class="lead">Online in unter einer Minute, rund um die Uhr — die Bestätigung
+          kommt sofort per E-Mail. Ab 11 Personen rufen Sie uns bitte an.</p>
       </div>
-
+      <div class="resband-tasten">
+        <a class="btn btn-primary" href="/reservieren">Tisch reservieren</a>
+        <a class="btn btn-ghost" href="tel:+497042832282">07042 83 22 82</a>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ================= KONTAKT / INFO ================= -->
-<section id="kontakt">
+<!-- ================= KURZE INFO ================= -->
+<section class="kurzinfo">
   <div class="wrap">
     <div class="info-grid">
       <div class="reveal">
         <p class="eyebrow">Öffnungszeiten</p>
         <div class="rule"></div>
-        <table class="hours" id="hours">
+        <table class="hours">
           <tbody>
             <tr data-d="1"><td>Montag</td><td>17:00 – 22:00</td></tr>
             <tr data-d="2"><td>Dienstag</td><td>17:00 – 22:00</td></tr>
@@ -1368,66 +328,18 @@ footer a:hover{color:var(--gold)}
         <p class="note" style="margin-top:1.2rem">Sonntags ist die Küche durchgehend geöffnet.</p>
       </div>
       <div class="reveal">
-        <p class="eyebrow">Kontakt &amp; Anfahrt</p>
+        <p class="eyebrow">Hier finden Sie uns</p>
         <div class="rule"></div>
         <ul class="contact-list">
           <li><span class="k">Adresse</span><span>Klosterbergstraße 45<br>71665 Vaihingen an der Enz — Horrheim</span></li>
           <li><span class="k">Telefon</span><a href="tel:+497042832282">07042 83 22 82</a></li>
           <li><span class="k">E-Mail</span><a href="mailto:hallo@lammm.de">hallo@lammm.de</a></li>
-          <li><span class="k">Instagram</span><a href="https://www.instagram.com/goyas.lamm/" target="_blank" rel="noopener">@goyas.lamm</a></li>
         </ul>
-        <p style="margin-top:1.6rem" class="routen">
-          <a class="btn btn-primary" href="https://www.google.com/maps/search/?api=1&amp;query=Klosterbergstra%C3%9Fe%2045%2C%2071665%20Vaihingen%20an%20der%20Enz"
-             target="_blank" rel="noopener">In Google Maps öffnen</a>
-          <a class="btn btn-outline" href="https://maps.apple.com/?q=Goya%C2%B4s%20Lamm&amp;address=Klosterbergstra%C3%9Fe%2045,%2071665%20Vaihingen%20an%20der%20Enz&amp;ll=48.9789244,8.9884052"
-             target="_blank" rel="noopener">Apple Karten</a>
+        <p style="margin-top:1.6rem">
+          <a class="btn btn-outline" href="/kontakt">Anfahrt und Karte</a>
         </p>
       </div>
     </div>
-
-    <!-- Die Karte ist ein Bild, das bei uns liegt, kein eingebetteter Dienst:
-         So wird beim Aufruf der Seite nichts an Dritte übertragen und es
-         braucht keinen Cookie-Hinweis. Wer die richtige Karte will, tippt
-         darauf und landet in seiner eigenen Karten-App — das ist ohnehin der
-         Weg, den fast jeder nimmt. -->
-    <a class="mapbox reveal" href="https://www.google.com/maps/search/?api=1&amp;query=Klosterbergstra%C3%9Fe%2045%2C%2071665%20Vaihingen%20an%20der%20Enz"
-       target="_blank" rel="noopener"
-       aria-label="Standort Klosterbergstraße 45, Horrheim — in Google Maps öffnen">
-      <picture>
-        <source type="image/webp"
-                srcset="/assets/img/anfahrt-700.webp 700w, /assets/img/anfahrt-1200.webp 1200w"
-                sizes="(max-width:900px) 100vw, 1140px">
-        <img src="/assets/img/anfahrt-700.jpg"
-             srcset="/assets/img/anfahrt-700.jpg 700w, /assets/img/anfahrt-1200.jpg 1200w"
-             sizes="(max-width:900px) 100vw, 1140px"
-             alt="Karte: Goya´s Lamm in der Klosterbergstraße 45 in Horrheim, neben Clemenskirche und Weinmuseum"
-             width="1200" height="500" loading="lazy" decoding="async">
-      </picture>
-      <span class="map-cta">In Google Maps öffnen</span>
-    </a>
-    <div class="anfahrt reveal">
-      <div>
-        <span class="k">Mit dem Auto</span>
-        <p>Durch Horrheim führt die Pforzheimer Straße (L 1106). Von dort sind es in den
-           Ortskern nur ein paar hundert Meter — wir liegen in der Klosterbergstraße,
-           gleich neben der Verwaltungsstelle und der Clemenskirche.</p>
-      </div>
-      <div>
-        <span class="k">Parken</span>
-        <p>Zum Parken bieten sich die Klosterbergstraße und die Obere Gasse an, beides
-           keine hundert Meter zu Fuß. Rund um den Marktplatz gibt es weitere Flächen.</p>
-      </div>
-      <div>
-        <span class="k">Wenn Sie da sind</span>
-        <p>Das Weinmuseum liegt im selben Gassengeviert. Wer nach dem Essen noch ein paar
-           Schritte gehen möchte: von hier aus beginnen die Weinberge.</p>
-      </div>
-    </div>
-
-    <p class="note map-quelle">Kartendaten © <a href="https://www.openstreetmap.org/copyright"
-       target="_blank" rel="noopener">OpenStreetMap</a>-Mitwirkende. Die Karte ist eine
-       Abbildung auf unserem Server — beim Aufruf dieser Seite werden keine Daten an
-       Kartendienste übertragen.</p>
   </div>
 </section>
 
@@ -1450,13 +362,13 @@ footer a:hover{color:var(--gold)}
       <div>
         <h4>Restaurant</h4>
         <ul>
-          <li><a href="#konzept">Über uns</a></li>
-          <li><a href="#inhaber">Der Inhaber</a></li>
-          <li><a href="#steak">Steak vom heißen Stein</a></li>
-          <li><a href="#teller">Gerichte</a></li>
+          <li><a href="/restaurant">Das Restaurant</a></li>
+          <li><a href="/restaurant#inhaber">Der Inhaber</a></li>
+          <li><a href="/steak">Steak vom heißen Stein</a></li>
+          <li><a href="/steak#spezialitaeten">Spezialitäten</a></li>
           <li><a href="/karte">Speisekarte</a></li>
-          <li><a href="#galerie">Galerie</a></li>
-          <li><a href="#reservieren">Reservieren</a></li>
+          <li><a href="/restaurant#galerie">Galerie</a></li>
+          <li><a href="/reservieren">Reservieren</a></li>
         </ul>
       </div>
       <div>
@@ -1466,6 +378,7 @@ footer a:hover{color:var(--gold)}
           <li>71665 Vaihingen a. d. Enz</li>
           <li><a href="tel:+497042832282">07042 83 22 82</a></li>
           <li><a href="mailto:hallo@lammm.de">hallo@lammm.de</a></li>
+          <li><a href="/kontakt">Anfahrt &amp; Öffnungszeiten</a></li>
         </ul>
         <h4 style="margin-top:1.8rem">Rechtliches</h4>
         <ul>
@@ -1475,7 +388,7 @@ footer a:hover{color:var(--gold)}
       </div>
     </div>
     <div class="foot-bottom">
-      <span>© <span id="yr">2026</span> Goya´s Lamm Horrheim. Alle Rechte vorbehalten.</span>
+      <span>&copy; <span id="yr">2026</span> Goya´s Lamm Horrheim. Alle Rechte vorbehalten.</span>
       <span>Umsetzung: <a href="https://www.hasi-elektronic.de" target="_blank" rel="noopener">Hasi Elektronic</a></span>
     </div>
   </div>
@@ -1483,9 +396,8 @@ footer a:hover{color:var(--gold)}
 
 <div class="stickybar">
   <a class="call" href="tel:+497042832282">Anrufen</a>
-  <a class="res" href="#reservieren">Tisch reservieren</a>
+  <a class="res" href="/reservieren">Tisch reservieren</a>
 </div>
-
 
 <div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Bildergalerie">
   <button class="lb-btn lb-close" id="lbClose" aria-label="Schließen">&times;</button>
@@ -1513,7 +425,7 @@ footer a:hover{color:var(--gold)}
   "logo":"https://lammm.de/assets/logo-dark.png",
   "priceRange":"€€",
   "servesCuisine":["Schwäbisch","Deutsch","Steakhouse","Mediterran"],
-  "acceptsReservations":"https://lammm.de/#reservieren",
+  "acceptsReservations":"https://lammm.de/reservieren",
   "hasMenu":"https://lammm.de/karte",
   "sameAs":["https://www.instagram.com/goyas.lamm/"],
   "address":{
@@ -1532,380 +444,6 @@ footer a:hover{color:var(--gold)}
 }
 </script>
 
-<script>
-(function(){
-  /* Ohne Sprungmarke immer oben starten (auch nach Reload oder Zurück-Taste). */
-  function toTop(){
-    if (location.hash) return;
-    try { window.scrollTo({ top:0, left:0, behavior:'instant' }); }
-    catch(e){ window.scrollTo(0,0); }
-  }
-  toTop();
-  window.addEventListener('load', toTop);
-  window.addEventListener('pageshow', function(e){ if(e.persisted) toTop(); });
-
-  var hdr=document.getElementById('hdr');
-  function onScroll(){ hdr.classList.toggle('solid', window.scrollY>60); }
-  onScroll(); window.addEventListener('scroll',onScroll,{passive:true});
-
-  var b=document.getElementById('burger'), m=document.getElementById('mmenu'), c=document.getElementById('mclose');
-  function close(){ m.classList.remove('open'); b.setAttribute('aria-expanded','false'); document.body.style.overflow=''; }
-  b.addEventListener('click',function(){ m.classList.add('open'); b.setAttribute('aria-expanded','true'); document.body.style.overflow='hidden'; });
-  c.addEventListener('click',close);
-  m.querySelectorAll('a').forEach(function(a){ a.addEventListener('click',close); });
-
-  var io=new IntersectionObserver(function(es){
-    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
-  },{threshold:.12,rootMargin:'0px 0px -40px 0px'});
-  document.querySelectorAll('.reveal').forEach(function(el,i){ el.style.transitionDelay=(i%3)*70+'ms'; io.observe(el); });
-
-  /* ---------- Reservierung ---------- */
-  (function(){
-    var form=document.getElementById('resForm');
-    if(!form) return;
-    var MAXG=10, PHONE='07042 83 22 82';
-    var state={guests:2,date:'',time:'',warte:false};
-    var gWrap=document.getElementById('guestChips'),
-        gHint=document.getElementById('guestHint'),
-        dInp =document.getElementById('resDate'),
-        dQuick=document.getElementById('dateQuick'),
-        dHint=document.getElementById('dateHint'),
-        tWrap=document.getElementById('timeChips'),
-        tHint=document.getElementById('timeHint'),
-        msg  =document.getElementById('resMsg'),
-        btn  =document.getElementById('resSubmit'),
-        wBox =document.getElementById('warteBox'),
-        wHint=document.getElementById('warteHint');
-
-    document.getElementById('resTs').value=Date.now();
-
-    var WD=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
-    var MO=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
-    function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-    function labelDE(v){var p=v.split('-');var d=new Date(+p[0],+p[1]-1,+p[2]);
-      return WD[d.getDay()]+', '+(+p[2])+'. '+MO[+p[1]-1]+' '+p[0];}
-
-    /* --- Personen --- */
-    for(var n=1;n<=MAXG;n++){
-      (function(n){
-        var b=document.createElement('button');
-        b.type='button'; b.className='chip'; b.textContent=n;
-        b.setAttribute('aria-pressed', n===state.guests?'true':'false');
-        b.addEventListener('click',function(){
-          state.guests=n;
-          [].forEach.call(gWrap.children,function(c){c.setAttribute('aria-pressed', c===b?'true':'false')});
-          gHint.hidden=true;
-          ladeMonat();                 // andere Personenzahl → andere Tage sind voll
-          if(state.date) loadSlots();
-        });
-        gWrap.appendChild(b);
-      })(n);
-    }
-    var more=document.createElement('button');
-    more.type='button'; more.className='chip wide'; more.textContent='11+';
-    more.addEventListener('click',function(){ gHint.hidden=false; });
-    gWrap.appendChild(more);
-
-    /* --- Datum: Monatskalender --- */
-    var today=new Date(), maxD=new Date(); maxD.setDate(maxD.getDate()+90);
-    var kalTage=document.getElementById('kalTage'),
-        kalMonat=document.getElementById('kalMonat'),
-        kalZurueck=document.getElementById('kalZurueck'),
-        kalVor=document.getElementById('kalVor'),
-        kalStand={y:today.getFullYear(), m:today.getMonth()},   // m: 0–11
-        kalCache={};                                            // '2026-09' → {tag: status}
-
-    function monatKey(y,m){ return y+'-'+String(m+1).padStart(2,'0'); }
-
-    function quick(label,d){
-      var b=document.createElement('button');
-      b.type='button'; b.className='chip'; b.textContent=label;
-      b.dataset.iso=iso(d); b.setAttribute('aria-pressed','false');
-      b.addEventListener('click',function(){ waehle(b.dataset.iso); });
-      dQuick.appendChild(b);
-    }
-    (function(){
-      var t=new Date(), tm=new Date(); tm.setDate(tm.getDate()+1);
-      if(t.getDay()!==3) quick('Heute',t);
-      if(tm.getDay()!==3) quick('Morgen',tm);
-      var fr=new Date(); do{fr.setDate(fr.getDate()+1);}while(fr.getDay()!==5);
-      quick('Freitag',fr);
-      var sa=new Date(); do{sa.setDate(sa.getDate()+1);}while(sa.getDay()!==6);
-      quick('Samstag',sa);
-    })();
-
-    /* Der Kalender kennt drei Zustände je Tag: frei, ausgebucht, geschlossen.
-       Sie kommen vom Server, damit Ruhetage, Urlaub und volle Abende gleich
-       sichtbar sind — und zwar für die aktuell gewählte Personenzahl. */
-    function ladeMonat(){
-      var key=monatKey(kalStand.y,kalStand.m)+'|'+state.guests;
-      kalMonat.textContent = MO[kalStand.m]+' '+kalStand.y;
-      if(kalCache[key]){ zeichneMonat(kalCache[key]); return; }
-      kalTage.classList.add('kal-laedt');
-      zeichneMonat(null);
-      fetch('/api/slots?month='+monatKey(kalStand.y,kalStand.m)+'&guests='+state.guests,
-            {headers:{accept:'application/json'}})
-        .then(function(r){ return r.json(); })
-        .then(function(d){ kalCache[key]=d.days||{}; kalTage.classList.remove('kal-laedt'); zeichneMonat(d.days||{}); })
-        .catch(function(){ kalTage.classList.remove('kal-laedt'); zeichneMonat({}); });
-    }
-
-    function zeichneMonat(tage){
-      kalTage.innerHTML='';
-      var erster=new Date(kalStand.y, kalStand.m, 1);
-      var versatz=(erster.getDay()+6)%7;                       // Woche beginnt am Montag
-      var anzahl=new Date(kalStand.y, kalStand.m+1, 0).getDate();
-      var heute=iso(new Date());
-      for(var i=0;i<versatz;i++){
-        var l=document.createElement('span'); l.className='leer'; kalTage.appendChild(l);
-      }
-      for(var d=1;d<=anzahl;d++){
-        (function(d){
-          var v=monatKey(kalStand.y,kalStand.m)+'-'+String(d).padStart(2,'0');
-          var st=tage ? (tage[v]||'past') : 'past';
-          var el;
-          if(st==='open'){
-            el=document.createElement('button');
-            el.type='button'; el.textContent=d;
-            el.setAttribute('aria-pressed', v===state.date?'true':'false');
-            el.setAttribute('aria-label', labelDE(v));
-            el.addEventListener('click',function(){ waehle(v); });
-          } else {
-            el=document.createElement('span');
-            el.textContent=d;
-            el.className = st==='full' ? 'voll' : (st==='past' ? 'weg' : 'zu');
-            el.setAttribute('title', st==='full' ? 'ausgebucht'
-              : st==='ruhetag' ? 'Ruhetag' : st==='closed' ? 'geschlossen' : '');
-          }
-          if(v===heute) el.classList.add('heute');
-          kalTage.appendChild(el);
-        })(d);
-      }
-      var erstesImMonat=new Date(kalStand.y,kalStand.m,1);
-      kalZurueck.disabled = erstesImMonat <= new Date(today.getFullYear(),today.getMonth(),1);
-      kalVor.disabled = new Date(kalStand.y,kalStand.m+1,1) > maxD;
-    }
-
-    kalZurueck.addEventListener('click',function(){
-      if(--kalStand.m<0){ kalStand.m=11; kalStand.y--; } ladeMonat();
-    });
-    kalVor.addEventListener('click',function(){
-      if(++kalStand.m>11){ kalStand.m=0; kalStand.y++; } ladeMonat();
-    });
-
-    function waehle(v){
-      state.date=v; state.time='';
-      document.getElementById('resDate').value=v;
-      var p=v.split('-');
-      kalStand.y=+p[0]; kalStand.m=+p[1]-1;
-      [].forEach.call(dQuick.children,function(c){
-        c.setAttribute('aria-pressed', c.dataset.iso===state.date ? 'true' : 'false');
-      });
-      dHint.textContent=labelDE(v); dHint.className='res-hint';
-      ladeMonat();
-      loadSlots();
-    }
-
-    ladeMonat();
-
-    /* --- Zeiten --- */
-    function setTimeHint(txt,warn){ tHint.textContent=txt; tHint.className='res-hint'+(warn?' warn':''); }
-
-    function loadSlots(){
-      tWrap.innerHTML=''; state.time=''; wBox.hidden=true;
-      if(state.warte) warteAus();
-      if(!state.date){ setTimeHint('Bitte wählen Sie zuerst ein Datum.'); return; }
-      setTimeHint('Freie Zeiten werden geladen …');
-      fetch('/api/slots?date='+encodeURIComponent(state.date)+'&guests='+state.guests,{headers:{accept:'application/json'}})
-        .then(function(r){ return r.json(); })
-        .then(function(d){
-          if(d.closed){ setTimeHint(d.reason==='Ruhetag'
-            ? 'Mittwoch ist unser Ruhetag. Bitte wählen Sie einen anderen Tag.'
-            : 'An diesem Tag haben wir geschlossen ('+d.reason+').', true); return; }
-          if(!d.slots || !d.slots.length){
-            setTimeHint('Für '+state.guests+' Personen ist an diesem Tag leider nichts mehr frei.', true);
-            wBox.hidden=false; return; }
-          setTimeHint('');
-          d.slots.forEach(function(sl){
-            var b=document.createElement('button');
-            b.type='button'; b.className='chip'; b.textContent=sl.time;
-            b.setAttribute('aria-pressed','false');
-            b.addEventListener('click',function(){
-              state.time=sl.time;
-              [].forEach.call(tWrap.children,function(c){c.setAttribute('aria-pressed', c===b?'true':'false')});
-              msg.textContent=''; msg.className='res-msg';
-            });
-            tWrap.appendChild(b);
-          });
-        })
-        .catch(function(){
-          setTimeHint('Die Zeiten konnten nicht geladen werden. Bitte rufen Sie uns an: '+PHONE, true);
-        });
-    }
-
-    /* --- Warteliste --- */
-    function warteAn(){
-      state.warte=true;
-      wBox.hidden=true; tWrap.innerHTML=''; setTimeHint('');
-      wHint.hidden=false; document.getElementById('warteTag').textContent=dLabel(state.date);
-      form.classList.add('warte');
-      [].forEach.call(document.querySelectorAll('.mail-opt'),function(e){e.hidden=false});
-      document.getElementById('resMail').required=false;
-      btn.textContent='Auf die Warteliste setzen';
-      wHint.scrollIntoView({block:'center'});
-    }
-    function warteAus(){
-      state.warte=false;
-      wHint.hidden=true; form.classList.remove('warte');
-      [].forEach.call(document.querySelectorAll('.mail-opt'),function(e){e.hidden=true});
-      document.getElementById('resMail').required=true;
-      btn.textContent='Tisch verbindlich reservieren';
-    }
-    function dLabel(iso){
-      if(!iso) return '';
-      var t=iso.split('-');
-      return WT[new Date(Date.UTC(+t[0],+t[1]-1,+t[2])).getUTCDay()]+', '+(+t[2])+'.'+(+t[1])+'.'+t[0];
-    }
-    var WT=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
-    document.getElementById('warteAn').addEventListener('click',warteAn);
-    document.getElementById('warteAus').addEventListener('click',function(){ warteAus(); loadSlots(); });
-
-    /* --- Absenden --- */
-    function invalid(el,on){ el.setAttribute('aria-invalid', on?'true':'false'); }
-
-    form.addEventListener('submit',function(e){
-      e.preventDefault();
-      msg.className='res-msg'; msg.textContent='';
-      var name=document.getElementById('resName'),
-          mail=document.getElementById('resMail'),
-          tel =document.getElementById('resPhone');
-      [name,mail,tel].forEach(function(el){invalid(el,false)});
-
-      if(!state.date){ msg.className='res-msg err'; msg.textContent='Bitte wählen Sie im Kalender einen Tag.';
-        document.querySelector('.kal').scrollIntoView({block:'center'}); return; }
-      if(!state.warte && !state.time){ msg.className='res-msg err'; msg.textContent='Bitte wählen Sie eine Uhrzeit.'; tWrap.scrollIntoView({block:'center'}); return; }
-      if(name.value.trim().length<2){ invalid(name,true); msg.className='res-msg err'; msg.textContent='Bitte geben Sie Ihren Namen an.'; name.focus(); return; }
-      if((!state.warte || mail.value.trim()) &&
-         !/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(mail.value.trim())){ invalid(mail,true); msg.className='res-msg err'; msg.textContent='Bitte prüfen Sie Ihre E-Mail-Adresse.'; mail.focus(); return; }
-      if(tel.value.replace(/[^\d]/g,'').length<6){ invalid(tel,true); msg.className='res-msg err'; msg.textContent='Bitte geben Sie eine Telefonnummer an.'; tel.focus(); return; }
-
-      var zurueck = state.warte ? 'Auf die Warteliste setzen' : 'Tisch verbindlich reservieren';
-      btn.disabled=true; btn.textContent='Wird gesendet …';
-      var payload={
-        date:state.date, time:state.time, guests:state.guests,
-        name:name.value.trim(), email:mail.value.trim(), phone:tel.value.trim(),
-        note:document.getElementById('resNote').value.trim(),
-        website:form.website.value, ts:document.getElementById('resTs').value
-      };
-      fetch(state.warte ? '/api/warteliste' : '/api/reservierung',
-            {method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)})
-        .then(function(r){ return r.json().then(function(j){ return {ok:r.ok,j:j}; }); })
-        .then(function(res){
-          if(!res.ok || !res.j.ok){
-            btn.disabled=false; btn.textContent=zurueck;
-            msg.className='res-msg err';
-            msg.textContent=(res.j && res.j.message) || 'Das hat nicht geklappt. Bitte rufen Sie uns an: '+PHONE;
-            if(res.j && (res.j.error==='slot_taken')) loadSlots();
-            return;
-          }
-          if(state.warte){ wartefertig(res.j, payload); return; }
-          done(res.j, payload);
-        })
-        .catch(function(){
-          btn.disabled=false; btn.textContent=zurueck;
-          msg.className='res-msg err';
-          msg.textContent='Verbindung fehlgeschlagen. Bitte rufen Sie uns an: '+PHONE;
-        });
-    });
-
-    function wartefertig(d,p){
-      var wrap=document.getElementById('resDone');
-      wrap.querySelector('h3').textContent = d.doppelt
-        ? 'Sie stehen schon auf der Liste.' : 'Sie stehen auf der Warteliste.';
-      document.getElementById('doneLead').textContent = d.doppelt
-        ? 'Für diesen Abend haben wir Ihre Nummer bereits.'
-        : 'Danke, '+p.name.split(' ')[0]+'. Wird ein Tisch frei, rufen wir Sie an.';
-      document.getElementById('doneDl').innerHTML =
-        '<div><span>Wunschtag</span><span>'+dLabel(p.date)+'</span></div>'+
-        '<div><span>Personen</span><span>'+p.guests+'</span></div>'+
-        '<div><span>Rückruf an</span><span>'+p.phone.replace(/</g,'')+'</span></div>';
-      document.getElementById('doneNote').innerHTML =
-        '<b>Das ist noch keine Reservierung.</b> Ein Tisch ist erst sicher, wenn wir uns bei Ihnen '+
-        'gemeldet haben. Sie können uns auch direkt anrufen: '+PHONE+'.';
-      form.hidden=true; wrap.hidden=false;
-      wrap.scrollIntoView({behavior:'smooth',block:'center'});
-    }
-
-    function done(d,p){
-      var wrap=document.getElementById('resDone');
-      document.getElementById('doneLead').textContent =
-        'Wir freuen uns auf Sie, '+p.name.split(' ')[0]+'.';
-      document.getElementById('doneDl').innerHTML =
-        '<div><span>Datum</span><span>'+d.dateLabel+'</span></div>'+
-        '<div><span>Uhrzeit</span><span>'+d.time+' Uhr</span></div>'+
-        '<div><span>Personen</span><span>'+d.guests+'</span></div>'+
-        '<div><span>Nummer</span><span>'+d.id+'</span></div>';
-      document.getElementById('doneNote').innerHTML = d.mailed
-        ? 'Eine Bestätigung ist an <b>'+p.email.replace(/</g,'')+'</b> unterwegs. '+
-          'Falls sich etwas ändert, genügt ein Anruf unter '+PHONE+'.'
-        : 'Notieren Sie sich gerne die Nummer. Bei Änderungen erreichen Sie uns unter '+PHONE+'.';
-      form.hidden=true; wrap.hidden=false;
-      wrap.scrollIntoView({behavior:'smooth',block:'center'});
-    }
-  })();
-
-  /* ---- Galerie: Lightbox + Mobile-Fortschritt ---- */
-  // Teller-Karten hängen mit in der Lightbox, tragen aber eigene Optik —
-  // deshalb hier zwei Selektoren statt einer gemeinsamen Klasse.
-  var gItems=[].slice.call(document.querySelectorAll('.teller[data-src], .g-item'));
-  var lb=document.getElementById('lb'), lbImg=document.getElementById('lbImg'),
-      lbCap=document.getElementById('lbCap'), lbCount=document.getElementById('lbCount'),
-      gi=0, lastFocus=null;
-  function render(){
-    var el=gItems[gi];
-    lbImg.src=el.dataset.src;
-    lbImg.alt=el.dataset.title+' — '+el.dataset.sub;
-    lbCap.innerHTML=el.dataset.title+'<small>'+el.dataset.sub+'</small>';
-    lbCount.textContent=(gi+1)+' / '+gItems.length;
-  }
-  function openLb(i){ gi=i; lastFocus=document.activeElement; render(); lb.classList.add('open');
-    document.body.style.overflow='hidden'; document.getElementById('lbClose').focus(); }
-  function closeLb(){ lb.classList.remove('open'); document.body.style.overflow='';
-    if(lastFocus) lastFocus.focus(); }
-  function step(n){ gi=(gi+n+gItems.length)%gItems.length; render(); }
-  gItems.forEach(function(el,i){ el.addEventListener('click',function(){ openLb(i); }); });
-  document.getElementById('lbClose').addEventListener('click',closeLb);
-  document.getElementById('lbPrev').addEventListener('click',function(){step(-1)});
-  document.getElementById('lbNext').addEventListener('click',function(){step(1)});
-  lb.addEventListener('click',function(e){ if(e.target===lb||e.target.tagName==='FIGURE') closeLb(); });
-  document.addEventListener('keydown',function(e){
-    if(!lb.classList.contains('open')) return;
-    if(e.key==='Escape') closeLb();
-    else if(e.key==='ArrowRight') step(1);
-    else if(e.key==='ArrowLeft') step(-1);
-  });
-  var tsx=0,tsy=0;
-  lb.addEventListener('touchstart',function(e){tsx=e.changedTouches[0].clientX;tsy=e.changedTouches[0].clientY},{passive:true});
-  lb.addEventListener('touchend',function(e){
-    var dx=e.changedTouches[0].clientX-tsx, dy=e.changedTouches[0].clientY-tsy;
-    if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)) step(dx<0?1:-1);
-    else if(dy>90&&Math.abs(dy)>Math.abs(dx)) closeLb();
-  },{passive:true});
-
-  var gal=document.getElementById('gallery'), bar=document.querySelector('.g-progress span');
-  if(gal&&bar){
-    gal.addEventListener('scroll',function(){
-      var max=gal.scrollWidth-gal.clientWidth;
-      var p=max>0?gal.scrollLeft/max:0;
-      bar.style.left=(p*78)+'%';
-    },{passive:true});
-  }
-
-  var d=new Date().getDay();
-  var row=document.querySelector('#hours tr[data-d="'+d+'"]');
-  if(row) row.classList.add('today');
-  document.getElementById('yr').textContent=new Date().getFullYear();
-})();
-</script>
+<script src="/js/site.js" defer></script>
 </body>
 </html>

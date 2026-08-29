@@ -1,17 +1,21 @@
 /**
- * Den Stand der Karte in die Startseite einsetzen.
+ * Den Stand der Karte in die Seite „Steak & Spezialitäten" einsetzen.
  *
- * Die Startseite bleibt eine statische Datei. Ein einziges Feld wird im
+ * Die Seite bleibt eine statische Datei. Ein einziges Feld wird im
  * Vorbeifliegen ersetzt (HTMLRewriter, kein zweiter Request, kein JavaScript
  * beim Gast): das Datum in `#karte-stand` — „Stand der Karte: August 2026".
  *
  * ── Wie diese Datei geschrumpft ist ───────────────────────────────────
  * Bis August 2026 stand hier die **vollständige** Karte, alle 132 Gerichte,
  * ein Viertel des HTML der Startseite. Dann wurde daraus ein Schaufenster mit
- * zwölf Gerichten. Und seit die Startseite drei Spezialitäten mit Bild und
+ * zwölf Gerichten. Und seit die Seite drei Spezialitäten mit Bild und
  * Geschichte zeigt statt eines Kartenauszugs, bleibt nur das Datum übrig: Ein
  * Auszug der Karte las sich neben dem Abschnitt „Vom Teller" wie zwei
  * Speisekarten auf einer Seite. Die Karte selbst steht unter `/karte`.
+ *
+ * Seit dem 29.08.2026 steht der Preishinweis mit dem Datum nicht mehr auf der
+ * Startseite, sondern unter `/steak` — die Spezialitäten sind dorthin
+ * umgezogen, als die eine lange Seite in fünf kurze zerlegt wurde.
  *
  * Failsafe unverändert: Geht hier etwas schief oder antwortet die Datenbank
  * nicht, wird die Seite unverändert ausgeliefert. Im HTML steht ein
@@ -45,8 +49,8 @@ export async function onRequest(context) {
   const { request, env, next } = context;
   const url = new URL(request.url);
 
-  const istStart = url.pathname === '/' || url.pathname === '/index.html';
-  if (!istStart || request.method !== 'GET') return next();
+  const istSteak = url.pathname === '/steak' || url.pathname === '/steak.html';
+  if (!istSteak || request.method !== 'GET') return next();
 
   const res = await next();
   if (!res.ok || !(res.headers.get('content-type') || '').includes('text/html')) return res;

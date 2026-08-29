@@ -11,3 +11,12 @@
 
 /*.html
   Cache-Control: public, max-age=0, must-revalidate
+
+# Aussehen und Verhalten liegen seit dem 29.08.2026 in eigenen Dateien, die
+# sich alle Seiten teilen. Sie ändern sich mit jeder Überarbeitung — deshalb
+# hier kurz zwischenspeichern statt ein Jahr wie unter /assets.
+/css/*
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/js/*
+  Cache-Control: public, max-age=3600, must-revalidate

@@ -670,7 +670,7 @@ function seite(karte, sprache, stand) {
 <footer class="fuss">
   <div class="wrap">
     <div class="tasten">
-      <a class="taste" href="${HOUSE.site}/#reservieren">${esc(t.reservieren)}</a>
+      <a class="taste" href="${HOUSE.site}/reservieren">${esc(t.reservieren)}</a>
       <a class="taste stil" href="tel:${esc(HOUSE.tel)}">${esc(t.anrufen)}</a>
       <a class="taste stil" href="${HOUSE.site}/">${esc(t.web)}</a>
     </div>

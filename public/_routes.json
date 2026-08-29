@@ -1,8 +1,8 @@
 {
   "version": 1,
   "include": [
-    "/",
-    "/index.html",
+    "/steak",
+    "/steak.html",
     "/karte",
     "/admin",
     "/admin/*",
@@ -11,6 +11,8 @@
   ],
   "exclude": [
     "/assets/*",
+    "/css/*",
+    "/js/*",
     "/impressum.html",
     "/datenschutz.html",
     "/robots.txt",
