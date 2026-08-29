@@ -481,7 +481,12 @@ input[type="date"].res-date:focus{outline:0;border-color:var(--wine);box-shadow:
 .map-cta{position:absolute;right:1rem;bottom:1rem;background:var(--wine);color:#fff;
   font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;
   padding:.7rem 1.1rem;line-height:1;box-shadow:0 10px 24px -12px rgba(0,0,0,.6)}
-.map-quelle{margin-top:.7rem;text-align:right}
+.anfahrt{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:1.4rem 2rem;margin-top:1.8rem}
+.anfahrt .k{display:block;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;
+  font-weight:700;color:var(--wine);margin-bottom:.45rem}
+.anfahrt p{margin:0;font-size:.92rem;line-height:1.65;color:var(--muted,#6E675A)}
+.map-quelle{margin-top:1.6rem;text-align:right}
 .routen{display:flex;gap:.6rem;flex-wrap:wrap}
 @media(max-width:560px){
   .map-cta{left:1rem;right:auto;bottom:.8rem;text-align:center}
@@ -1400,6 +1405,25 @@ footer a:hover{color:var(--gold)}
       </picture>
       <span class="map-cta">In Google Maps öffnen</span>
     </a>
+    <div class="anfahrt reveal">
+      <div>
+        <span class="k">Mit dem Auto</span>
+        <p>Durch Horrheim führt die Pforzheimer Straße (L 1106). Von dort sind es in den
+           Ortskern nur ein paar hundert Meter — wir liegen in der Klosterbergstraße,
+           gleich neben der Verwaltungsstelle und der Clemenskirche.</p>
+      </div>
+      <div>
+        <span class="k">Parken</span>
+        <p>Zum Parken bieten sich die Klosterbergstraße und die Obere Gasse an, beides
+           keine hundert Meter zu Fuß. Rund um den Marktplatz gibt es weitere Flächen.</p>
+      </div>
+      <div>
+        <span class="k">Wenn Sie da sind</span>
+        <p>Das Weinmuseum liegt im selben Gassengeviert. Wer nach dem Essen noch ein paar
+           Schritte gehen möchte: von hier aus beginnen die Weinberge.</p>
+      </div>
+    </div>
+
     <p class="note map-quelle">Kartendaten © <a href="https://www.openstreetmap.org/copyright"
        target="_blank" rel="noopener">OpenStreetMap</a>-Mitwirkende. Die Karte ist eine
        Abbildung auf unserem Server — beim Aufruf dieser Seite werden keine Daten an
