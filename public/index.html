@@ -469,8 +469,23 @@ input[type="date"].res-date:focus{outline:0;border-color:var(--wine);box-shadow:
 .contact-list .k{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);width:100px;flex-shrink:0;padding-top:.28rem}
 .contact-list a{text-decoration:none;font-weight:500}
 .contact-list a:hover{color:var(--wine)}
-.mapbox{margin-top:2.5rem;border:1px solid var(--sand)}
-.mapbox iframe{display:block;width:100%;height:340px;border:0;filter:grayscale(.35) contrast(1.05)}
+/* Die Karte ist ein Bild bei uns, kein eingebetteter Dienst — deshalb ein
+   Link mit Bild statt eines iframes. Der Hinweis „In Google Maps öffnen"
+   liegt sichtbar darauf, damit niemand vergeblich zu ziehen versucht. */
+.mapbox{display:block;position:relative;margin-top:2.5rem;border:1px solid var(--sand);
+  overflow:hidden;line-height:0}
+.mapbox img{width:100%;height:auto;display:block;filter:grayscale(.28) contrast(1.04);
+  transition:transform .5s cubic-bezier(.2,.7,.2,1),filter .3s}
+.mapbox:hover img,.mapbox:focus-visible img{transform:scale(1.02);filter:grayscale(0) contrast(1.04)}
+.mapbox:focus-visible{outline:2px solid var(--wine);outline-offset:2px}
+.map-cta{position:absolute;right:1rem;bottom:1rem;background:var(--wine);color:#fff;
+  font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;
+  padding:.7rem 1.1rem;line-height:1;box-shadow:0 10px 24px -12px rgba(0,0,0,.6)}
+.map-quelle{margin-top:.7rem;text-align:right}
+.routen{display:flex;gap:.6rem;flex-wrap:wrap}
+@media(max-width:560px){
+  .map-cta{left:1rem;right:auto;bottom:.8rem;text-align:center}
+}
 
 /* ---------- footer ---------- */
 footer{background:var(--ink);color:rgba(244,247,234,.62);padding:4.5rem 0 6.5rem;font-size:.9rem}
@@ -1356,15 +1371,39 @@ footer a:hover{color:var(--gold)}
           <li><span class="k">E-Mail</span><a href="mailto:hallo@lammm.de">hallo@lammm.de</a></li>
           <li><span class="k">Instagram</span><a href="https://www.instagram.com/goyas.lamm/" target="_blank" rel="noopener">@goyas.lamm</a></li>
         </ul>
-        <p style="margin-top:1.6rem">
-          <a class="btn btn-outline" href="https://www.google.com/maps/search/?api=1&amp;query=Klosterbergstra%C3%9Fe%2045%2C%2071665%20Vaihingen%20an%20der%20Enz" target="_blank" rel="noopener">Route planen</a>
+        <p style="margin-top:1.6rem" class="routen">
+          <a class="btn btn-primary" href="https://www.google.com/maps/search/?api=1&amp;query=Klosterbergstra%C3%9Fe%2045%2C%2071665%20Vaihingen%20an%20der%20Enz"
+             target="_blank" rel="noopener">In Google Maps öffnen</a>
+          <a class="btn btn-outline" href="https://maps.apple.com/?q=Goya%C2%B4s%20Lamm&amp;address=Klosterbergstra%C3%9Fe%2045,%2071665%20Vaihingen%20an%20der%20Enz&amp;ll=48.9789244,8.9884052"
+             target="_blank" rel="noopener">Apple Karten</a>
         </p>
       </div>
     </div>
-    <div class="mapbox reveal">
-      <iframe title="Karte: Klosterbergstraße 45, 71665 Vaihingen an der Enz" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
-        src="https://www.openstreetmap.org/export/embed.html?bbox=8.9705%2C48.9776%2C8.9937%2C48.9876&amp;layer=mapnik&amp;marker=48.9826%2C8.9821"></iframe>
-    </div>
+
+    <!-- Die Karte ist ein Bild, das bei uns liegt, kein eingebetteter Dienst:
+         So wird beim Aufruf der Seite nichts an Dritte übertragen und es
+         braucht keinen Cookie-Hinweis. Wer die richtige Karte will, tippt
+         darauf und landet in seiner eigenen Karten-App — das ist ohnehin der
+         Weg, den fast jeder nimmt. -->
+    <a class="mapbox reveal" href="https://www.google.com/maps/search/?api=1&amp;query=Klosterbergstra%C3%9Fe%2045%2C%2071665%20Vaihingen%20an%20der%20Enz"
+       target="_blank" rel="noopener"
+       aria-label="Standort Klosterbergstraße 45, Horrheim — in Google Maps öffnen">
+      <picture>
+        <source type="image/webp"
+                srcset="/assets/img/anfahrt-700.webp 700w, /assets/img/anfahrt-1200.webp 1200w"
+                sizes="(max-width:900px) 100vw, 1140px">
+        <img src="/assets/img/anfahrt-700.jpg"
+             srcset="/assets/img/anfahrt-700.jpg 700w, /assets/img/anfahrt-1200.jpg 1200w"
+             sizes="(max-width:900px) 100vw, 1140px"
+             alt="Karte: Goya´s Lamm in der Klosterbergstraße 45 in Horrheim, neben Clemenskirche und Weinmuseum"
+             width="1200" height="500" loading="lazy" decoding="async">
+      </picture>
+      <span class="map-cta">In Google Maps öffnen</span>
+    </a>
+    <p class="note map-quelle">Kartendaten © <a href="https://www.openstreetmap.org/copyright"
+       target="_blank" rel="noopener">OpenStreetMap</a>-Mitwirkende. Die Karte ist eine
+       Abbildung auf unserem Server — beim Aufruf dieser Seite werden keine Daten an
+       Kartendienste übertragen.</p>
   </div>
 </section>
 
@@ -1461,7 +1500,7 @@ footer a:hover{color:var(--gold)}
     "postalCode":"71665",
     "addressCountry":"DE"
   },
-  "geo":{"@type":"GeoCoordinates","latitude":48.9826,"longitude":8.9821},
+  "geo":{"@type":"GeoCoordinates","latitude":48.9789244,"longitude":8.9884052},
   "openingHoursSpecification":[
     {"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Thursday","Friday","Saturday"],"opens":"17:00","closes":"22:00"},
     {"@type":"OpeningHoursSpecification","dayOfWeek":"Sunday","opens":"12:00","closes":"20:00"}
