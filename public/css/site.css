@@ -731,3 +731,10 @@ header.solid .navlinks a[aria-current="page"]{color:var(--wine)}
   .kopf{min-height:min(40svh,340px);padding:7.5rem 0 2.4rem}
 }
 
+
+
+/* Kurztext unter den Preisen einer Steakkarte — sagt, was den Zuschnitt ausmacht. */
+.pricecard .kurz{margin:1.15rem 0 0;padding-top:1rem;border-top:1px solid rgba(192,160,98,.22);
+  color:rgba(244,247,234,.62);font-size:.87rem;line-height:1.6}
+.pricecard .kurz b{color:var(--gold);font-weight:600;font-size:.72rem;letter-spacing:.16em;
+  text-transform:uppercase;display:block;margin-bottom:.35rem}
