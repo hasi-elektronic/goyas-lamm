@@ -42,6 +42,11 @@ img{display:block;max-width:100%}
    Fenstern bricht sie stattdessen um (unter 720px ist sie ohnehin ausgeblendet) */
 nav.tabs{background:var(--ink-2);position:sticky;top:47px;z-index:39}
 nav.tabs::-webkit-scrollbar{display:none}
+/* Bleibt bewusst bei „wrap". Ein „overflow-x:auto" zum Schieben wäre die
+   schönere Leiste, würde aber die Klappmenüs abschneiden: sobald eine Achse
+   scrollt, klippt der Browser auch die andere, und .tliste hängt absolut
+   darunter. Den Umbruch verhindert stattdessen der 900px-Umschaltpunkt —
+   darunter gibt es die untere Leiste statt der Reiter. */
 nav.tabs .in{width:min(100% - 1.6rem,1180px);margin-inline:auto;display:flex;gap:.15rem;flex-wrap:wrap}
 nav.tabs a{color:rgba(244,247,234,.62);text-decoration:none;padding:.85rem 1rem;white-space:nowrap;
   font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;border-bottom:2px solid transparent}
@@ -68,6 +73,12 @@ nav.tabs details.tmehr .tliste a.on{color:var(--wine)}
 nav.tabs details.tmehr .tliste a span{display:block;font-size:.76rem;font-weight:400;
   line-height:1.35;color:var(--muted);margin-top:.1rem}
 nav.tabs details.tmehr .tliste a:hover span{color:var(--muted)}
+/* Zwischen 901px und der vollen Breite passen die acht Oberpunkte nicht mehr
+   in eine Zeile und brechen um. Statt umzubrechen rücken sie enger zusammen —
+   ein Laptop mit 1024px ist keine Ausnahme, sondern der Normalfall. */
+@media(min-width:901px) and (max-width:1179px){
+  nav.tabs a,nav.tabs details.tmehr summary{padding:.85rem .5rem;letter-spacing:.07em;font-size:.7rem}
+}
 
 main{width:min(100% - 1.6rem,1180px);margin:1.6rem auto 5rem}
 h1{font-size:1.45rem;margin:0 0 .2rem;letter-spacing:-.01em}
@@ -260,18 +271,44 @@ tr.noshow td.nm a{text-decoration:line-through;text-decoration-color:var(--wine)
 .bnav{display:none}
 .sheet-bg{display:none}
 
-@media(max-width:720px){
+/**
+ * Der Umschaltpunkt lag bei 720px und war zu niedrig.
+ *
+ * Gemeldet am 31.08.2026: „Bu yeni tuşu android telefonda görünmedi." Zwischen
+ * 721 und rund 900 Pixeln bekam man **beides nicht richtig**: die untere Leiste
+ * war ausgeblendet (und damit der Plus-Knopf), und die acht Reiter oben passten
+ * nicht in eine Zeile, brachen um und standen als zweizeiliger Klotz da.
+ *
+ * In diesen Bereich fallen mehr Geräte, als man denkt: Tablets im Hochformat,
+ * Falt-Telefone aufgeklappt, und jedes Android-Telefon, bei dem unter
+ * „Anzeigegröße" eine kleinere Stufe eingestellt ist — dann meldet der Browser
+ * mehr CSS-Pixel als das gleiche Gerät in der Standardeinstellung.
+ *
+ * Deshalb 900px. Der Inhalt darunter bleibt bei 720 (eigener Block weiter
+ * unten) — hier geht es nur um die Navigation.
+ */
+@media(max-width:900px){
   nav.tabs{display:none}
   body{padding-bottom:calc(66px + env(safe-area-inset-bottom))}
   .bnav{
-    display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:50;
+    display:grid;grid-auto-flow:column;position:fixed;left:0;right:0;bottom:0;z-index:50;
     background:var(--ink);border-top:1px solid rgba(244,247,234,.14);
-    padding-bottom:env(safe-area-inset-bottom)}
+    padding-bottom:env(safe-area-inset-bottom);
+    /* Die Leiste darf unter keinen Umständen breiter werden als der Bildschirm:
+       sonst rutschen die letzten Felder hinaus und sind unerreichbar. */
+    overflow:hidden}
+  /* „1fr" allein heißt minmax(auto,1fr) — eine Spalte wird dann so breit wie
+     ihr Inhalt, egal wie schmal das Gerät ist. Bei großer Systemschrift reicht
+     das, um die Leiste zu sprengen. minmax(0,1fr) erlaubt das Schrumpfen. */
+  .bnav > *{min-width:0}
   .bnav a,.bnav summary{
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.22rem;
-    padding:.6rem .2rem .55rem;text-decoration:none;color:rgba(244,247,234,.58);
+    padding:.6rem .15rem .55rem;text-decoration:none;color:rgba(244,247,234,.58);
     font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;font-weight:700;
     list-style:none;cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:60px}
+  /* Lieber „EINSTELL…" als ein Feld, das die Nachbarn verdrängt. */
+  .bnav a > span,.bnav summary > span{
+    max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .bnav summary::-webkit-details-marker{display:none}
   .bnav a.on{color:#fff;box-shadow:inset 0 2px 0 var(--gold)}
   .bnav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7;
@@ -678,7 +715,7 @@ ${rolle === 'demo' ? `<div class="demobar">Demo-Zugang · nur ansehen ·
 </div></nav>
 <main>${body}</main>
 
-<nav class="bnav" style="grid-template-columns:repeat(${felder},1fr)">
+<nav class="bnav" style="grid-template-columns:repeat(${felder},minmax(0,1fr))">
   ${unten.map((pfad, i) => {
     const [h, , ic, kurz] = NAV.find(n => n[0] === pfad);
     const knopf = `<a href="${h}" class="${active === h ? 'on' : ''}">
