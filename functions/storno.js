@@ -29,7 +29,7 @@ main{display:flex;align-items:center;justify-content:center;min-height:62vh}
 .mark{width:56px;margin:0 auto 1.2rem;display:block}
 </style></head><body>
 <div class="topbar"><div class="wrap">
-  <a href="/"><img src="/assets/logo-white.png" alt="Goya´s Lamm Horrheim" width="1155" height="450"></a>
+  <a href="/"><img src="/assets/logo-white.png" alt="Goya´s Lamm Horrheim" width="1600" height="737"></a>
   <a class="back" href="/">&larr; Zur Startseite</a>
 </div></div>
 <main><div class="card">
