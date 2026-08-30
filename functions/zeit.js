@@ -134,7 +134,7 @@ const seite = (inhalt, { titel = 'Stempeluhr', jetzt = '', zurueckNach = 0 } = {
 <style>${CSS}</style></head><body>
 <div class="wrap">
   <div class="marke">
-    <img src="/assets/logo-white.png" alt="Goya´s Lamm Horrheim" width="1600" height="737">
+    <img src="/assets/logo-white.png" alt="Goya´s Lamm Horrheim" width="1200" height="443">
   </div>
   ${inhalt}
   <p class="fuss">Stempeluhr für unser Team.<br>
