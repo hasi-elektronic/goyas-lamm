@@ -597,6 +597,10 @@ function karteSeite({ url, user, m, reiter, neu, lohn, abw, heute, monat,
     <div class="card">
       <h2>Eintragen</h2>
       <div class="body">
+        <p class="meta" style="margin:0 0 1rem">Urlaub und Ausfälle trägt <b>nur der Chef</b>
+           hier ein — besprochen wird das im Betrieb, nicht über ein Formular. Die Stempeluhr
+           unter <code>/zeit</code> kann ausschließlich kommen, Pause und gehen.
+           Was hier steht, gilt sofort und wartet auf keine Genehmigung.</p>
         <form method="post" action="/admin/personal">
           <input type="hidden" name="do" value="abw_neu">
           <input type="hidden" name="id" value="${esc(m.id)}">

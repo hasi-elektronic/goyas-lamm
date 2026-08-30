@@ -360,7 +360,8 @@ const IC = {
   regal:  '<rect x="3.5" y="4" width="17" height="16" rx="1.5"/><path d="M3.5 9.5h17M3.5 15h17"/>',
   etikett:'<path d="M4 4.5h7.2L20 13.3a1.7 1.7 0 0 1 0 2.4l-4.3 4.3a1.7 1.7 0 0 1-2.4 0L4.5 11.2z"/><path d="M8 8h.01"/>',
   zaehl:  '<rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8 8h8M8 12h8M8 16h4"/>',
-  qr:     '<rect x="3.5" y="3.5" width="7" height="7" rx="1"/><rect x="13.5" y="3.5" width="7" height="7" rx="1"/><rect x="3.5" y="13.5" width="7" height="7" rx="1"/><path d="M13.5 13.5h3v3h-3zM20.5 13.5v3M17.5 20.5h3M13.5 20.5h.01"/>',
+  beutel: '<path d="M4.5 8.5h15l.9 11.4a1.5 1.5 0 0 1-1.5 1.6H5.1a1.5 1.5 0 0 1-1.5-1.6z"/><path d="M8.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5"/>',
+  qr:   '<rect x="3.5" y="3.5" width="7" height="7" rx="1"/><rect x="13.5" y="3.5" width="7" height="7" rx="1"/><rect x="3.5" y="13.5" width="7" height="7" rx="1"/><path d="M13.5 13.5h3v3h-3zM20.5 13.5v3M17.5 20.5h3M13.5 20.5h.01"/>',
 };
 const svg = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>`;
 
@@ -396,6 +397,7 @@ const NAV = [
      greift: /zeit ist eine offene Seite, /admin/stempel nicht. */
   ['/admin/stempel',   'Stempeluhr öffnen', 'stempel', 'Stempel'],
   ['/admin/rechnung',  'Rechnungen',        'muenze',   'Rechnung'],
+  ['/admin/privat',    'Privatkasse',       'beutel',   'Privat'],
   ['/admin/tische',    'Tische',            'tisch',    'Tische'],
   ['/admin/zeiten',    'Schließtage',       'uhr',      'Zeiten'],
   ['/admin/benutzer',  'Benutzer & Rechte', 'schluessel','Zugang'],
@@ -444,6 +446,10 @@ const GRUPPEN = [
      Reservierungen (das ist der Tischplan) noch zur Warenwirtschaft (das ist
      der Einkauf), und der Chef öffnet sie bewusst. */
   { titel: 'Rechnungen', pfad: '/admin/rechnung' },
+  /* Die Privatkasse steht bewusst allein und ganz am Ende — sie gehört nicht
+     zum Betrieb, sondern dem Inhaber. Sie in eine Betriebsgruppe zu hängen
+     wäre der erste Schritt dahin, beides zu verwechseln. */
+  { titel: 'Privat', pfad: '/admin/privat' },
   { titel: 'Einstellungen', kinder: ['/admin/tische', '/admin/zeiten', '/admin/benutzer'] },
 ];
 

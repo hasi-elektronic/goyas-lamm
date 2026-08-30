@@ -37,6 +37,10 @@ export const PIN_PFADE = [
   '/admin/inventur',
   /* Rechnungen enthalten Kundenanschriften und Beträge. */
   '/admin/rechnung',
+  /* Die Privatkasse ist das Haushaltsbuch des Inhabers. Niemand sonst im Haus
+     hat einen Grund, sie zu öffnen — auch kein anderer Chef-Zugang, der aus
+     Versehen offen stehen bleibt. */
+  '/admin/privat',
 ];
 
 export const brauchtPin = pfad =>
