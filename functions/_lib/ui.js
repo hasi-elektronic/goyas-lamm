@@ -1,6 +1,6 @@
 /** Gemeinsames Layout und Bausteine für den Admin-Bereich. */
 import { esc, formatDateDE, nowBerlin, WEEKDAY_DE, weekday } from './core.js';
-import { darfSeite, darfPersonendaten, kuerzeName, ROLLEN } from './auth.js';
+import { darfSeite, darfSchreiben, darfPersonendaten, kuerzeName, ROLLEN } from './auth.js';
 import { FANFARE_CSS, fanfareMarkup, tonSchalter } from './fanfare.js';
 import { ZEITDIALOG_CSS } from './zeitdialog.js';
 import { WARE_CSS } from './warenui.js';
@@ -55,13 +55,19 @@ nav.tabs details.tmehr summary::-webkit-details-marker{display:none}
 nav.tabs details.tmehr summary::after{content:" ▾";font-size:.7em}
 nav.tabs details.tmehr summary:hover{color:#fff}
 nav.tabs details.tmehr summary.on{color:#fff;border-bottom-color:var(--gold)}
-nav.tabs details.tmehr .tliste{position:absolute;top:100%;left:0;z-index:60;min-width:210px;
+nav.tabs details.tmehr .tliste{position:absolute;top:100%;left:0;z-index:60;min-width:270px;
   background:var(--paper);border:1px solid var(--sand);box-shadow:0 14px 30px -16px rgba(0,0,0,.5)}
-nav.tabs details.tmehr .tliste a{display:block;color:var(--ink);padding:.7rem 1rem;
+nav.tabs details.tmehr .tliste a{display:block;color:var(--ink);padding:.6rem 1rem .65rem;
   border-bottom:1px solid var(--sand);text-transform:none;letter-spacing:normal;font-size:.9rem}
 nav.tabs details.tmehr .tliste a:last-child{border-bottom:0}
 nav.tabs details.tmehr .tliste a:hover{background:var(--cream);color:var(--wine)}
 nav.tabs details.tmehr .tliste a.on{color:var(--wine)}
+/* Die halbe Zeile unter der Beschriftung. Sie ist der Grund, warum die Liste
+   breiter geworden ist — ein Umbruch mitten in der Erklärung liest sich
+   schlechter als gar keine Erklärung. */
+nav.tabs details.tmehr .tliste a span{display:block;font-size:.76rem;font-weight:400;
+  line-height:1.35;color:var(--muted);margin-top:.1rem}
+nav.tabs details.tmehr .tliste a:hover span{color:var(--muted)}
 
 main{width:min(100% - 1.6rem,1180px);margin:1.6rem auto 5rem}
 h1{font-size:1.45rem;margin:0 0 .2rem;letter-spacing:-.01em}
@@ -268,35 +274,61 @@ tr.noshow td.nm a{text-decoration:line-through;text-decoration-color:var(--wine)
     list-style:none;cursor:pointer;-webkit-tap-highlight-color:transparent;min-height:60px}
   .bnav summary::-webkit-details-marker{display:none}
   .bnav a.on{color:#fff;box-shadow:inset 0 2px 0 var(--gold)}
-  .bnav a.plus{color:#fff}
-  .bnav a.plus svg{background:var(--wine);border-radius:50%;padding:3px}
   .bnav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7;
     stroke-linecap:round;stroke-linejoin:round}
-  details.more{position:static}
-  details.more[open] > summary{color:#fff}
-  details.more .sheet{
+  .bnav details{position:static}
+  .bnav details[open] > summary{color:#fff}
+
+  /* Der Plus-Knopf. Der Kreis sitzt am Symbol, nicht am ganzen Feld — sonst
+     verschiebt er die Beschriftung gegenüber den Nachbarn. */
+  .bnav details.neu > summary{color:#fff}
+  .bnav details.neu > summary svg{background:var(--wine);border-radius:50%;padding:3px;
+    transition:transform .16s ease}
+  .bnav details.neu[open] > summary svg{transform:rotate(45deg)}
+
+  /* Blatt über der Leiste — für „Mehr" und für „Neu" dasselbe Gerüst. */
+  .bnav .sheet{
     position:fixed;left:0;right:0;bottom:calc(66px + env(safe-area-inset-bottom));z-index:51;
-    background:var(--paper);border-top:1px solid var(--sand);
-    box-shadow:0 -18px 40px -20px rgba(0,0,0,.5);padding:.4rem 0 .6rem;
-    max-height:66vh;overflow-y:auto}
-  details.more .sheet a{
+    background:var(--cream);border-top:1px solid var(--sand);
+    box-shadow:0 -18px 40px -20px rgba(0,0,0,.5);padding:0 0 .6rem;
+    max-height:70vh;overflow-y:auto}
+  .bnav .sheet a{
     display:flex;flex-direction:row;align-items:center;justify-content:flex-start;
-    gap:.85rem;padding:.9rem 1.1rem;text-decoration:none;min-height:0;
-    text-transform:none;letter-spacing:normal;
+    gap:.85rem;padding:.85rem 1.1rem;text-decoration:none;min-height:0;
+    text-transform:none;letter-spacing:normal;background:var(--paper);
     color:var(--ink);font-size:.98rem;font-weight:600;border-bottom:1px solid var(--sand)}
-  details.more .sheet a:last-child{border-bottom:0}
-  details.more .sheet a.on{color:var(--wine)}
+  .bnav .sheet a b{font-weight:600;min-width:0}
+  /* Die Erklärung unter der Beschriftung. Am Handy ist Platz dafür, und hier
+     wird das Menü tatsächlich durchgesehen. */
+  .bnav .sheet a b span{display:block;font-size:.78rem;font-weight:400;line-height:1.3;
+    color:var(--muted);margin-top:.08rem}
+  .bnav .sheet a.on{color:var(--wine)}
+  .bnav .sheet a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;
+    stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto;color:var(--muted)}
+  .bnav .sheet a.on svg{color:var(--wine)}
+  .bnav .sheet .ab{color:var(--muted);font-weight:400;font-size:.9rem}
+
   /* Gruppenüberschrift im Blatt. Ohne sie wären es wieder einundzwanzig Zeilen
      in einer Reihe — der Zustand, aus dem dieses Menü gerade herauskommt. */
-  details.more .sheet .grp{
-    padding:1rem 1.1rem .3rem;font-size:.72rem;letter-spacing:.16em;
+  .bnav .sheet .grp{
+    padding:.9rem 1.1rem .35rem;font-size:.72rem;letter-spacing:.16em;
     text-transform:uppercase;font-weight:700;color:var(--muted)}
-  details.more .sheet a svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;
-    stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto;color:var(--muted)}
-  details.more .sheet a.on svg{color:var(--wine)}
-  details.more .sheet .ab{color:var(--muted);font-weight:400;font-size:.9rem}
-  details.more[open] ~ .sheet-bg,
-  details.more[open] .sheet-bg{display:block;position:fixed;inset:0;z-index:49;
+  /* Jeder Block hat seinen eigenen hellen Grund und einen Spalt dazwischen.
+     Das ist der eigentliche Fix: „Rechnungen" hing vorher optisch unter TEAM,
+     weil zwischen den Gruppen nichts stand. */
+  .bnav .sheet .blk{background:var(--paper);border-bottom:1px solid var(--sand)}
+  .bnav .sheet .blk + .blk{border-top:7px solid var(--cream)}
+  .bnav .sheet .blk > a:last-child{border-bottom:0}
+
+  /* Das Blatt am Plus-Knopf ist kurz — die Überschrift ist eine Ansage, keine
+     Rubrik, deshalb dunkel und nicht grau. */
+  .bnav .nsheet .grp{color:var(--ink);font-size:.76rem;padding:.9rem 1.1rem .4rem}
+  .bnav .nsheet a{padding:1rem 1.1rem}
+  .bnav .nsheet a svg{color:var(--wine)}
+  .bnav .nsheet a:last-child{border-bottom:0}
+
+  .bnav details[open] ~ .sheet-bg,
+  .bnav details[open] .sheet-bg{display:block;position:fixed;inset:0;z-index:49;
     background:rgba(20,18,15,.45)}
   .top .out{display:none}
 }
@@ -365,42 +397,84 @@ const IC = {
 };
 const svg = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>`;
 
-/* [Pfad, Beschriftung, Icon, kurze Beschriftung für die untere Leiste] */
+/**
+ * [Pfad, Beschriftung, Icon, kurze Beschriftung für die untere Leiste, Erklärung]
+ *
+ * Die fünfte Spalte ist neu (31.08.2026): eine halbe Zeile, die sagt, was hinter
+ * dem Punkt liegt. Sie steht unter der Beschriftung — im Klappmenü am
+ * Schreibtisch und im Blatt am Handy.
+ *
+ * Der Anlass: „Menüleri daha anlaşılır yapalım." Zwei Punkte mit ähnlichem Namen
+ * („Küchenzettel"/„Stundennachweis", „Artikel"/„Inventur") lassen sich am Namen
+ * allein nicht auseinanderhalten, und wer eine Seite noch nie geöffnet hat,
+ * errät aus „Kontrollblatt" nicht, wofür sie gut ist. Ein Menü, das man
+ * durchprobieren muss, ist kein Menü.
+ *
+ * Die Erklärung ist ein Satzfragment ohne Punkt, höchstens etwa 45 Zeichen —
+ * länger wird die Liste zur Textwand und niemand liest mehr.
+ */
 const NAV = [
-  ['/admin',           'Übersicht',         'heim',     'Start'],
-  ['/admin/tag',       'Tagesansicht',      'liste',    'Heute'],
-  ['/admin/kalender',  'Kalender',          'kalender', 'Kalender'],
-  ['/admin/warteliste','Warteliste',        'warte',    'Warte'],
-  ['/admin/auswertung','Auswertung',        'kurve',    'Zahlen'],
-  ['/admin/neu',       'Neue Reservierung', 'plus',     'Neu'],
-  ['/admin/suche',     'Suche',             'lupe',     'Suche'],
-  ['/admin/zettel',    'Küchenzettel',      'druck',    'Zettel'],
-  ['/admin/karte',     'Speisekarte',       'karte',    'Karte'],
-  ['/admin/aufsteller','QR-Aufsteller',     'qr',       'QR'],
-  ['/admin/ware',      'Wareneingang',      'kiste',    'Ware'],
-  ['/admin/hygiene',   'Hygiene-Kontrolle', 'liste',    'Hygiene'],
+  ['/admin',           'Übersicht',         'heim',     'Start',
+   'Der ganze Betrieb auf einen Blick'],
+  ['/admin/tag',       'Tagesansicht',      'liste',    'Heute',
+   'Wer heute kommt, Tisch für Tisch'],
+  ['/admin/kalender',  'Kalender',          'kalender', 'Kalender',
+   'Auslastung über Wochen und Monate'],
+  ['/admin/warteliste','Warteliste',        'warte',    'Warte',
+   'Anfragen, für die kein Tisch frei war'],
+  ['/admin/auswertung','Auswertung',        'kurve',    'Zahlen',
+   'Gäste, Stoßzeiten, Absagen'],
+  ['/admin/neu',       'Neue Reservierung', 'plus',     'Neu',
+   'Tisch von Hand eintragen'],
+  ['/admin/suche',     'Suche',             'lupe',     'Suche',
+   'Gast über Name oder Telefon finden'],
+  ['/admin/zettel',    'Küchenzettel',      'druck',    'Zettel',
+   'Tagesliste zum Ausdrucken für die Küche'],
+  ['/admin/karte',     'Speisekarte',       'karte',    'Karte',
+   'Gerichte, Preise, Allergene pflegen'],
+  ['/admin/aufsteller','QR-Aufsteller',     'qr',       'QR',
+   'Tischaufsteller zur digitalen Karte'],
+  ['/admin/ware',      'Wareneingang',      'kiste',    'Ware',
+   'Lieferung annehmen und buchen'],
+  ['/admin/hygiene',   'Hygiene-Kontrolle', 'liste',    'Hygiene',
+   'Temperaturen und Kontrollen festhalten'],
   /* Hieß „Lager". Falscher Name: Auf der Seite stehen Lieferanten, Artikel und
      Grenzwerte — ein Bestand entsteht erst mit der Inventur. */
-  ['/admin/lager',     'Artikel & Lieferanten', 'regal', 'Artikel'],
-  ['/admin/inventur',  'Inventur',          'zaehl',    'Inventur'],
+  ['/admin/lager',     'Artikel & Lieferanten', 'regal', 'Artikel',
+   'Stammdaten: was von wem kommt'],
+  ['/admin/inventur',  'Inventur',          'zaehl',    'Inventur',
+   'Bestand zählen und festschreiben'],
   /* „Preis-Radar" war ein Eigenname, den außerhalb dieses Hauses niemand kennt. */
-  ['/admin/preise',    'Einkaufspreise',    'etikett',  'Preise'],
-  ['/admin/warenblatt','Kontrollblatt',     'druck',    'Blatt'],
-  ['/admin/personal',  'Personal',          'leute',    'Team'],
-  ['/admin/dienstplan','Dienstplan',        'kalender', 'Plan'],
-  ['/admin/arbeitszeit','Arbeitszeit',      'sanduhr',  'Zeit'],
+  ['/admin/preise',    'Einkaufspreise',    'etikett',  'Preise',
+   'Was der Einkauf über die Zeit kostet'],
+  ['/admin/warenblatt','Kontrollblatt',     'druck',    'Blatt',
+   'Leerformular für die Warenannahme'],
+  ['/admin/personal',  'Personal',          'leute',    'Team',
+   'Personalkarte, Urlaub, Fristen'],
+  ['/admin/dienstplan','Dienstplan',        'kalender', 'Plan',
+   'Wer wann eingeteilt ist'],
+  ['/admin/arbeitszeit','Arbeitszeit',      'sanduhr',  'Zeit',
+   'Gestempelte Schichten nachsehen'],
   /* Es gab zwei „Zettel" — einen für die Küche, einen für die Stunden. */
-  ['/admin/zeitzettel','Stundennachweis',   'druck',    'Nachweis'],
-  ['/admin/trinkgeld', 'Trinkgeld',         'muenze',   'Trinkgeld'],
+  ['/admin/zeitzettel','Stundennachweis',   'druck',    'Nachweis',
+   'Monatsblatt zum Unterschreiben'],
+  ['/admin/trinkgeld', 'Trinkgeld',         'muenze',   'Trinkgeld',
+   'Verteilen und dokumentieren'],
   /* Führt auf /zeit — die Adresse bleibt nur wegen alter Lesezeichen bestehen.
      Der Menüpunkt zeigt weiter auf /admin/stempel, damit die Rechteprüfung
      greift: /zeit ist eine offene Seite, /admin/stempel nicht. */
-  ['/admin/stempel',   'Stempeluhr öffnen', 'stempel', 'Stempel'],
-  ['/admin/rechnung',  'Rechnungen',        'muenze',   'Rechnung'],
-  ['/admin/privat',    'Privatkasse',       'beutel',   'Privat'],
-  ['/admin/tische',    'Tische',            'tisch',    'Tische'],
-  ['/admin/zeiten',    'Schließtage',       'uhr',      'Zeiten'],
-  ['/admin/benutzer',  'Benutzer & Rechte', 'schluessel','Zugang'],
+  ['/admin/stempel',   'Stempeluhr öffnen', 'stempel',  'Stempel',
+   'Die Seite fürs Küchen-Tablet'],
+  ['/admin/rechnung',  'Rechnungen',        'muenze',   'Rechnung',
+   'Feiern und Firmenessen auf Rechnung'],
+  ['/admin/privat',    'Privatkasse',       'beutel',   'Privat',
+   'Privates Haushaltsbuch — nicht der Betrieb'],
+  ['/admin/tische',    'Tische',            'tisch',    'Tische',
+   'Wie viele Plätze wo stehen'],
+  ['/admin/zeiten',    'Schließtage',       'uhr',      'Zeiten',
+   'Ruhetage, Urlaub, Feiertage'],
+  ['/admin/benutzer',  'Benutzer & Rechte', 'schluessel','Zugang',
+   'Wer sich anmelden darf und was er sieht'],
 ];
 
 /**
@@ -438,13 +512,16 @@ const GRUPPEN = [
                                       '/admin/neu', '/admin/suche', '/admin/zettel',
                                       '/admin/auswertung'] },
   { titel: 'Speisekarte', kinder: ['/admin/karte', '/admin/aufsteller'] },
-  { titel: 'Warenwirtschaft', kinder: ['/admin/ware', '/admin/hygiene', '/admin/lager', '/admin/inventur',
+  /* Hieß „Warenwirtschaft". Ein Fachwort aus dem Handel — im Haus sagt niemand
+     so. „Einkauf & Lager" benennt die beiden Dinge, die dahinter liegen. */
+  { titel: 'Einkauf & Lager', kinder: ['/admin/ware', '/admin/hygiene', '/admin/lager', '/admin/inventur',
                                        '/admin/preise', '/admin/warenblatt'] },
   { titel: 'Team', kinder: ['/admin/personal', '/admin/dienstplan', '/admin/arbeitszeit', '/admin/zeitzettel',
                             '/admin/trinkgeld', '/admin/stempel'] },
   /* Rechnungen für Feiern stehen für sich: sie gehören weder zu den
-     Reservierungen (das ist der Tischplan) noch zur Warenwirtschaft (das ist
-     der Einkauf), und der Chef öffnet sie bewusst. */
+     Reservierungen (das ist der Tischplan) noch zum Einkauf. Am Schreibtisch
+     ist das ein Reiter ohne Klappmenü, am Handy ein eigener Block mit eigener
+     Überschrift — siehe den Kommentar zu `blockAus()`. */
   { titel: 'Rechnungen', pfad: '/admin/rechnung' },
   /* Die Privatkasse steht bewusst allein und ganz am Ende — sie gehört nicht
      zum Betrieb, sondern dem Inhaber. Sie in eine Betriebsgruppe zu hängen
@@ -467,13 +544,102 @@ function gruppenFuer(rolle) {
     .filter(g => (g.pfad ? darfSeite(rolle, g.pfad) : g.eintraege.length > 0));
 }
 
-/* Untere Leiste am Handy: vier häufige Ziele plus „Mehr". */
-const UNTEN = ['/admin', '/admin/tag', '/admin/neu', '/admin/karte'];
+/* Untere Leiste am Handy: vier häufige Ziele plus „Mehr". Der Plus-Knopf sitzt
+   zwischen dem zweiten und dritten und ist kein Ziel, sondern ein Menü. */
+const UNTEN = ['/admin', '/admin/tag', '/admin/karte'];
+
+/**
+ * Was der Plus-Knopf am Handy anbietet.
+ *
+ * Vorher führte der mittlere Knopf direkt auf `/admin/neu`. Das war für den
+ * häufigsten Fall richtig und für jeden anderen im Weg: eine Rechnung oder eine
+ * Lieferung legt man genauso oft neu an, findet sie aber nur über drei Ebenen
+ * Menü. Jetzt öffnet der Knopf ein Blatt — dieselbe Geste wie in den mobilen
+ * Buchhaltungs-Apps, an die Hamdi gedacht hat.
+ *
+ * `recht` ist der Pfad, an dem die Rechteprüfung hängt, `ziel` die Adresse, auf
+ * der man landet. Beides ist bei der Rechnung nicht dasselbe: geprüft wird
+ * `/admin/rechnung`, geöffnet wird der leere Entwurf.
+ *
+ * Fällt für eine Rolle alles weg (Demo darf nichts anlegen), verschwindet der
+ * Knopf und die Leiste hat vier Felder statt fünf.
+ */
+const ANLEGEN = [
+  { recht: '/admin/neu',      ziel: '/admin/neu',           ic: 'kalender',
+    titel: 'Neue Reservierung', hilfe: 'Tisch von Hand eintragen' },
+  { recht: '/admin/rechnung', ziel: '/admin/rechnung?neu=1', ic: 'muenze',
+    titel: 'Rechnung schreiben', hilfe: 'Für Feiern und Firmenessen' },
+  { recht: '/admin/ware',     ziel: '/admin/ware',           ic: 'kiste',
+    titel: 'Wareneingang buchen', hilfe: 'Lieferung annehmen' },
+  { recht: '/admin/privat',   ziel: '/admin/privat',         ic: 'beutel',
+    titel: 'Privat-Ausgabe',      hilfe: 'Ins private Haushaltsbuch' },
+];
+
+const anlegenFuer = rolle =>
+  darfSchreiben(rolle) ? ANLEGEN.filter(a => darfSeite(rolle, a.recht)) : [];
+
+/**
+ * Der Plus-Knopf und sein Blatt.
+ *
+ * Ein eigenes `<details>`, kein Link: Antippen öffnet, Antippen schließt, und
+ * das Skript am Seitenende schließt es zusammen mit den übrigen Klappmenüs.
+ * Ohne JavaScript funktioniert es genauso — nur bleibt es offen, bis man es
+ * wieder antippt.
+ */
+const plusKnopf = (anlegen) => `<details class="neu">
+  <summary aria-label="Neu anlegen">${svg('plus')}<span>Neu</span></summary>
+  <div class="sheet-bg"></div>
+  <div class="sheet nsheet">
+    <div class="grp">Neu anlegen</div>
+    ${anlegen.map(a => `<a href="${a.ziel}">${svg(a.ic)}<b>${esc(a.titel)}
+      <span>${esc(a.hilfe)}</span></b></a>`).join('')}
+  </div>
+</details>`;
+
+/** Eine Zeile im Klappmenü am Schreibtisch: Beschriftung plus Erklärung. */
+const tabZeile = ([h, t, , , hilfe], active) =>
+  `<a href="${h}" class="${active === h ? 'on' : ''}">${esc(t)}${
+    hilfe ? `<span>${esc(hilfe)}</span>` : ''}</a>`;
+
+/** Eine Zeile im Handy-Blatt: Symbol, Beschriftung, Erklärung. */
+const blattZeile = ([h, t, ic, , hilfe], active) =>
+  `<a href="${h}" class="${active === h ? 'on' : ''}">${svg(ic)}<b>${esc(t)}${
+    hilfe ? `<span>${esc(hilfe)}</span>` : ''}</b></a>`;
+
+/**
+ * Ein Block im Handy-Blatt.
+ *
+ * **Der Fehler, den das behebt** (gemeldet von Gökhan, 31.08.2026: „Rechnungen
+ * neden Personal bölümünde?"): Gruppen mit eigenem Pfad — Rechnungen, Privat —
+ * wurden hier als nackter Link ausgegeben, ohne Überschrift. Sie standen damit
+ * direkt unter den Einträgen der vorherigen Gruppe und sahen aus wie deren
+ * letzte Punkte. „Rechnungen" hing optisch unter TEAM.
+ *
+ * Jetzt bekommt **jede** Gruppe ihren Block mit Überschrift, und die Blöcke
+ * sind durch einen dicken Trenner in der Seitenfarbe getrennt. Nur die
+ * Übersicht bleibt ohne Überschrift: sie steht ganz oben, hat nichts über sich,
+ * mit dem sie zu verwechseln wäre, und „ÜBERSICHT / Übersicht" wäre dasselbe
+ * Wort zweimal.
+ */
+function blockAus(g, active) {
+  if (g.pfad) {
+    const e = eintrag(g.pfad);
+    const kopf = g.pfad === '/admin' ? '' : `<div class="grp">${esc(g.titel)}</div>`;
+    return `<div class="blk">${kopf}${blattZeile(e, active)}</div>`;
+  }
+  return `<div class="blk"><div class="grp">${esc(g.titel)}</div>
+    ${g.eintraege.map(e => blattZeile(e, active)).join('')}</div>`;
+}
 
 export function layout({ title, active, body, status = 200, user = null }) {
   const rolle = user?.role || 'chef';
   const gruppen = gruppenFuer(rolle);
   const unten = UNTEN.filter(h => darfSeite(rolle, h));
+  const anlegen = anlegenFuer(rolle);
+  /* Der Plus-Knopf sitzt in der Mitte. Ohne ihn rücken die vier Ziele
+     zusammen — deshalb hängt die Spaltenzahl an der Liste, nicht am Zufall. */
+  const felder = unten.length + 1 + (anlegen.length ? 1 : 0);
+  const mitte = Math.ceil(unten.length / 2);
   return new Response(
 `<!DOCTYPE html><html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -507,30 +673,27 @@ ${rolle === 'demo' ? `<div class="demobar">Demo-Zugang · nur ansehen ·
     : `<details class="tmehr" name="hauptnav">
     <summary class="${g.eintraege.some(([h]) => h === active) ? 'on' : ''}">${esc(g.titel)}</summary>
     <div class="tliste">
-      ${g.eintraege.map(([h, t]) =>
-        `<a href="${h}" class="${active === h ? 'on' : ''}">${esc(t)}</a>`).join('')}
+      ${g.eintraege.map(e => tabZeile(e, active)).join('')}
     </div></details>`).join('')}
 </div></nav>
 <main>${body}</main>
 
-<nav class="bnav">
-  ${unten.map(pfad => {
+<nav class="bnav" style="grid-template-columns:repeat(${felder},1fr)">
+  ${unten.map((pfad, i) => {
     const [h, , ic, kurz] = NAV.find(n => n[0] === pfad);
-    return `<a href="${h}" class="${active === h ? 'on' : ''}${h === '/admin/neu' ? ' plus' : ''}">
+    const knopf = `<a href="${h}" class="${active === h ? 'on' : ''}">
       ${svg(ic)}<span>${kurz}</span></a>`;
+    /* Der Plus-Knopf rutscht in die Mitte der Leiste — dort erwartet ihn der
+       Daumen, und dort steht er in jeder App, die das so macht. */
+    return (anlegen.length && i === mitte) ? plusKnopf(anlegen) + knopf : knopf;
   }).join('')}
+  ${anlegen.length && mitte >= unten.length ? plusKnopf(anlegen) : ''}
   <details class="more">
     <summary>${svg('mehr')}<span>Mehr</span></summary>
     <div class="sheet-bg"></div>
     <div class="sheet">
-      ${gruppen.map(g => g.pfad
-        ? `<a href="${g.pfad}" class="${active === g.pfad ? 'on' : ''}">
-             ${svg(eintrag(g.pfad)[2])}<span>${esc(g.titel)}</span></a>`
-        : `<div class="grp">${esc(g.titel)}</div>
-           ${g.eintraege.map(([h, t, ic]) =>
-             `<a href="${h}" class="${active === h ? 'on' : ''}">
-                ${svg(ic)}<span>${esc(t)}</span></a>`).join('')}`).join('')}
-      <a href="/admin/logout" class="ab">${svg('aus')}<span>Abmelden</span></a>
+      ${gruppen.map(g => blockAus(g, active)).join('')}
+      <div class="blk"><a href="/admin/logout" class="ab">${svg('aus')}<b>Abmelden</b></a></div>
     </div>
   </details>
 </nav>
