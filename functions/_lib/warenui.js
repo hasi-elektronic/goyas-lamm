@@ -48,8 +48,8 @@ export const WARE_CSS = `
 .foto .stand{font-size:.84rem;color:var(--muted);margin:.7rem 0 0}
 
 /* Positionszeile */
-.prow{display:grid;grid-template-columns:minmax(0,2.1fr) minmax(0,.85fr) minmax(0,.95fr)
-  minmax(0,1fr) minmax(0,1fr) auto;gap:.5rem;align-items:end;padding:.7rem 0;
+.prow{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1.15fr) minmax(0,.85fr)
+  auto minmax(0,.95fr) minmax(0,.95fr) auto;gap:.5rem;align-items:end;padding:.7rem 0;
   border-bottom:1px solid var(--sand)}
 .prow:last-of-type{border-bottom:0}
 .prow .f label{margin-bottom:.2rem;font-size:.6rem}
@@ -74,6 +74,31 @@ export const WARE_CSS = `
   .irow.lager{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 }
 
+/* Mengenschild in der Artikelliste.
+   Dort stand vorher nur „7× geliefert" — also wie oft, nie wie viel. Die Menge
+   ist das, wonach in dieser Liste gesucht wird; sie bekommt deshalb eine eigene
+   Fläche statt einer weiteren grauen Kleinzeile. */
+.mschild{display:inline-flex;flex-direction:column;line-height:1.2;
+  background:var(--cream);border:1px solid var(--sand);border-radius:var(--r);
+  padding:.32rem .6rem;min-width:6.6rem}
+.mschild b{font-size:1rem;font-variant-numeric:tabular-nums}
+.mschild span{font-size:.66rem;letter-spacing:.06em;color:var(--muted)}
+.mschild.leer b{color:var(--muted);font-weight:400}
+
+/* Positionszeile: Einheit als lesbares Etikett neben dem Feld, Zeilensumme
+   rechts. Vorher stand die Einheit als hellgrauer Hinweistext unter dem Feld
+   und war beim Tippen praktisch unsichtbar — man wusste nicht, ob „12" jetzt
+   zwölf Stück oder zwölf Kilo sind. */
+.prow .ehz{display:flex;gap:.35rem;align-items:stretch}
+.prow .ehz input{flex:1 1 auto;min-width:0}
+.prow .eh{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+  min-width:3.6rem;padding:0 .5rem;background:var(--cream);border:1px solid var(--sand);
+  border-radius:var(--r);font-size:.8rem;font-weight:700;color:var(--ink);white-space:nowrap}
+.prow .eh.leer{color:var(--muted);font-weight:400}
+.prow .zsum{font-size:.82rem;font-weight:700;font-variant-numeric:tabular-nums;
+  color:var(--sand);white-space:nowrap;align-self:center;padding-bottom:.1rem}
+.prow .zsum.hat{color:var(--ink)}
+
 /* Lieferungszeile in der Liste */
 .abweich{color:var(--wine);font-weight:700}
 td.temp{font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -82,6 +107,7 @@ td.temp{font-variant-numeric:tabular-nums;white-space:nowrap}
   .prow{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.45rem .5rem;
     padding:.8rem 0;position:relative}
   .prow .f.artikel{grid-column:1 / -1}
+  .prow .zsum{grid-column:1 / -1;text-align:right;padding-top:.15rem}
   .prow .weg{position:absolute;top:.55rem;right:0;height:auto;padding:.25rem .55rem;font-size:.85rem}
   .lkacheln{grid-template-columns:repeat(auto-fill,minmax(46%,1fr))}
   .ampel .pkt{width:22px;height:22px}

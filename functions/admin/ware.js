@@ -159,17 +159,17 @@ export async function onRequestGet(context) {
     </div>
 
     <div class="stats">
-      <div class="stat"><b>${lieferungen.length}</b><span>Lieferungen</span></div>
-      <div class="stat hot"><b>${euro(gesamt)} €</b><span>erfasste Positionen</span></div>
+      <div class="stat"><b>${lieferungen.length}</b><span>Lieferungen im Monat</span></div>
+      <div class="stat hot"><b>${euro(gesamt)} €</b><span>Warenwert erfasst</span></div>
       <div class="stat ${beanstandet.length ? 'hot' : ''}"><b>${beanstandet.length}</b><span>mit Abweichung</span></div>
-      <div class="stat"><b>${lieferungen.filter(l => l.beleg_key).length}</b><span>mit Beleg</span></div>
+      <div class="stat"><b>${lieferungen.filter(l => l.beleg_key).length}</b><span>mit Belegfoto</span></div>
     </div>
 
     <div class="card">
-      <h2>Lieferungen</h2>
+      <h2>Lieferungen <em>eine Zeile je Annahme — anklicken zum Öffnen</em></h2>
       ${lieferungen.length ? `<table class="stack"><thead><tr>
-          <th>Tag</th><th>Lieferant</th><th>Temp.</th><th class="hide-s">Kontrolle</th>
-          <th class="hide-s">Inhalt</th><th>Wert</th><th></th>
+          <th>Tag</th><th>Lieferant</th><th>Temperatur</th><th class="hide-s">Kontrolle</th>
+          <th class="hide-s">Positionen</th><th>Warenwert</th><th></th>
         </tr></thead><tbody>${lieferungen.map(zeile).join('')}</tbody></table>`
         : `<div class="empty">In diesem Monat ist noch nichts erfasst.<br>
              <span class="meta">Die erste Lieferung dauert zwei Minuten — danach sind es dreißig Sekunden.</span></div>`}
@@ -258,12 +258,16 @@ async function formular({ request, env, data }, id) {
         <select class="neuname" name="artneu_einheit" style="margin-top:.35rem">${einheitOptionen('kg')}</select>
       </div>
       <div class="f"><label>Menge</label>
-        <input name="menge" inputmode="decimal" maxlength="12" data-menge
-               value="${p ? esc(menge(p.menge_milli, a?.einheit || 'kg')) : ''}"
-               placeholder="0"><span class="hint" data-eh>${a ? esc(einheitLabel(a.einheit)) : ''}</span></div>
-      <div class="f"><label>€ je Einheit</label>
+        <div class="ehz">
+          <input name="menge" inputmode="decimal" maxlength="12" data-menge
+                 value="${p ? esc(menge(p.menge_milli, a?.einheit || 'kg')) : ''}"
+                 placeholder="0">
+          <span class="eh${a ? '' : ' leer'}" data-eh>${a ? esc(einheitLabel(a.einheit)) : 'Einheit'}</span>
+        </div></div>
+      <div class="f"><label>Preis je Einheit</label>
         <input name="ep" inputmode="decimal" maxlength="12" data-ep
                value="${p?.ep_cent ? esc(euro(p.ep_cent)) : ''}" placeholder="optional"></div>
+      <div class="zsum" data-zsum aria-label="Wert dieser Zeile">—</div>
       <div class="f"><label>MHD</label>
         <input name="mhd" type="date" value="${esc(p?.mhd || '')}"></div>
       <div class="f"><label>Charge</label>
@@ -389,13 +393,18 @@ async function formular({ request, env, data }, id) {
       </div>
 
       <div class="card">
-        <h2>Positionen <em>optional — kann abends nachgetragen werden</em></h2>
+        <h2>Was war in der Lieferung <em>optional — kann abends nachgetragen werden</em></h2>
         <div class="body">
+          <p class="hint" style="margin:0 0 .9rem">Eine Zeile je Artikel. <b>Menge</b> in der
+            Einheit, die rechts daneben steht — die kommt vom Artikel und lässt sich hier nicht
+            ändern. <b>Preis je Einheit</b> ist der Netto-Einkaufspreis vom Lieferschein; wer ihn
+            einträgt, sieht rechts sofort den Wert der Zeile. <b>MHD</b> und <b>Charge</b>
+            braucht man nur bei Ware, die zurückverfolgbar sein muss (Fleisch, Fisch, Molkerei).</p>
           <div id="posten">${zeilen}</div>
           <div class="row" style="margin-top:.8rem">
             <button type="button" class="btn sm ghost" id="mehr">Zeile hinzufügen</button>
           </div>
-          <div class="psum"><span>Wert der erfassten Positionen</span><b id="summe">0,00 €</b></div>
+          <div class="psum"><span>Warenwert dieser Lieferung</span><b id="summe">0,00 €</b></div>
         </div>
       </div>
 
@@ -476,7 +485,16 @@ const SKRIPT = `
     var s=0;
     $$('[data-zeile]',box).forEach(function(r){
       var m=zahl3($('[data-menge]',r).value), e=zahl2($('[data-ep]',r).value);
-      if(m&&e) s+=Math.round(m*e/1000);
+      var c=(m&&e)?Math.round(m*e/1000):0;
+      s+=c;
+      /* Jede Zeile zeigt ihren eigenen Wert. Vorher stand nur die Endsumme
+         unten — ein Tippfehler in einer von zwölf Zeilen war erst zu sehen,
+         wenn die Gesamtsumme nicht zum Lieferschein passte. */
+      var z=$('[data-zsum]',r);
+      if(z){
+        z.textContent = c ? (c/100).toFixed(2).replace('.',',')+' €' : '—';
+        z.className = 'zsum'+(c?' hat':'');
+      }
     });
     $('#summe').textContent=(s/100).toFixed(2).replace('.',',')+' €';
   }
@@ -489,13 +507,20 @@ const SKRIPT = `
     var a=$('[data-art]',r);
     function art(){
       r.classList.toggle('istneu', a.value==='__neu');
-      var eh=$('[data-eh]',r);
-      if(eh) eh.textContent = a.value&&a.value!=='__neu' ? (D.einheit[a.value]||'') : '';
+      var eh=$('[data-eh]',r), ne=$('[name=artneu_einheit]',r), gewaehlt='';
+      if(a.value==='__neu'){ if(ne&&ne.selectedIndex>=0) gewaehlt=ne.options[ne.selectedIndex].text; }
+      else if(a.value){ gewaehlt = D.einheit[a.value]||''; }
+      if(eh){
+        eh.textContent = gewaehlt || 'Einheit';
+        eh.className = 'eh'+(gewaehlt?'':' leer');
+      }
       /* Passt die Warengruppe der Position zur gemessenen Klasse? Wenn noch
          keine gewählt ist, die des ersten gekühlten Artikels vorschlagen. */
       if(tk&&!tk.value&&D.tempArt&&D.tempArt[a.value]){ tk.value=D.tempArt[a.value]; ampel(); }
     }
     a.addEventListener('change',art); art();
+    var nes=$('[name=artneu_einheit]',r);
+    if(nes) nes.addEventListener('change',art);
     $$('[data-menge],[data-ep]',r).forEach(function(i){ i.addEventListener('input',rechne) });
     var w=$('[data-weg]',r);
     if(w) w.addEventListener('click',function(){

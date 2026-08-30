@@ -16,8 +16,9 @@ import { clean, esc, jsq } from '../_lib/core.js';
 import { layout, flash, redirect } from '../_lib/ui.js';
 import {
   EINHEITEN, GRUPPEN, ORTE, TEMP_KLASSEN, tempKlassen,
-  istEinheit, einheitLabel, grad, tempAus, kennung, schwelle,
+  istEinheit, einheitLabel, grad, menge, tempAus, kennung, schwelle,
 } from '../_lib/ware.js';
+import { tagKurz } from '../_lib/zeit.js';
 
 const MIGRATION = 'Die Tabellen für den Wareneingang fehlen noch — '
   + 'bitte Migration 0011_ware.sql einspielen.';
@@ -49,6 +50,34 @@ export async function onRequestGet({ request, env, data }) {
       `SELECT article_id, COUNT(*) AS n FROM delivery_items GROUP BY article_id`).all()).results || [];
     zaehler = Object.fromEntries(z.map(r => [r.article_id, r.n]));
   } catch { fehler = MIGRATION; }
+
+  /* Wie viel ist von einem Artikel da, und wann kam zuletzt welcher?
+     Beides stand bisher nirgends in der Liste — man sah nur „7× geliefert",
+     also wie oft, nie wie viel (Rückmeldung Gökhan, 30.08.2026).
+
+     Ein laufender Bestand lässt sich hier nicht rechnen: Es gibt keine
+     Kasse, die den Verbrauch meldet (siehe Kopfkommentar in inventur.js).
+     Die ehrlichste Zahl ist deshalb die letzte gezählte Menge mit ihrem
+     Stichtag — daneben die letzte Liefermenge, damit man sieht, ob seither
+     etwas dazugekommen ist. */
+  let bestand = {}, letzteLief = {};
+  try {
+    const b = (await db.prepare(
+      `SELECT s.article_id, s.menge_milli, s.day FROM stock_counts s
+         JOIN (SELECT article_id, MAX(day) AS d FROM stock_counts GROUP BY article_id) m
+           ON m.article_id = s.article_id AND m.d = s.day`).all()).results || [];
+    bestand = Object.fromEntries(b.map(r => [r.article_id, r]));
+  } catch { /* noch keine Inventur-Tabelle — Spalte bleibt leer */ }
+  try {
+    const l = (await db.prepare(
+      `SELECT i.article_id, i.menge_milli, d.day FROM delivery_items i
+         JOIN deliveries d ON d.id = i.delivery_id
+         JOIN (SELECT i2.article_id, MAX(d2.day) AS d FROM delivery_items i2
+                 JOIN deliveries d2 ON d2.id = i2.delivery_id
+                GROUP BY i2.article_id) m
+           ON m.article_id = i.article_id AND m.d = d.day`).all()).results || [];
+    for (const r of l) if (!letzteLief[r.article_id]) letzteLief[r.article_id] = r;
+  } catch { /* dito */ }
 
   const klassen = tempKlassen(await einstellung(db, 'ware_temp'));
   const proz = schwelle(await einstellung(db, 'ware_schwelle'));
@@ -83,6 +112,24 @@ export async function onRequestGet({ request, env, data }) {
     + ORTE.map(o => `<option value="${esc(o)}"${o === gewaehlt ? ' selected' : ''}>${esc(o)}</option>`).join('');
 
   /* --- Artikelzeile --------------------------------------------- */
+  /** Mengenschild links unter der Artikelzeile: die Zahl, die man sucht. */
+  const mengeSchild = a => {
+    const b = bestand[a.id];
+    const eh = einheitLabel(a.einheit);
+    return `<span class="mschild${b ? '' : ' leer'}">
+      <b>${b ? esc(menge(b.menge_milli, a.einheit)) + ' ' + esc(eh) : '—'}</b>
+      <span>${b ? 'gezählt ' + esc(tagKurz(b.day)) : 'nie gezählt'}</span></span>`;
+  };
+
+  /** Rechts daneben: kam seit der Zählung noch etwas? */
+  const liefSchild = a => {
+    const l = letzteLief[a.id];
+    if (!l) return '<span class="meta">noch nie geliefert</span>';
+    return `<span class="meta">zuletzt geliefert ${esc(tagKurz(l.day))} ·
+      ${esc(menge(l.menge_milli, a.einheit))} ${esc(einheitLabel(a.einheit))}
+      · ${zaehler[a.id] || 1}× insgesamt</span>`;
+  };
+
   const artikelZeile = a => `
     <tr class="${a.active ? '' : 'cancelled'}">
       <td colspan="3" style="padding:0">
@@ -100,6 +147,7 @@ export async function onRequestGet({ request, env, data }) {
           <div class="irow-act"><button class="btn sm" type="submit">Sichern</button></div>
         </form>
         <div class="irow-sub">
+          ${mengeSchild(a)}
           <form method="post" action="/admin/lager" class="row" style="gap:.45rem">
             <input type="hidden" name="do" value="artikel_save">
             <input type="hidden" name="id" value="${esc(a.id)}">
@@ -114,7 +162,7 @@ export async function onRequestGet({ request, env, data }) {
                     style="font:inherit;font-size:.8rem;padding:.3rem .45rem;border:1px solid var(--sand)">
               ${ortOptionen(a.lagerort)}</select>
           </form>
-          <span class="meta">${zaehler[a.id] ? `${zaehler[a.id]}× geliefert` : 'noch nie geliefert'}</span>
+          ${liefSchild(a)}
           <span class="spacer"></span>
           <form method="post" action="/admin/lager"
                 onsubmit="return confirm(${jsq(a.name)} + ' ' + ${jsq(a.active ? 'auslisten?' : 'wieder aufnehmen?')})">
@@ -222,7 +270,12 @@ export async function onRequestGet({ request, env, data }) {
 
     <div class="card">
       <h2>Artikel <em>${gefiltert.length} ${gefiltert.length === 1 ? 'Eintrag' : 'Einträge'}</em></h2>
-      ${artikel.length ? `<div class="body" style="padding-bottom:0">${filterLeiste}</div>` : ''}
+      ${artikel.length ? `<div class="body" style="padding-bottom:0">
+        <p class="hint" style="margin:0 0 .9rem">Die fette Zahl unter jedem Artikel ist die
+          <b>zuletzt gezählte Menge</b> aus der <a href="/admin/inventur">Inventur</a> — kein
+          laufender Bestand. Einen laufenden Bestand kann das Haus nicht führen, solange keine
+          Kasse den Verbrauch meldet. Daneben steht, wann zuletzt wie viel geliefert wurde.</p>
+        ${filterLeiste}</div>` : ''}
       ${gefiltert.length
         ? `<table><tbody>${gefiltert.map(artikelZeile).join('')}</tbody></table>`
         : `<div class="empty">Noch keine Artikel.<br>
