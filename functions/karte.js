@@ -294,7 +294,12 @@ dialog.tafel::backdrop{background:rgba(6,5,4,.88);backdrop-filter:blur(6px)}
 .tafel-innen{position:fixed;inset:0;overflow-y:auto;overscroll-behavior:contain;
   background:var(--nacht-2);
   padding-bottom:calc(2.4rem + env(safe-area-inset-bottom));
-  -webkit-overflow-scrolling:touch}
+  -webkit-overflow-scrolling:touch;
+  /* Die Rollleiste am rechten Rand der Tafel wird ausgeblendet: Sie schnitt eine
+     helle Kante in das Bild, das bis an den Rand laeuft. Gerollt wird weiter,
+     mit Finger, Rad und Tastatur. */
+  scrollbar-width:none;-ms-overflow-style:none}
+.tafel-innen::-webkit-scrollbar{width:0;height:0;display:none}
 .js dialog.tafel[open] .tafel-innen{animation:tafelAuf .42s cubic-bezier(.16,.84,.28,1) both}
 @keyframes tafelAuf{from{opacity:0;transform:scale(1.025)}to{opacity:1;transform:none}}
 .js dialog.tafel.zu[open] .tafel-innen{animation:tafelWeg .2s ease both}

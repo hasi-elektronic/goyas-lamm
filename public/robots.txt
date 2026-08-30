@@ -2,5 +2,6 @@ User-agent: *
 Allow: /
 Disallow: /impressum
 Disallow: /datenschutz
+Disallow: /zeit
 
 Sitemap: https://lammm.de/sitemap.xml

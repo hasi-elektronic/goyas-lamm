@@ -215,7 +215,10 @@ export async function onRequestGet({ request, env }) {
       : `<div class="leer">Noch niemand mit PIN angelegt.<br>
            <a href="/admin/personal" style="color:var(--gold)">Zum Personal</a></div>`}
     <p class="hinweis">Antippen, PIN eingeben, fertig. Vergessen zu stempeln? Der Chef kann
-       die Zeit unter „Arbeitszeit" nachtragen.</p>`);
+       die Zeit unter „Arbeitszeit" nachtragen.<br><br>
+       Wer mit dem eigenen Telefon stempeln will, braucht diese Seite nicht: Unter
+       <b>${esc(new URL(request.url).host)}/zeit</b> gibt es die Uhr ohne Anmeldung —
+       dort führt die PIN allein zum Ziel. Eine gute Adresse fürs Lesezeichen.</p>`);
 }
 
 export async function onRequestPost({ request, env }) {

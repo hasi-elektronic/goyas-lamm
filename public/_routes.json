@@ -1,6 +1,7 @@
 {
   "version": 1,
   "include": [
+    "/zeit",
     "/steak",
     "/steak.html",
     "/karte",

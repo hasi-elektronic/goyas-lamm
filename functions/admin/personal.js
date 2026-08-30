@@ -619,6 +619,10 @@ export async function onRequestGet({ request, env, data }) {
 export async function onRequestPost({ request, env, data }) {
   let d = {};
   try { d = Object.fromEntries(await request.formData()); } catch { /* leer */ }
+  /* Die Adresse der offenen Stempeluhr — steht auf der Karte, die der Chef dem
+     Mitarbeiter mit der PIN in die Hand gibt. Aus der Anfrage abgeleitet, damit
+     sie auch nach dem Domainumzug stimmt. */
+  const uhrAdresse = new URL(request.url).host + '/zeit';
   const db = env.DB;
   const id = clean(d.id, 40);
   const zurueck = (t, ok) => redirect(
@@ -657,6 +661,20 @@ export async function onRequestPost({ request, env, data }) {
     }
   }
 
+  /* Seit es die offene Stempeluhr unter /zeit gibt, ist die PIN nicht mehr nur
+     ein Passwort, sondern der Ausweis: Sie sucht die Person. Zwei Leute mit
+     derselben PIN wären dort nicht auseinanderzuhalten — deshalb wird beim
+     Vergeben geprüft. `wer` ist die Person, die sie behalten darf. */
+  const pinVergeben = async (klar, wer) => {
+    try {
+      const h = await pinHash(klar, env.IP_SALT);
+      const r = await db.prepare(
+        `SELECT id FROM staff WHERE pin_hash=? AND active=1 AND id<>?`
+      ).bind(h, wer || '').first();
+      return !!r;
+    } catch { return false; }
+  };
+
   try {
     /* --- Anlegen --- */
     if (d.do === 'add') {
@@ -665,7 +683,20 @@ export async function onRequestPost({ request, env, data }) {
       if ('wage' in d && String(d.wage || '').trim() && wage === null) {
         return fehler('Stundenlohn bitte als Zahl angeben, z. B. 14,50.');
       }
-      const neu = pin || String(Math.floor(1000 + Math.random() * 9000));
+      let neu = pin;
+      if (neu) {
+        if (await pinVergeben(neu, null)) {
+          return fehler('Diese PIN hat schon jemand. Bitte eine andere wählen.');
+        }
+      } else {
+        /* Zufällig, aber garantiert frei — sonst wäre die Uhr unter /zeit
+           nicht mehr eindeutig. */
+        for (let i = 0; i < 40 && !neu; i++) {
+          const k = String(Math.floor(1000 + Math.random() * 9000));
+          if (!await pinVergeben(k, null)) neu = k;
+        }
+        if (!neu) return fehler('Es ist gerade keine freie PIN zu finden. Bitte eine von Hand vergeben.');
+      }
       const max = await db.prepare(`SELECT COALESCE(MAX(sort),0) m FROM staff`).first();
       const nid = crypto.randomUUID();
       const hash = await pinHash(neu, env.IP_SALT);
@@ -684,7 +715,9 @@ export async function onRequestPost({ request, env, data }) {
         user: data?.user, titel: `${name} ist angelegt`,
         zeilen: [['Name', name], ['PIN für die Stempeluhr', neu]],
         hinweis: 'Die PIN wird verschlüsselt gespeichert und lässt sich nicht wieder anzeigen. '
-               + 'Vergessen? Einfach eine neue vergeben. Alles Weitere steht auf der Karte.',
+               + 'Vergessen? Einfach eine neue vergeben. Alles Weitere steht auf der Karte. '
+               + `Gestempelt wird am Tablet in der Küche — oder mit dem eigenen Telefon unter `
+               + `${uhrAdresse} (am besten als Lesezeichen einrichten).`,
         zurueck: `/admin/personal?id=${nid}`,
       });
     }
@@ -730,12 +763,16 @@ export async function onRequestPost({ request, env, data }) {
         catch { /* Spalte fehlt noch */ }
       }
       if (pin) {
+        if (await pinVergeben(pin, id)) {
+          return fehler('Diese PIN hat schon jemand. Bitte eine andere wählen.');
+        }
         const m = await db.prepare(`SELECT name FROM staff WHERE id=?`).bind(id).first();
         await db.prepare(`UPDATE staff SET pin_hash=? WHERE id=?`)
           .bind(await pinHash(pin, env.IP_SALT), id).run();
         return geheimnis({
           user: data?.user, titel: `${m?.name || 'Mitarbeiter'}: neue PIN`,
-          zeilen: [['Name', m?.name || ''], ['PIN für die Stempeluhr', pin]],
+          zeilen: [['Name', m?.name || ''], ['PIN für die Stempeluhr', pin],
+                   ['Stempeln im Netz', uhrAdresse]],
           hinweis: 'Die bisherige PIN gilt nicht mehr.',
           zurueck: `/admin/personal?id=${encodeURIComponent(id)}&t=zeit`,
         });
