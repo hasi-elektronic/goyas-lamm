@@ -35,6 +35,8 @@ export const PIN_PFADE = [
      Einkaufspreise und die Monatsausgaben sieht nur der Chef. */
   '/admin/preise',
   '/admin/inventur',
+  /* Rechnungen enthalten Kundenanschriften und Beträge. */
+  '/admin/rechnung',
 ];
 
 export const brauchtPin = pfad =>

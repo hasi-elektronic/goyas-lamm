@@ -395,6 +395,7 @@ const NAV = [
      Der Menüpunkt zeigt weiter auf /admin/stempel, damit die Rechteprüfung
      greift: /zeit ist eine offene Seite, /admin/stempel nicht. */
   ['/admin/stempel',   'Stempeluhr öffnen', 'stempel', 'Stempel'],
+  ['/admin/rechnung',  'Rechnungen',        'muenze',   'Rechnung'],
   ['/admin/tische',    'Tische',            'tisch',    'Tische'],
   ['/admin/zeiten',    'Schließtage',       'uhr',      'Zeiten'],
   ['/admin/benutzer',  'Benutzer & Rechte', 'schluessel','Zugang'],
@@ -439,6 +440,10 @@ const GRUPPEN = [
                                        '/admin/preise', '/admin/warenblatt'] },
   { titel: 'Team', kinder: ['/admin/personal', '/admin/dienstplan', '/admin/arbeitszeit', '/admin/zeitzettel',
                             '/admin/trinkgeld', '/admin/stempel'] },
+  /* Rechnungen für Feiern stehen für sich: sie gehören weder zu den
+     Reservierungen (das ist der Tischplan) noch zur Warenwirtschaft (das ist
+     der Einkauf), und der Chef öffnet sie bewusst. */
+  { titel: 'Rechnungen', pfad: '/admin/rechnung' },
   { titel: 'Einstellungen', kinder: ['/admin/tische', '/admin/zeiten', '/admin/benutzer'] },
 ];
 
