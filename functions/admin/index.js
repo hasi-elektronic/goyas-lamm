@@ -110,19 +110,30 @@ export async function onRequestGet({ request, env, data }) {
 
   /* --- Team: wer ist gerade eingestempelt, wer ist eingeplant ----- */
   if (darf('/admin/personal')) {
+    /* `pausiert` kommt aus einem LEFT JOIN, damit eine fehlende Tabelle
+       shift_breaks (Migration 0024) die Kachel nicht mitnimmt — `liste()`
+       fängt den Fehler ab, aber dann wäre auch die Anwesenheit weg. Deshalb
+       zwei getrennte Abfragen. */
     const imDienst = await liste(db,
-      `SELECT s.name, sh.start_at FROM shifts sh
+      `SELECT s.name, sh.start_at, sh.id FROM shifts sh
          JOIN staff s ON s.id = sh.staff_id
         WHERE sh.work_date = ? AND sh.end_at IS NULL
         ORDER BY sh.start_at`, now.date);
+    const inPause = new Set((await liste(db,
+      `SELECT b.shift_id FROM shift_breaks b
+         JOIN shifts sh ON sh.id = b.shift_id
+        WHERE b.end_at IS NULL AND sh.end_at IS NULL`)).map(r => r.shift_id));
     const geplant = await zahl(db,
       `SELECT COUNT(*) n FROM shift_plan
         WHERE work_date = ? AND art = 'schicht' AND published = 1`, now.date);
-    const namen = imDienst.map(r => `${r.name} (seit ${r.start_at})`).join(' · ');
+    const namen = imDienst
+      .map(r => `${r.name} (seit ${r.start_at}${inPause.has(r.id) ? ', in Pause' : ''})`)
+      .join(' · ');
+    const pausierend = imDienst.filter(r => inPause.has(r.id)).length;
     kacheln.push(kachel({
       titel: 'Team heute',
       wert: imDienst.length
-        ? `${imDienst.length} im Dienst`
+        ? `${imDienst.length} im Dienst${pausierend ? ` · ${pausierend} in Pause` : ''}`
         : '<span class="leer">niemand eingestempelt</span>',
       zusatz: esc(namen || (geplant ? `${geplant} für heute eingeplant` : 'für heute nichts eingeplant')),
       href: '/admin/dienstplan',

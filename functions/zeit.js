@@ -24,7 +24,7 @@
  * passiert ist und wann — kein Name.
  */
 import { clean, esc, nowBerlin, formatDateDE, hashIp } from './_lib/core.js';
-import { pinHash, brutto, hhmm } from './_lib/zeit.js';
+import { pinHash, brutto, hhmm, pausenSumme, pflichtPause } from './_lib/zeit.js';
 import { bremseFrei, bremseFehler, bremseOk } from './_lib/pinbremse.js';
 
 const CSS = `
@@ -82,13 +82,25 @@ input.pin:focus{outline:0;border-color:var(--gold)}
 .b.kommen{background:var(--ok);color:#fff}
 .b.gehen{background:var(--wine);color:#fff}
 .b.still{background:none;color:var(--matt);border-color:rgba(244,247,234,.2)}
+/* Pause beginnen ist bewusst zurückhaltender als Kommen und Feierabend —
+   es ist der Knopf, den man mehrmals am Abend drückt, nicht der wichtigste. */
+.b.pause{background:none;color:var(--gold);border-color:var(--gold)}
 
 select.pause{width:100%;font:inherit;font-size:1.05rem;padding:.85rem .8rem;border-radius:3px;
   border:1px solid rgba(244,247,234,.24);background:#0F0D0C;color:#fff;margin-bottom:.2rem}
+details.nachtrag{margin-top:.7rem}
+details.nachtrag summary{list-style:none;cursor:pointer;color:var(--matt);font-size:.86rem;
+  text-align:center;padding:.5rem 0}
+details.nachtrag summary::-webkit-details-marker{display:none}
+details.nachtrag summary::after{content:" ▾"}
+details.nachtrag[open] summary::after{content:" ▴"}
+details.nachtrag summary:hover{color:var(--creme)}
 
 .stand{border-left:3px solid var(--ok);background:rgba(46,107,79,.16);padding:.9rem 1rem;
   margin-bottom:1.2rem;font-size:.95rem;line-height:1.55}
 .stand b{font-weight:600}
+.stand.pausiert{border-left-color:var(--gold);background:rgba(192,160,98,.14)}
+.stand .zeile{display:block;margin-top:.35rem;color:var(--matt);font-size:.88rem}
 .warn{border-left:3px solid var(--gold);background:rgba(192,160,98,.14);padding:.9rem 1rem;
   margin-bottom:1.2rem;font-size:.95rem;line-height:1.55}
 
@@ -170,6 +182,9 @@ const seite = (inhalt, { titel = 'Stempeluhr', jetzt = '', zurueckNach = 0 } = {
 </body></html>`,
   { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
 
+/** „1 Minute" statt „1 Minuten" — die Uhr liest jeden Abend jemand. */
+const min = n => `${n} ${n === 1 ? 'Minute' : 'Minuten'}`;
+
 const kopfUhr = now => `<div class="uhr">
   <div class="t" id="uhr">${esc(now.time)}</div>
   <div class="d">${esc(formatDateDE(now.date))}</div>
@@ -203,19 +218,29 @@ export async function onRequestGet({ request, env }) {
 
   /* Bestätigung nach dem Stempeln. In der Adresse steht kein Name — nur was
      passiert ist und wann. */
-  const art = url.searchParams.get('k') ? 'kommen' : url.searchParams.get('g') ? 'gehen' : null;
+  const art = url.searchParams.get('k') ? 'kommen'
+            : url.searchParams.get('g') ? 'gehen'
+            : url.searchParams.get('pb') ? 'pause_beginn'
+            : url.searchParams.get('pe') ? 'pause_ende' : null;
   if (art) {
     const zeit = clean(url.searchParams.get('t'), 5);
     const dauer = clean(url.searchParams.get('d'), 8);
+    const TEXTE = {
+      kommen:       ['Dienstbeginn erfasst.', 'Guten Dienst.'],
+      gehen:        ['Feierabend erfasst.',
+                     dauer ? `${dauer} Stunden für heute. Schönen Feierabend.` : 'Schönen Feierabend.'],
+      pause_beginn: ['Pause läuft.',
+                     'Beim Zurückkommen wieder die PIN eingeben und „Pause beenden" tippen.'],
+      pause_ende:   ['Zurück im Dienst.',
+                     /^\d+$/.test(dauer) ? `${min(+dauer)} Pause erfasst.` : 'Pause erfasst.'],
+    };
+    const [ueber, unter] = TEXTE[art];
     return seite(`${kopfUhr(now)}
       <div class="karte fertig">
         <div class="haken" aria-hidden="true">&#10003;</div>
-        <h2>${art === 'kommen' ? 'Dienstbeginn erfasst.' : 'Feierabend erfasst.'}</h2>
+        <h2>${esc(ueber)}</h2>
         <div class="gross">${esc(zeit)} Uhr</div>
-        <p>${art === 'kommen'
-              ? 'Guten Dienst.'
-              : dauer ? `${esc(dauer)} Stunden für heute. Schönen Feierabend.`
-                      : 'Schönen Feierabend.'}</p>
+        <p>${esc(unter)}</p>
         <a class="b still" href="/zeit">Fertig</a>
       </div>`, { titel: 'Erfasst', jetzt: now.time, zurueckNach: 25 });
   }
@@ -270,58 +295,160 @@ export async function onRequestPost({ request, env }) {
   const m = treffer[0];
 
   const offen = await db.prepare(
-    `SELECT id,work_date,start_at FROM shifts WHERE staff_id=? AND end_at IS NULL
+    `SELECT id,work_date,start_at,break_min FROM shifts WHERE staff_id=? AND end_at IS NULL
       ORDER BY work_date DESC, start_at DESC LIMIT 1`).bind(m.id).first();
 
-  /* --- Schritt 1: PIN stimmt, jetzt der eine Knopf --- */
+  /* Gestempelte Pausen der laufenden Schicht.
+     Fehlt die Tabelle (Migration 0024 noch nicht eingespielt), bleibt es beim
+     alten Verhalten: Pause wird beim Feierabend aus der Liste gewählt. Die
+     Uhr soll deshalb nicht ausfallen — `kannPause` schaltet nur die Knöpfe ab. */
+  let pausen = [], kannPause = true;
+  if (offen) {
+    try {
+      pausen = (await db.prepare(
+        `SELECT id,start_at,end_at FROM shift_breaks WHERE shift_id=? ORDER BY start_at`
+      ).bind(offen.id).all()).results || [];
+    } catch { kannPause = false; }
+  }
+  const laeuft = pausen.find(p => !p.end_at) || null;
+  const bisher = pausenSumme(pausen);
+  const jetztIso = () => new Date().toISOString();
+
+  /** Eine laufende Pause schließen und die neue Zeilenliste zurückgeben. */
+  async function pauseSchliessen() {
+    if (!laeuft) return pausen;
+    await db.prepare(`UPDATE shift_breaks SET end_at=?, updated_at=? WHERE id=?`)
+      .bind(now.time, jetztIso(), laeuft.id).run();
+    return pausen.map(p => p.id === laeuft.id ? { ...p, end_at: now.time } : p);
+  }
+
+  /** `shifts.break_min` ist die Summe — und nie mehr als die Anwesenheit selbst. */
+  const summeMinuten = zeilen =>
+    Math.min(pausenSumme(zeilen), brutto(offen.start_at, now.time) || 0);
+
+  /* --- Schritt 1: PIN stimmt, jetzt die Knöpfe --- */
   if (d.do === 'pruefen') {
-    const seit = offen
-      ? `<div class="stand">Im Dienst seit <b>${esc(offen.start_at)} Uhr</b>${
-          offen.work_date !== now.date
-            ? ` (${esc(offen.work_date.slice(8))}.${esc(offen.work_date.slice(5, 7))}.)` : ''
-          } — bisher ${esc(hhmm(brutto(offen.start_at, now.time)))} Stunden.</div>`
+    const anwesend = offen ? (brutto(offen.start_at, now.time) || 0) : 0;
+    const vortag = offen && offen.work_date !== now.date
+      ? ` (${esc(offen.work_date.slice(8))}.${esc(offen.work_date.slice(5, 7))}.)` : '';
+
+    const stand = !offen ? '' : laeuft
+      ? `<div class="stand pausiert">Pause läuft seit <b>${esc(laeuft.start_at)} Uhr</b>
+           — ${min(brutto(laeuft.start_at, now.time) || 0)}.
+           <span class="zeile">Im Dienst seit ${esc(offen.start_at)} Uhr${vortag}${
+             bisher ? ` · davor schon ${min(bisher)} Pause` : ''}.</span></div>`
+      : `<div class="stand">Im Dienst seit <b>${esc(offen.start_at)} Uhr</b>${vortag}
+           — bisher ${esc(hhmm(anwesend))} Stunden.${
+           bisher ? `<span class="zeile">Pause heute: ${min(bisher)}, gestempelt.</span>` : ''}</div>`;
+
+    /* Hinweis, kein Abzug. Eine Pause, die niemand gemacht hat, automatisch
+       abzuziehen wäre eine Kürzung der Arbeitszeit — genau das, was § 17 MiLoG
+       verhindern soll. */
+    const soll = offen ? pflichtPause(Math.max(0, anwesend - bisher)) : 0;
+    const pflichtHinweis = soll > bisher
+      ? `<div class="warn">Nach ${soll === 45 ? 'neun' : 'sechs'} Stunden Arbeit sind
+           <b>${soll} Minuten Pause</b> vorgeschrieben (§ 4 ArbZG).${
+           bisher ? ` Erfasst sind bisher ${min(bisher)}.` : ' Bisher ist keine erfasst.'}</div>`
       : '';
-    const pausen = [0,5,10,15,20,25,30,35,40,45,50,55,60,75,90]
+
+    const auswahl = [0,5,10,15,20,25,30,35,40,45,50,55,60,75,90]
       .map(n => `<option value="${n}">${n === 0 ? 'keine Pause' : n + ' Minuten'}</option>`).join('');
+
+    /* Die Auswahlliste erscheint nur, wenn nichts gestempelt wurde. Sonst
+       stünden zwei Wahrheiten nebeneinander und die schlechtere gewinnt. */
+    const nachtragen = (!kannPause || !bisher) && !laeuft
+      ? (kannPause
+          /* Zugeklappt: Stempeln ist der Normalfall, Nachtragen die Ausnahme.
+             Stünde die Liste offen daneben, würde sie benutzt — und dann
+             stünde wieder eine Schätzung in der Aufzeichnung. */
+          ? `<details class="nachtrag"><summary>Pause vergessen zu stempeln?</summary>
+               <select class="pause" name="pause">${auswahl}</select></details>`
+          : `<span class="lab" style="text-align:left">Pause</span>
+             <select class="pause" name="pause">${auswahl}</select>`)
+      : '';
+
+    const knoepfe = !offen
+      ? `<button class="b kommen" name="do" value="kommen" type="submit">Kommen</button>`
+      : laeuft
+        ? `<button class="b kommen" name="do" value="pause_ende" type="submit">Pause beenden</button>
+           <button class="b gehen" name="do" value="gehen" type="submit">Feierabend</button>`
+        : `${kannPause
+             ? `<button class="b pause" name="do" value="pause_beginn" type="submit">Pause beginnen</button>`
+             : ''}
+           ${nachtragen}
+           <button class="b gehen" name="do" value="gehen" type="submit">Feierabend</button>`;
+
+    const fuss = !offen
+      ? 'Die Zeit läuft ab dem Moment, in dem du auf „Kommen" tippst.'
+      : laeuft
+        ? 'Die Pause zählt weiter, bis du sie beendest. Beim Feierabend wird sie automatisch geschlossen.'
+        : kannPause
+          ? 'Pause beginnen und beenden wird mitgeschrieben — dann muss beim Feierabend niemand schätzen.'
+          : 'Pause bitte ehrlich eintragen — sie wird von der Arbeitszeit abgezogen.';
 
     return seite(`${kopfUhr(now)}
       <form class="karte" method="post" action="/zeit">
         <input type="hidden" name="pin" value="${esc(pin)}">
         <h2>Hallo ${esc(m.name.split(' ')[0])}.</h2>
         <div class="rolle">${esc(m.role || 'Team')}</div>
-        ${seit}
-        ${offen ? `<span class="lab" style="text-align:left">Pause</span>
-          <select class="pause" name="pause">${pausen}</select>
-          <button class="b gehen" name="do" value="gehen" type="submit">Feierabend</button>`
-                : `<button class="b kommen" name="do" value="kommen" type="submit">Kommen</button>`}
+        ${stand}
+        ${pflichtHinweis}
+        ${knoepfe}
         <a class="b still" href="/zeit">Abbrechen</a>
-        <p class="fuss" style="padding-top:1.4rem;margin:0">${offen
-          ? 'Pause bitte ehrlich eintragen — sie wird von der Arbeitszeit abgezogen.'
-          : 'Die Zeit läuft ab dem Moment, in dem du auf „Kommen" tippst.'}</p>
+        <p class="fuss" style="padding-top:1.4rem;margin:0">${fuss}</p>
       </form>`, { titel: 'Stempeluhr', jetzt: now.time, zurueckNach: 120 });
   }
 
   /* --- Schritt 2: stempeln --- */
+  const fertig = (ziel) => new Response(null, { status: 303, headers: {
+    location: ziel, 'cache-control': 'no-store' } });
+
   if (d.do === 'kommen') {
     if (offen) return zurStart('Du bist bereits eingestempelt.');
     await db.prepare(
       `INSERT INTO shifts (id,staff_id,work_date,start_at,break_min,source,created_at)
        VALUES (?,?,?,?,0,'stempel',?)`
-    ).bind(crypto.randomUUID(), m.id, now.date, now.time, new Date().toISOString()).run();
-    return new Response(null, { status: 303, headers: {
-      location: `/zeit?k=1&t=${encodeURIComponent(now.time)}`, 'cache-control': 'no-store' } });
+    ).bind(crypto.randomUUID(), m.id, now.date, now.time, jetztIso()).run();
+    return fertig(`/zeit?k=1&t=${encodeURIComponent(now.time)}`);
+  }
+
+  if (d.do === 'pause_beginn') {
+    if (!offen) return zurStart('Du bist gar nicht eingestempelt.');
+    if (!kannPause) return zurStart('Gestempelte Pausen sind hier noch nicht eingerichtet.');
+    if (laeuft) return zurStart('Deine Pause läuft schon.');
+    await db.prepare(
+      `INSERT INTO shift_breaks (id,shift_id,start_at,source,created_at)
+       VALUES (?,?,?,'stempel',?)`
+    ).bind(crypto.randomUUID(), offen.id, now.time, jetztIso()).run();
+    return fertig(`/zeit?pb=1&t=${encodeURIComponent(now.time)}`);
+  }
+
+  if (d.do === 'pause_ende') {
+    if (!offen) return zurStart('Du bist gar nicht eingestempelt.');
+    if (!laeuft) return zurStart('Es läuft gerade keine Pause.');
+    const dauer = brutto(laeuft.start_at, now.time) || 0;
+    const zeilen = await pauseSchliessen();
+    await db.prepare(`UPDATE shifts SET break_min=?, updated_at=? WHERE id=?`)
+      .bind(summeMinuten(zeilen), jetztIso(), offen.id).run();
+    return fertig(`/zeit?pe=1&t=${encodeURIComponent(now.time)}&d=${dauer}`);
   }
 
   if (d.do === 'gehen') {
     if (!offen) return zurStart('Du bist gar nicht eingestempelt.');
-    const pause = Math.max(0, Math.min(600, parseInt(d.pause, 10) || 0));
-    const dauer = Math.max(0, brutto(offen.start_at, now.time) - pause);
+    /* Wer im Feierabend geht, ohne die Pause zu beenden, hat sie trotzdem
+       beendet — hier und jetzt. Sonst liefe sie bis zum nächsten Dienst. */
+    const zeilen = await pauseSchliessen();
+    const gestempelt = summeMinuten(zeilen);
+    const gewaehlt = Math.max(0, Math.min(600, parseInt(d.pause, 10) || 0));
+    /* Gestempelt schlägt geschätzt. Die Liste greift nur, wenn niemand
+       gestempelt hat — für den, der es vergessen hat. */
+    const anwesend = brutto(offen.start_at, now.time) || 0;
+    const pause = Math.min(gestempelt || gewaehlt, anwesend);
     await db.prepare(
       `UPDATE shifts SET end_at=?, break_min=?, updated_at=? WHERE id=?`
-    ).bind(now.time, pause, new Date().toISOString(), offen.id).run();
-    return new Response(null, { status: 303, headers: {
-      location: `/zeit?g=1&t=${encodeURIComponent(now.time)}&d=${encodeURIComponent(hhmm(dauer))}`,
-      'cache-control': 'no-store' } });
+    ).bind(now.time, pause, jetztIso(), offen.id).run();
+    return fertig(`/zeit?g=1&t=${encodeURIComponent(now.time)}`
+      + `&d=${encodeURIComponent(hhmm(Math.max(0, anwesend - pause)))}`);
   }
 
   return zurStart('Das hat nicht geklappt. Bitte noch einmal.');

@@ -28,6 +28,30 @@ export function brutto(start, end) {
   return d;
 }
 
+/**
+ * Summe der **abgeschlossenen** Pausen einer Schicht, in Minuten.
+ *
+ * Eine laufende Pause zählt bewusst nicht mit: Solange sie offen ist, weiß
+ * niemand, wie lang sie wird. Sie wird beim Beenden geschlossen — spätestens
+ * beim Feierabend — und erst dann mitgerechnet.
+ */
+export const pausenSumme = zeilen =>
+  (zeilen || []).reduce((s, p) => p.end_at ? s + (brutto(p.start_at, p.end_at) || 0) : s, 0);
+
+/**
+ * Mindestpause nach § 4 ArbZG: über sechs Stunden Arbeitszeit 30 Minuten,
+ * über neun Stunden 45. Darunter keine.
+ *
+ * Wird nur zum **Hinweisen** benutzt, nie zum Abziehen. Eine Pause, die
+ * niemand gemacht hat, automatisch abzuziehen wäre eine Kürzung der
+ * Arbeitszeit — genau das, was § 17 MiLoG verhindern soll.
+ *
+ * @param {number} minuten Anwesenheit ohne Pausenabzug
+ * @returns {number} 0, 30 oder 45
+ */
+export const pflichtPause = minuten =>
+  minuten > 9 * 60 ? 45 : minuten > 6 * 60 ? 30 : 0;
+
 /** Netto = Anwesenheit minus Pause. Das ist die **echte** Dauer, ungerundet. */
 export function netto(s) {
   const b = brutto(s.start_at, s.end_at);

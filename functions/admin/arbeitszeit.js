@@ -529,6 +529,12 @@ export async function onRequestPost({ request, env }) {
     }
 
     if (d.do === 'del') {
+      /* Die gestempelten Pausen hängen an der Schicht. Bleiben sie liegen,
+         sammeln sich Zeilen an, zu denen es keine Schicht mehr gibt — und beim
+         nächsten Eintrag mit derselben zufälligen ID wären sie plötzlich wieder
+         da. SQLite in D1 erzwingt keine Fremdschlüssel, also von Hand. */
+      try { await db.prepare(`DELETE FROM shift_breaks WHERE shift_id=?`).bind(id).run(); }
+      catch { /* Tabelle gibt es erst ab Migration 0024 */ }
       await db.prepare(`DELETE FROM shifts WHERE id=?`).bind(id).run();
       return redirect(ziel, 'Eintrag gelöscht.');
     }

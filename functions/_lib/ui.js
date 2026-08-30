@@ -391,7 +391,10 @@ const NAV = [
   /* Es gab zwei „Zettel" — einen für die Küche, einen für die Stunden. */
   ['/admin/zeitzettel','Stundennachweis',   'druck',    'Nachweis'],
   ['/admin/trinkgeld', 'Trinkgeld',         'muenze',   'Trinkgeld'],
-  ['/admin/stempel',   'Stempeluhr · Tablet','stempel', 'Stempel'],
+  /* Führt auf /zeit — die Adresse bleibt nur wegen alter Lesezeichen bestehen.
+     Der Menüpunkt zeigt weiter auf /admin/stempel, damit die Rechteprüfung
+     greift: /zeit ist eine offene Seite, /admin/stempel nicht. */
+  ['/admin/stempel',   'Stempeluhr öffnen', 'stempel', 'Stempel'],
   ['/admin/tische',    'Tische',            'tisch',    'Tische'],
   ['/admin/zeiten',    'Schließtage',       'uhr',      'Zeiten'],
   ['/admin/benutzer',  'Benutzer & Rechte', 'schluessel','Zugang'],
