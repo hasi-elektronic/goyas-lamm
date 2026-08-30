@@ -1,8 +1,68 @@
+/**
+ * Übersicht — die Startseite der Verwaltung.
+ *
+ * Sie zeigte bis zum 30.08.2026 ausschließlich Reservierungen. Das war
+ * historisch richtig (das Reservierungssystem war zuerst da) und inhaltlich
+ * falsch: Wer morgens das Panel aufmacht, will wissen, ob der Betrieb steht —
+ * nicht nur, wie viele Gäste kommen. Rückmeldung Gökhan: „Die Übersicht muss
+ * das ganze System zeigen, nicht nur Reservierungen."
+ *
+ * Deshalb steht jetzt zwischen den Reservierungszahlen und der Tagesliste ein
+ * Block mit einer Kachel je Bereich — Team, Wareneingang, Hygiene, Artikel,
+ * Speisekarte, Warteliste. Jede Kachel beantwortet genau eine Frage („muss ich
+ * da heute hin?") und verlinkt auf die Seite, die es genauer weiß. Bewusst
+ * keine zweite Tagesliste und keine Diagramme: Die Übersicht soll in drei
+ * Sekunden lesbar sein.
+ *
+ * Zwei Regeln für spätere Erweiterungen:
+ *
+ * 1. **Jede Abfrage hier ist unkritisch.** Fehlt eine Tabelle (frische
+ *    Datenbank, Migration noch nicht eingespielt), fällt die Kachel weg —
+ *    die Übersicht darf daran nie scheitern. Deshalb `zahl()`/`zeile()`
+ *    mit try/catch statt roher `db.prepare`-Aufrufe.
+ * 2. **Keine Kachel ohne Rechteprüfung.** `darfSeite` entscheidet, was eine
+ *    Rolle sieht; sonst zeigt der Demo-Zugang Einkaufszahlen.
+ */
 import { nowBerlin, addDays, formatDateDE, slotsForDate, esc, capacityFor } from '../_lib/core.js';
 import { layout, flash, table, dayHeading } from '../_lib/ui.js';
 import { mailReady } from '../_lib/mail.js';
 import { notesFor } from '../_lib/gaeste.js';
 import { darfSeite } from '../_lib/auth.js';
+
+/** Eine Zahl holen. Fehlt die Tabelle, ist das Ergebnis `null`, nicht ein Fehler. */
+async function zahl(db, sql, ...args) {
+  try {
+    const r = await db.prepare(sql).bind(...args).first();
+    return r ? Number(Object.values(r)[0] ?? 0) : 0;
+  } catch { return null; }
+}
+
+/** Eine Zeile holen; `null`, wenn es sie nicht gibt oder die Tabelle fehlt. */
+async function zeile(db, sql, ...args) {
+  try { return (await db.prepare(sql).bind(...args).first()) || null; }
+  catch { return null; }
+}
+
+async function liste(db, sql, ...args) {
+  try { return (await db.prepare(sql).bind(...args).all()).results || []; }
+  catch { return []; }
+}
+
+/**
+ * Eine Bereichskachel.
+ * @param {object} k
+ * @param {string} k.titel   Bereichsname (Großbuchstaben, klein gesetzt)
+ * @param {string} k.wert    die eine Zahl oder Aussage, groß
+ * @param {string} k.zusatz  eine Zeile Erläuterung darunter
+ * @param {string} k.href    Ziel
+ * @param {string} [k.stand] 'warn' = braucht Aufmerksamkeit, 'gut' = erledigt
+ */
+const kachel = ({ titel, wert, zusatz, href, stand = '' }) => `
+  <a class="mod${stand ? ' ' + stand : ''}" href="${esc(href)}">
+    <span class="mt">${esc(titel)}</span>
+    <b>${wert}</b>
+    <span class="ms">${zusatz}</span>
+  </a>`;
 
 export async function onRequestGet({ request, env, data }) {
   const url = new URL(request.url);
@@ -10,8 +70,10 @@ export async function onRequestGet({ request, env, data }) {
   if (!db) return layout({ user: data?.user, title: 'Übersicht', active: '/admin', body: '<div class="msg err">Datenbank nicht verbunden.</div>' });
 
   const rolle = data?.user?.role || 'chef';
+  const darf = pfad => darfSeite(rolle, pfad);
   const now = nowBerlin();
   const until = addDays(now.date, 13);
+  const monat = now.date.slice(0, 7);
 
   const rows = (await db.prepare(
     `SELECT id,res_date,res_time,guests,name,email,phone,note,status,source,no_show
@@ -39,6 +101,123 @@ export async function onRequestGet({ request, env, data }) {
   const kap = await capacityFor(db, env, now.date);
   const cap = kap.seats;
 
+  /* ---------------------------------------------------------------- */
+  /* Bereichskacheln                                                   */
+  /* ---------------------------------------------------------------- */
+
+  const kacheln = [];
+
+  /* --- Team: wer ist gerade eingestempelt, wer ist eingeplant ----- */
+  if (darf('/admin/personal')) {
+    const imDienst = await liste(db,
+      `SELECT s.name, sh.start_at FROM shifts sh
+         JOIN staff s ON s.id = sh.staff_id
+        WHERE sh.work_date = ? AND sh.end_at IS NULL
+        ORDER BY sh.start_at`, now.date);
+    const geplant = await zahl(db,
+      `SELECT COUNT(*) n FROM shift_plan
+        WHERE work_date = ? AND art = 'schicht' AND published = 1`, now.date);
+    const namen = imDienst.map(r => `${r.name} (seit ${r.start_at})`).join(' · ');
+    kacheln.push(kachel({
+      titel: 'Team heute',
+      wert: imDienst.length
+        ? `${imDienst.length} im Dienst`
+        : '<span class="leer">niemand eingestempelt</span>',
+      zusatz: esc(namen || (geplant ? `${geplant} für heute eingeplant` : 'für heute nichts eingeplant')),
+      href: '/admin/dienstplan',
+    }));
+  }
+
+  /* --- Wareneingang: kam heute was, gab es Abweichungen? ---------- */
+  if (darf('/admin/ware')) {
+    const letzte = await zeile(db, `SELECT day FROM deliveries ORDER BY day DESC LIMIT 1`);
+    const imMonat = await zahl(db, `SELECT COUNT(*) n FROM deliveries WHERE day LIKE ?`, monat + '%');
+    const abweich = await zahl(db,
+      `SELECT COUNT(*) n FROM deliveries
+        WHERE day LIKE ? AND (temp_ok = 0 OR mhd_ok = 0 OR ware_ok = 0)`, monat + '%');
+    if (imMonat !== null) {
+      kacheln.push(kachel({
+        titel: 'Wareneingang',
+        wert: abweich ? `${abweich} mit Abweichung` : `${imMonat} Lieferungen`,
+        zusatz: letzte
+          ? `diesen Monat ${imMonat} · zuletzt ${esc(formatDateDE(letzte.day))}`
+          : 'diesen Monat noch nichts erfasst',
+        href: '/admin/ware',
+        stand: abweich ? 'warn' : '',
+      }));
+    }
+  }
+
+  /* --- Hygiene: was fehlt heute noch? ----------------------------- */
+  if (darf('/admin/hygiene')) {
+    const offen = await zahl(db,
+      `SELECT COUNT(*) n FROM hygiene_punkte p
+        WHERE p.active = 1 AND p.takt = 'taeglich'
+          AND NOT EXISTS (SELECT 1 FROM hygiene_log l WHERE l.punkt_id = p.id AND l.tag = ?)`,
+      now.date);
+    const schlecht = await zahl(db,
+      `SELECT COUNT(*) n FROM hygiene_log WHERE tag = ? AND ok = 0`, now.date);
+    if (offen !== null) {
+      kacheln.push(kachel({
+        titel: 'Hygiene heute',
+        wert: offen ? `${offen} offen` : 'erledigt',
+        zusatz: schlecht
+          ? `${schlecht} ${schlecht === 1 ? 'Abweichung' : 'Abweichungen'} heute`
+          : 'tägliche Kontrollpunkte',
+        href: '/admin/hygiene',
+        stand: schlecht ? 'warn' : (offen ? 'warn' : 'gut'),
+      }));
+    }
+  }
+
+  /* --- Artikel & Inventur ----------------------------------------- */
+  if (darf('/admin/lager')) {
+    const aktiv = await zahl(db, `SELECT COUNT(*) n FROM articles WHERE active = 1`);
+    const letzteZaehlung = await zeile(db, `SELECT day FROM stock_counts ORDER BY day DESC LIMIT 1`);
+    if (aktiv !== null) {
+      kacheln.push(kachel({
+        titel: 'Artikel & Inventur',
+        wert: `${aktiv} Artikel`,
+        zusatz: letzteZaehlung
+          ? `letzte Zählung ${esc(formatDateDE(letzteZaehlung.day))}`
+          : 'noch nie gezählt',
+        href: '/admin/lager',
+        stand: letzteZaehlung ? '' : 'warn',
+      }));
+    }
+  }
+
+  /* --- Speisekarte -------------------------------------------------- */
+  if (darf('/admin/karte')) {
+    const gerichte = await zahl(db, `SELECT COUNT(*) n FROM menu_items`);
+    const aus = await zahl(db, `SELECT COUNT(*) n FROM menu_items WHERE active = 0`);
+    if (gerichte !== null) {
+      kacheln.push(kachel({
+        titel: 'Speisekarte',
+        wert: `${gerichte - (aus || 0)} auf der Karte`,
+        zusatz: aus ? `${aus} heute ausgeblendet` : 'nichts ausgeblendet',
+        href: '/admin/karte',
+      }));
+    }
+  }
+
+  /* --- Warteliste --------------------------------------------------- */
+  if (darf('/admin/warteliste')) {
+    const offen = await zahl(db,
+      `SELECT COUNT(*) n FROM waitlist WHERE status = 'offen' AND res_date >= ?`, now.date);
+    if (offen !== null) {
+      kacheln.push(kachel({
+        titel: 'Warteliste',
+        wert: offen ? `${offen} ${offen === 1 ? 'Anfrage' : 'Anfragen'}` : 'leer',
+        zusatz: offen ? 'wartet auf Rückmeldung' : 'niemand wartet',
+        href: '/admin/warteliste',
+        stand: offen ? 'warn' : '',
+      }));
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+
   const tischWarn = kap.source === 'tische' ? '' : `<div class="msg warn">
     <b>Es sind noch keine Tische angelegt.</b> Das System rechnet solange mit ${cap} Plätzen
     je Zeitfenster. Unter <a href="/admin/tische">Tische</a> eintragen, wie viele Tische es gibt
@@ -63,6 +242,7 @@ export async function onRequestGet({ request, env, data }) {
     ${tischWarn}
     ${mailWarn}
 
+    <h2 class="abschnitt">Reservierungen</h2>
     <div class="stats">
       <div class="stat hot"><b>${today.length}</b><span>Heute · Tische</span></div>
       <div class="stat hot"><b>${sum(today)}</b><span>Heute · Gäste</span></div>
@@ -71,12 +251,16 @@ export async function onRequestGet({ request, env, data }) {
       <div class="stat"><b>${openTotal.n}</b><span>Offen gesamt</span></div>
     </div>
 
+    ${kacheln.length ? `
+    <h2 class="abschnitt">Betrieb heute</h2>
+    <div class="mods">${kacheln.join('')}</div>` : ''}
+
     <div class="row" style="margin-bottom:1.4rem">
       ${[['/admin/neu', '+ Neue Reservierung', ''],
          ['/admin/tag?d=' + now.date, 'Tagesansicht heute', ' ghost'],
          ['/admin/kalender', 'Kalender', ' ghost'],
          ['/admin/zettel?d=' + now.date, 'Küchenzettel drucken', ' ghost']]
-        .filter(([h]) => darfSeite(rolle, h.split('?')[0]))
+        .filter(([h]) => darf(h.split('?')[0]))
         .map(([h, t, k]) => `<a class="btn${k}" href="${h}">${t}</a>`).join('')}
     </div>
 
@@ -87,7 +271,7 @@ export async function onRequestGet({ request, env, data }) {
         : table(today, { notes, user: data?.user })}
     </div>
 
-    <h2 style="margin:2rem 0 .9rem">Nächste Tage</h2>
+    <h2 class="abschnitt">Nächste Tage</h2>
     ${upcoming}
 
     <p class="hint" style="margin:2.2rem 0 0;text-align:center">

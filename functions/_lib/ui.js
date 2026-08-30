@@ -75,6 +75,25 @@ h2{font-size:1.05rem;margin:0 0 .9rem}
 .stat span{font-size:.65rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
 .stat.hot b{color:var(--wine)}
 
+/* Abschnittsüberschrift auf der Übersicht. Ohne sie stünden Zahlenkacheln,
+   Bereichskacheln und Tagesliste als eine einzige graue Fläche untereinander. */
+h2.abschnitt{font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+  margin:2rem 0 .8rem}
+h2.abschnitt:first-of-type{margin-top:0}
+
+/* Bereichskacheln — eine je Modul, jede beantwortet „muss ich da heute hin?" */
+.mods{display:grid;grid-template-columns:repeat(auto-fit,minmax(226px,1fr));gap:.7rem;margin-bottom:1.6rem}
+.mod{display:flex;flex-direction:column;gap:.28rem;background:var(--paper);border:1px solid var(--sand);
+  padding:.95rem 1.1rem;text-decoration:none;color:inherit}
+.mod:hover{border-color:var(--wine)}
+.mod .mt{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.mod b{font-size:1.12rem;line-height:1.25}
+.mod b .leer{font-weight:400;color:var(--muted);font-size:.95rem}
+.mod .ms{font-size:.83rem;color:var(--muted);line-height:1.45}
+.mod.warn{border-left:3px solid var(--gold)}
+.mod.warn b{color:var(--warn)}
+.mod.gut b{color:var(--ok)}
+
 .card{background:var(--paper);border:1px solid var(--sand);margin-bottom:1.3rem}
 .card > h2{margin:0;font-size:.75rem;letter-spacing:.18em;text-transform:uppercase;
   padding:.8rem 1.1rem;border-bottom:1px solid var(--sand);background:var(--cream);
@@ -348,7 +367,7 @@ const svg = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>`;
 /* [Pfad, Beschriftung, Icon, kurze Beschriftung für die untere Leiste] */
 const NAV = [
   ['/admin',           'Übersicht',         'heim',     'Start'],
-  ['/admin/tag',       'Heute',             'liste',    'Heute'],
+  ['/admin/tag',       'Tagesansicht',      'liste',    'Heute'],
   ['/admin/kalender',  'Kalender',          'kalender', 'Kalender'],
   ['/admin/warteliste','Warteliste',        'warte',    'Warte'],
   ['/admin/auswertung','Auswertung',        'kurve',    'Zahlen'],
@@ -396,15 +415,22 @@ const NAV = [
  * bündeln (Lightspeed „Bestand", SIDES „Warenwirtschaft & Lager"), und ein
  * Haus mit einer Küche ist genau dieser Fall.
  *
- * **„Heute" bleibt ein eigener Reiter**, obwohl der Küchenzettel inhaltlich
- * dazugehört. Es ist die meistgeöffnete Seite; sie hinter ein Klappmenü zu
- * legen, wäre ein Klick zu viel an jedem einzelnen Tag.
+ * **„Heute" ist kein eigener Reiter mehr.** Es stand als Reiter direkt neben
+ * dem Klappmenü „Gäste", und beides führte zu denselben Reservierungen — beim
+ * Draufschauen war nicht zu erkennen, wofür man welches nimmt (Rückmeldung
+ * Gökhan, 30.08.2026). Jetzt gibt es einen Oberpunkt **Reservierungen**, und
+ * die Tagesansicht ist dessen erster Eintrag.
+ *
+ * Der eine Klick, den das am Schreibtisch kostet, wird am Handy nicht fällig:
+ * Dort liegt „Heute" weiter als eigenes Feld in der unteren Leiste (`UNTEN`),
+ * und das ist das Gerät, auf dem die Seite tatsächlich zwanzigmal am Tag
+ * aufgeht.
  */
 const GRUPPEN = [
   { titel: 'Übersicht', pfad: '/admin' },
-  { titel: 'Heute',     pfad: '/admin/tag' },
-  { titel: 'Gäste', kinder: ['/admin/kalender', '/admin/warteliste', '/admin/neu',
-                             '/admin/suche', '/admin/zettel', '/admin/auswertung'] },
+  { titel: 'Reservierungen', kinder: ['/admin/tag', '/admin/kalender', '/admin/warteliste',
+                                      '/admin/neu', '/admin/suche', '/admin/zettel',
+                                      '/admin/auswertung'] },
   { titel: 'Speisekarte', kinder: ['/admin/karte', '/admin/aufsteller'] },
   { titel: 'Warenwirtschaft', kinder: ['/admin/ware', '/admin/hygiene', '/admin/lager', '/admin/inventur',
                                        '/admin/preise', '/admin/warenblatt'] },
