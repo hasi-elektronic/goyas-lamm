@@ -31,6 +31,7 @@ import { clean, esc, nowBerlin, addDays, weekday, WEEKDAY_DE, HOURS } from '../_
 import { layout, flash, redirect } from '../_lib/ui.js';
 import { summe, dezimal, toMin, brutto } from '../_lib/zeit.js';
 import { darfSchreiben } from '../_lib/auth.js';
+import { artLabel as ABW_LABEL } from '../_lib/abwesenheit.js';
 
 const ARTEN = {
   schicht:  { label: 'Schicht',  kurz: '',          farbe: 'schicht' },
@@ -185,6 +186,20 @@ export async function onRequestGet({ request, env, data }) {
   const proZelle = {};
   for (const e of plan) (proZelle[`${e.staff_id}|${e.work_date}`] ||= []).push(e);
 
+  /* Genehmigte Abwesenheiten aus der Personalakte.
+     Sie werden hier nur ANGEZEIGT, nicht bearbeitet: Urlaub ist keine
+     Planung, sondern eine Zusage. Wer ihn ändern will, tut das dort, wo auch
+     das Urlaubskonto steht — sonst gäbe es zwei Wahrheiten. */
+  const abwZelle = {};
+  try {
+    const abw = (await db.prepare(
+      `SELECT staff_id, art, von, bis FROM absences
+        WHERE status = 'genehmigt' AND von <= ? AND bis >= ?`).bind(ende, start).all()).results || [];
+    for (const a of abw) {
+      for (const t of tage) if (a.von <= t && t <= a.bis) (abwZelle[`${a.staff_id}|${t}`] ||= []).push(a);
+    }
+  } catch { /* Migration 0025 fehlt — dann eben ohne */ }
+
   /* Zum Ändern: ein Eintrag kann ins Formular geladen werden. */
   const editId = clean(url.searchParams.get('e'), 40);
   const edit = editId ? plan.find(e => e.id === editId) : null;
@@ -195,8 +210,12 @@ export async function onRequestGet({ request, env, data }) {
 
   const zelle = (m, tag) => {
     const eintraege = proZelle[`${m.id}|${tag}`] || [];
-    const hatFrei = eintraege.some(e => e.art !== 'schicht');
+    const abwesend = abwZelle[`${m.id}|${tag}`] || [];
+    const hatFrei = eintraege.some(e => e.art !== 'schicht') || abwesend.length > 0;
     return `<td class="tag${geschlossen(tag) ? ' zu' : ''}">
+      ${abwesend.map(a => `<div class="marke frei" title="Aus der Personalakte — dort ändern">
+        <a href="/admin/personal?id=${encodeURIComponent(m.id)}&t=frei">${esc(ABW_LABEL(a.art))}</a>
+      </div>`).join('')}
       ${eintraege.map(e => {
         const a = ARTEN[e.art] || ARTEN.schicht;
         const kollision = e.art === 'schicht' && hatFrei;

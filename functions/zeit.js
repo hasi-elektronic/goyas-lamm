@@ -23,7 +23,8 @@
  * ein Neuladen ein zweites Mal stempelt. In der Adresse steht dabei nur, *was*
  * passiert ist und wann — kein Name.
  */
-import { clean, esc, nowBerlin, formatDateDE, hashIp } from './_lib/core.js';
+import { clean, esc, nowBerlin, formatDateDE, hashIp, isValidDate, addDays } from './_lib/core.js';
+import { werktage, urlaubskonto, zeitraum } from './_lib/abwesenheit.js';
 import { pinHash, brutto, hhmm, pausenSumme, pflichtPause } from './_lib/zeit.js';
 import { bremseFrei, bremseFehler, bremseOk } from './_lib/pinbremse.js';
 
@@ -86,8 +87,12 @@ input.pin:focus{outline:0;border-color:var(--gold)}
    es ist der Knopf, den man mehrmals am Abend drückt, nicht der wichtigste. */
 .b.pause{background:none;color:var(--gold);border-color:var(--gold)}
 
-select.pause{width:100%;font:inherit;font-size:1.05rem;padding:.85rem .8rem;border-radius:3px;
+select.pause,input.pause{width:100%;font:inherit;font-size:1.05rem;padding:.85rem .8rem;border-radius:3px;
   border:1px solid rgba(244,247,234,.24);background:#0F0D0C;color:#fff;margin-bottom:.2rem}
+/* Datumsfelder ziehen sich sonst auf ihre Inhaltsbreite zusammen und stehen
+   verloren links in der Karte. */
+input.pause[type=date]{-webkit-appearance:none;appearance:none;min-height:52px}
+input.pause::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.7}
 details.nachtrag{margin-top:.7rem}
 details.nachtrag summary{list-style:none;cursor:pointer;color:var(--matt);font-size:.86rem;
   text-align:center;padding:.5rem 0}
@@ -221,7 +226,8 @@ export async function onRequestGet({ request, env }) {
   const art = url.searchParams.get('k') ? 'kommen'
             : url.searchParams.get('g') ? 'gehen'
             : url.searchParams.get('pb') ? 'pause_beginn'
-            : url.searchParams.get('pe') ? 'pause_ende' : null;
+            : url.searchParams.get('pe') ? 'pause_ende'
+            : url.searchParams.get('ub') ? 'urlaub' : null;
   if (art) {
     const zeit = clean(url.searchParams.get('t'), 5);
     const dauer = clean(url.searchParams.get('d'), 8);
@@ -233,13 +239,20 @@ export async function onRequestGet({ request, env }) {
                      'Beim Zurückkommen wieder die PIN eingeben und „Pause beenden" tippen.'],
       pause_ende:   ['Zurück im Dienst.',
                      /^\d+$/.test(dauer) ? `${min(+dauer)} Pause erfasst.` : 'Pause erfasst.'],
+      urlaub:       ['Antrag ist raus.',
+                     'Der Chef entscheidet. Bis dahin bitte nichts fest buchen.'],
     };
     const [ueber, unter] = TEXTE[art];
+    /* Beim Urlaubsantrag steht im Feld `t` kein Uhrzeit-, sondern ein
+       Datumsbereich — deshalb kein „Uhr" dahinter. */
+    const grossZeile = art === 'urlaub'
+      ? `${esc(clean(url.searchParams.get('t'), 40))}${/^\d+$/.test(dauer) ? ` · ${dauer} Tage` : ''}`
+      : `${esc(zeit)} Uhr`;
     return seite(`${kopfUhr(now)}
       <div class="karte fertig">
         <div class="haken" aria-hidden="true">&#10003;</div>
         <h2>${esc(ueber)}</h2>
-        <div class="gross">${esc(zeit)} Uhr</div>
+        <div class="gross">${grossZeile}</div>
         <p>${esc(unter)}</p>
         <a class="b still" href="/zeit">Fertig</a>
       </div>`, { titel: 'Erfasst', jetzt: now.time, zurueckNach: 25 });
@@ -272,11 +285,17 @@ export async function onRequestPost({ request, env }) {
 
   /* Die PIN sucht die Person: gespeichert ist nur der Hash, und der ist für
      dieselbe PIN immer derselbe. */
-  let treffer = [];
+  let treffer = [], kannUrlaub = true;
+  const hash = await pinHash(pin, env.IP_SALT);
   try {
     treffer = (await db.prepare(
+      `SELECT id,name,role,urlaub_tage,urlaub_rest_vj FROM staff WHERE active=1 AND pin_hash=?`
+    ).bind(hash).all()).results || [];
+  } catch { kannUrlaub = false; }
+  try {
+    if (!kannUrlaub) treffer = (await db.prepare(
       `SELECT id,name,role FROM staff WHERE active=1 AND pin_hash=?`
-    ).bind(await pinHash(pin, env.IP_SALT)).all()).results || [];
+    ).bind(hash).all()).results || [];
   } catch {
     return zurStart('Die Zeiterfassung ist noch nicht eingerichtet.');
   }
@@ -394,9 +413,89 @@ export async function onRequestPost({ request, env }) {
         ${stand}
         ${pflichtHinweis}
         ${knoepfe}
+        ${kannUrlaub
+          ? `<button class="b still" name="do" value="urlaub_form" type="submit">Urlaub beantragen</button>`
+          : ''}
         <a class="b still" href="/zeit">Abbrechen</a>
         <p class="fuss" style="padding-top:1.4rem;margin:0">${fuss}</p>
       </form>`, { titel: 'Stempeluhr', jetzt: now.time, zurueckNach: 120 });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Urlaubsantrag                                                       */
+  /*                                                                     */
+  /* Nur Urlaub, ausdrücklich keine Krankmeldung. Eine Krankmeldung ist   */
+  /* eine Nachricht an den Chef und gehört ans Telefon — und was daraus   */
+  /* gespeichert wird, entscheidet der Chef, nicht ein Formular auf dem   */
+  /* Handy. Gesundheitsdaten sammelt man nicht nebenbei.                  */
+  /* ------------------------------------------------------------------ */
+
+  if (d.do === 'urlaub_form' || d.do === 'urlaub_senden') {
+    if (!kannUrlaub) return zurStart('Urlaubsanträge sind hier noch nicht eingerichtet.');
+
+    let eigene = [];
+    try {
+      eigene = (await db.prepare(
+        `SELECT id,art,von,bis,tage,status FROM absences WHERE staff_id=? ORDER BY von DESC`)
+        .bind(m.id).all()).results || [];
+    } catch { return zurStart('Urlaubsanträge sind hier noch nicht eingerichtet.'); }
+
+    const jahr = Number(now.date.slice(0, 4));
+    const konto = urlaubskonto(m, eigene, jahr);
+
+    /* --- absenden --- */
+    if (d.do === 'urlaub_senden') {
+      const von = clean(d.von, 10), bis = clean(d.bis, 10);
+      if (!isValidDate(von) || !isValidDate(bis)) return zurStart('Bitte Beginn und Ende angeben.');
+      if (bis < von) return zurStart('Das Ende liegt vor dem Beginn.');
+      if (von < now.date) return zurStart('Urlaub lässt sich nicht rückwirkend beantragen — bitte beim Chef melden.');
+      if (werktage(von, bis) > 60) return zurStart('So lang geht das hier nicht. Bitte mit dem Chef sprechen.');
+
+      const kollision = eigene.find(a =>
+        (a.status === 'genehmigt' || a.status === 'beantragt') && a.von <= bis && von <= a.bis);
+      if (kollision) return zurStart('Für diesen Zeitraum steht schon etwas eingetragen.');
+
+      const tage = werktage(von, bis);
+      await db.prepare(
+        `INSERT INTO absences (id,staff_id,art,von,bis,tage,status,quelle,created_at)
+         VALUES (?,?, 'urlaub', ?,?,?, 'beantragt', 'antrag', ?)`
+      ).bind(crypto.randomUUID(), m.id, von, bis, tage, new Date().toISOString()).run();
+
+      return new Response(null, { status: 303, headers: {
+        location: `/zeit?ub=1&t=${encodeURIComponent(zeitraum(von, bis))}&d=${tage}`,
+        'cache-control': 'no-store' } });
+    }
+
+    /* --- Formular --- */
+    const morgen = addDays(now.date, 1);
+    const liste = eigene.filter(a => a.art === 'urlaub').slice(0, 5);
+    return seite(`${kopfUhr(now)}
+      <form class="karte" method="post" action="/zeit">
+        <input type="hidden" name="pin" value="${esc(pin)}">
+        <h2>Urlaub beantragen</h2>
+        <div class="rolle">${esc(m.name.split(' ')[0])}</div>
+        <div class="stand">Noch offen: <b>${konto.rest} von ${konto.gesamt} Tagen</b>
+          ${konto.geplant ? `<span class="zeile">${konto.geplant} davon sind schon beantragt und noch nicht entschieden.</span>` : ''}
+        </div>
+        <span class="lab" style="text-align:left">Von</span>
+        <input class="pause" name="von" type="date" required min="${esc(morgen)}" value="${esc(morgen)}">
+        <span class="lab" style="text-align:left;margin-top:.9rem">Bis — einschließlich</span>
+        <input class="pause" name="bis" type="date" required min="${esc(morgen)}" value="${esc(morgen)}">
+        <button class="b weiter" name="do" value="urlaub_senden" type="submit">Antrag senden</button>
+        <a class="b still" href="/zeit">Abbrechen</a>
+        ${liste.length ? `<div style="margin-top:1.4rem">
+          <span class="lab" style="text-align:left">Bisher</span>
+          ${liste.map(a => `<div class="stand${a.status === 'beantragt' ? ' pausiert' : ''}"
+             style="margin-bottom:.5rem;font-size:.9rem">${esc(zeitraum(a.von, a.bis))}
+             <span class="zeile">${a.status === 'genehmigt' ? 'genehmigt'
+               : a.status === 'beantragt' ? 'wartet auf Antwort'
+               : a.status === 'abgelehnt' ? 'abgelehnt' : 'storniert'}${
+               a.tage ? ` · ${a.tage} Tage` : ''}</span></div>`).join('')}
+        </div>` : ''}
+        <p class="fuss" style="padding-top:1.4rem;margin:0">Der Antrag geht an den Chef. Bis er
+           entschieden ist, gilt der Urlaub nicht als genehmigt — bitte nichts fest buchen.
+           <br><br>Krankmeldung geht nicht über dieses Formular: bitte anrufen.</p>
+      </form>`, { titel: 'Urlaub beantragen', jetzt: now.time, zurueckNach: 300 });
   }
 
   /* --- Schritt 2: stempeln --- */

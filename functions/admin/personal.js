@@ -35,10 +35,16 @@ import {
   MINDESTLOHN_CENT, MINIJOB_CENT,
 } from '../_lib/zeit.js';
 import { gespeicherterPin, setzePin, loeschePin, sperrCookie, DAUER_MIN } from '../_lib/chefpin.js';
+import {
+  ARTEN as ABW_ARTEN, STATUS, istArt, artLabel, werktage, mindestUrlaub,
+  urlaubskonto, zeitraum, auFrist,
+} from '../_lib/abwesenheit.js';
+import { fristenFuer, resturlaubHinweis } from '../_lib/personalfristen.js';
 
 const ROLLEN = ['Küche', 'Service', 'Bar', 'Aushilfe', 'Leitung'];
 const ARTEN  = ['Vollzeit', 'Teilzeit', 'Minijob', 'Aushilfe', 'Azubi'];
-const REITER = [['person', 'Person'], ['zeit', 'Zeit & Lohn'], ['nachweis', 'Nachweise & Notizen']];
+const REITER = [['person', 'Person'], ['zeit', 'Zeit & Lohn'],
+                ['frei', 'Urlaub & Ausfall'], ['nachweis', 'Nachweise & Notizen']];
 
 /* Die Belehrung nach § 43 IfSG wird vom Gesundheitsamt erstmalig erteilt; die
    Wiederholung durch den Arbeitgeber ist alle zwei Jahre fällig. Wir rechnen
@@ -47,6 +53,9 @@ const BELEHRUNG_JAHRE = 2;
 const WARN_TAGE = 60;
 
 const SPALTEN_NEU = 'phone,birthday,start_date,art,nk_name,nk_phone,belehrung_am,notiz';
+/* Migration 0025 — Urlaubskonto und zwei weitere Fristen. Eigene Stufe beim
+   Lesen, damit ein Haus ohne diese Migration die Karte trotzdem bekommt. */
+const SPALTEN_25 = 'urlaub_tage,urlaub_rest_vj,vertrag_am,titel_bis';
 
 /* ------------------------------------------------------------------ */
 /* Kleinkram                                                           */
@@ -111,7 +120,12 @@ const heuteGeburtstag = (g, heute) => istDatum(g) && g.slice(5) === heute.slice(
 async function liesTeam(db) {
   const basis = 'id,name,role,pin_hash,active,sort';
   try {
-    return { neu: true, lohn: true, leute: (await db.prepare(
+    return { neu: true, lohn: true, abw: true, leute: (await db.prepare(
+      `SELECT ${basis},wage_cent,${SPALTEN_NEU},${SPALTEN_25} FROM staff ORDER BY active DESC, sort, name`
+    ).all()).results || [] };
+  } catch { /* Migration 0025 fehlt */ }
+  try {
+    return { neu: true, lohn: true, abw: false, leute: (await db.prepare(
       `SELECT ${basis},wage_cent,${SPALTEN_NEU} FROM staff ORDER BY active DESC, sort, name`
     ).all()).results || [] };
   } catch { /* Migration 0020 fehlt */ }
@@ -175,17 +189,19 @@ td.num{text-align:right;white-space:nowrap;vertical-align:middle}
 /* ------------------------------------------------------------------ */
 
 function listeSeite({ url, user, leute, hinweis, offen, laeuft, schichten, heute,
-                      chefPinGesetzt, lohn }) {
+                      chefPinGesetzt, lohn, heuteFrei = {}, antraege = [] }) {
   const aktive = leute.filter(m => m.active);
   const faellig = leute.filter(m => {
     const b = belehrungStand(m.belehrung_am, heute);
     return m.active && b && b.stufe !== 'ok';
   });
+  const nameVon = id => leute.find(x => x.id === id)?.name || 'Unbekannt';
 
   const zeile = m => {
     const s = summe(schichten.filter(x => x.staff_id === m.id));
     const on = laeuft[m.id];
     const b = belehrungStand(m.belehrung_am, heute);
+    const frei = heuteFrei[m.id];
     return `<tr class="${m.active ? '' : 'cancelled'}">
       <td>
         <a class="pnam" href="/admin/personal?id=${encodeURIComponent(m.id)}">
@@ -197,6 +213,7 @@ function listeSeite({ url, user, leute, hinweis, offen, laeuft, schichten, heute
       </td>
       <td>
         ${on ? `<span class="pill ns">seit ${esc(on.start_at)} Uhr im Dienst</span>` : ''}
+        ${frei ? `<span class="pill walk">heute ${esc(artLabel(frei.art))} bis ${esc(frei.bis.slice(8))}.${esc(frei.bis.slice(5, 7))}.</span>` : ''}
         ${m.active ? '' : '<span class="pill">ausgeschieden</span>'}
         ${m.active && !m.pin_hash ? '<span class="pill">ohne PIN</span>' : ''}
         ${m.active && b && b.stufe === 'faellig' ? '<span class="pill ns">Belehrung abgelaufen</span>' : ''}
@@ -219,13 +236,34 @@ function listeSeite({ url, user, leute, hinweis, offen, laeuft, schichten, heute
     <div class="stats">
       <div class="stat"><b>${aktive.length}</b><span>im Team</span></div>
       <div class="stat hot"><b>${offen.length}</b><span>gerade im Dienst</span></div>
+      <div class="stat"><b>${Object.keys(heuteFrei).length}</b><span>heute nicht da</span></div>
+      <div class="stat ${antraege.length ? 'hot' : ''}"><b>${antraege.length}</b><span>offene Anträge</span></div>
       <div class="stat"><b>${aktive.filter(m => !m.pin_hash).length}</b><span>ohne PIN</span></div>
       <div class="stat"><b>${faellig.length}</b><span>Belehrung fällig</span></div>
     </div>
 
+    ${antraege.length ? `<div class="card">
+      <h2>Urlaubsanträge <em>warten auf Entscheidung</em></h2>
+      <table class="stack"><tbody>${antraege.map(a => `<tr>
+        <td class="nm"><a href="/admin/personal?id=${encodeURIComponent(a.staff_id)}&t=frei">${
+          esc(nameVon(a.staff_id))}</a></td>
+        <td class="t">${esc(zeitraum(a.von, a.bis))}</td>
+        <td class="num">${a.tage ? esc(String(a.tage)) + ' Tage' : ''}</td>
+        <td class="act">
+          <form method="post" action="/admin/personal" style="display:inline">
+            <input type="hidden" name="do" value="abw_status">
+            <input type="hidden" name="id" value="${esc(a.staff_id)}">
+            <input type="hidden" name="aid" value="${esc(a.id)}">
+            <button class="btn sm" name="status" value="genehmigt" type="submit">Genehmigen</button>
+            <button class="btn sm danger" name="status" value="abgelehnt" type="submit">Ablehnen</button>
+          </form></td>
+      </tr>`).join('')}</tbody></table>
+    </div>` : ''}
+
     <div class="row" style="margin-bottom:1.4rem">
       <a class="btn" href="/admin/stempel">Stempeluhr öffnen</a>
       <a class="btn ghost" href="/admin/arbeitszeit">Arbeitszeiten</a>
+      <a class="btn ghost" href="/admin/dienstplan">Dienstplan</a>
     </div>
 
     <div class="card">
@@ -307,8 +345,8 @@ function auswahl(name, label, werte, gewaehlt) {
     ).join('')}</select></div>`;
 }
 
-function karteSeite({ url, user, m, reiter, neu, lohn, heute, monat,
-                      meine, letzte, trinkgeldCent, laeuft }) {
+function karteSeite({ url, user, m, reiter, neu, lohn, abw, heute, monat,
+                      meine, letzte, trinkgeldCent, laeuft, abwesenheiten = [] }) {
   const s = summe(meine);
   const lohnSum = lohnCent(s.gerundet, m.wage_cent);
   const b = belehrungStand(m.belehrung_am, heute);
@@ -472,8 +510,153 @@ function karteSeite({ url, user, m, reiter, neu, lohn, heute, monat,
     </div>`;
   }
 
+  if (reiter === 'frei') {
+    const jahr = Number(heute.slice(0, 4));
+    const konto = urlaubskonto(m, abwesenheiten, jahr);
+    const heutigeAbw = abwesenheiten.find(
+      a => a.status === STATUS.genehmigt && a.von <= heute && heute <= a.bis);
+
+    const zeile = a => {
+      const offen = a.status === STATUS.beantragt;
+      const auFehlt = a.art === 'krank' && !a.au_da && auFrist(a.von) < heute;
+      return `<tr class="${a.status === STATUS.abgelehnt || a.status === STATUS.storniert ? 'cancelled' : ''}">
+        <td class="t">${esc(zeitraum(a.von, a.bis))}</td>
+        <td class="nm"><b>${esc(artLabel(a.art))}</b>
+          ${a.notiz ? `<div class="meta">${esc(a.notiz)}</div>` : ''}
+          ${a.quelle === 'antrag' ? '<div class="meta">selbst beantragt</div>' : ''}
+          ${auFehlt ? '<div class="meta"><span class="pill ns">AU-Bescheinigung fehlt</span></div>' : ''}
+        </td>
+        <td class="num">${a.tage ? esc(String(a.tage)) + (ABW_ARTEN[a.art]?.konto ? ' Urlaubst.' : ' Tage') : '—'}</td>
+        <td class="num">${offen ? '<span class="pill">beantragt</span>'
+          : a.status === STATUS.abgelehnt ? '<span class="pill">abgelehnt</span>'
+          : a.status === STATUS.storniert ? '<span class="pill">storniert</span>'
+          : '<span class="meta">gilt</span>'}</td>
+        <td class="act">
+          ${offen ? `<form method="post" action="/admin/personal" style="display:inline">
+              <input type="hidden" name="do" value="abw_status">
+              <input type="hidden" name="id" value="${esc(m.id)}">
+              <input type="hidden" name="aid" value="${esc(a.id)}">
+              <button class="btn sm" name="status" value="genehmigt" type="submit">Genehmigen</button>
+              <button class="btn sm danger" name="status" value="abgelehnt" type="submit">Ablehnen</button>
+            </form>` : ''}
+          ${a.art === 'krank' && !a.au_da ? `<form method="post" action="/admin/personal" style="display:inline">
+              <input type="hidden" name="do" value="abw_au">
+              <input type="hidden" name="id" value="${esc(m.id)}">
+              <input type="hidden" name="aid" value="${esc(a.id)}">
+              <button class="btn sm ghost" type="submit">AU liegt vor</button>
+            </form>` : ''}
+          ${a.status === STATUS.genehmigt ? `<form method="post" action="/admin/personal" style="display:inline"
+              onsubmit="return confirm('Diesen Eintrag stornieren?')">
+              <input type="hidden" name="do" value="abw_status">
+              <input type="hidden" name="id" value="${esc(m.id)}">
+              <input type="hidden" name="aid" value="${esc(a.id)}">
+              <button class="btn sm danger" name="status" value="storniert" type="submit">Storno</button>
+            </form>` : ''}
+        </td>
+      </tr>`;
+    };
+
+    inhalt = !abw ? `<div class="card"><div class="body">
+        <p class="meta" style="margin:0">Urlaub und Ausfälle brauchen die Migration
+           <code>0025_abwesenheiten.sql</code>. Bitte einspielen, dann steht diese Seite.</p>
+      </div></div>` : `
+    <div class="card">
+      <h2>Urlaubskonto ${jahr}</h2>
+      <div class="body">
+        <div class="stats" style="margin-bottom:1.2rem">
+          <div class="stat"><b>${konto.gesamt}</b><span>Anspruch inkl. Übertrag</span></div>
+          <div class="stat"><b>${konto.genommen}</b><span>genommen</span></div>
+          <div class="stat"><b>${konto.geplant}</b><span>beantragt</span></div>
+          <div class="stat ${konto.rest < 0 ? 'hot' : ''}"><b>${konto.rest}</b><span>noch offen</span></div>
+        </div>
+        ${heutigeAbw ? `<div class="msg warn"><b>Heute nicht da:</b>
+          ${esc(artLabel(heutigeAbw.art))} bis ${esc(zeitraum(heutigeAbw.bis, heutigeAbw.bis))}</div>` : ''}
+        ${konto.rest < 0 ? `<div class="msg err">Mehr Urlaub vergeben als Anspruch besteht.
+          Entweder ist der Jahresanspruch zu niedrig eingetragen, oder es wurde zu viel genehmigt.</div>` : ''}
+        <form method="post" action="/admin/personal">
+          <input type="hidden" name="do" value="abw_konto">
+          <input type="hidden" name="id" value="${esc(m.id)}">
+          <div class="grid">
+            <div class="f"><label for="ut">Jahresanspruch in Werktagen</label>
+              <input id="ut" name="urlaub_tage" type="number" min="0" max="60"
+                     value="${m.urlaub_tage ?? ''}" placeholder="z. B. ${mindestUrlaub(5)}">
+              <p class="hint">Gesetzlicher Mindesturlaub nach § 3 BUrlG: ${mindestUrlaub(6)} Werktage bei
+                 Sechstagewoche, ${mindestUrlaub(5)} bei Fünftagewoche. Was im Vertrag steht, gilt —
+                 sofern es darüber liegt.</p></div>
+            <div class="f"><label for="uv">Übertrag aus dem Vorjahr</label>
+              <input id="uv" name="urlaub_rest_vj" type="number" min="0" max="60"
+                     value="${m.urlaub_rest_vj ?? ''}" placeholder="0">
+              <p class="hint">Resturlaub verfällt zum 31.12. nur, wenn rechtzeitig darauf
+                 hingewiesen wurde — sonst wandert er hierher.</p></div>
+          </div>
+          <div class="row end" style="margin-top:1rem"><button class="btn" type="submit">Speichern</button></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Eintragen</h2>
+      <div class="body">
+        <form method="post" action="/admin/personal">
+          <input type="hidden" name="do" value="abw_neu">
+          <input type="hidden" name="id" value="${esc(m.id)}">
+          <div class="grid">
+            <div class="f"><label for="art">Was</label>
+              <select id="art" name="art">${Object.entries(ABW_ARTEN).map(([k, v]) =>
+                `<option value="${k}">${esc(v.label)}</option>`).join('')}</select></div>
+            <div class="f"><label for="von">Von</label>
+              <input id="von" name="von" type="date" required value="${esc(heute)}"></div>
+            <div class="f"><label for="bis">Bis <span class="meta">einschließlich</span></label>
+              <input id="bis" name="bis" type="date" required value="${esc(heute)}"></div>
+            <div class="f"><label for="tage">Angerechnete Tage</label>
+              <input id="tage" name="tage" type="number" min="0" max="60" placeholder="automatisch">
+              <p class="hint">Leer lassen: Werktage Montag–Samstag werden gezählt. Nur überschreiben,
+                 wenn es im Einzelfall anders vereinbart ist.</p></div>
+            <div class="f full"><label for="anotiz">Anlass <span class="meta">optional, ein Wort</span></label>
+              <input id="anotiz" name="notiz" maxlength="80"
+                     placeholder="z. B. Heimatbesuch, Umzug, Fortbildung"></div>
+          </div>
+          <div class="msg warn" style="margin:1.2rem 0 0">
+            <b>Bei Krankheit: kein Grund, keine Diagnose.</b> Was der Betrieb wissen darf, ist der
+            Zeitraum und ob die Arbeitsunfähigkeitsbescheinigung vorliegt. Alles andere ist
+            Gesundheitsdatum nach Art. 9 DSGVO und gehört nicht ins Panel — auch nicht ins
+            Anlassfeld.
+          </div>
+          <div class="row end" style="margin-top:1.2rem">
+            <button class="btn" type="submit">Eintragen</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Bisher <em>${abwesenheiten.length} ${abwesenheiten.length === 1 ? 'Eintrag' : 'Einträge'}</em></h2>
+      ${abwesenheiten.length
+        ? `<table class="stack"><thead><tr><th>Zeitraum</th><th>Was</th><th class="num">Tage</th>
+             <th class="num">Stand</th><th></th></tr></thead>
+           <tbody>${abwesenheiten.map(zeile).join('')}</tbody></table>`
+        : '<div class="empty">Noch nichts eingetragen.</div>'}
+    </div>`;
+  }
+
   if (reiter === 'nachweis') {
+    const hinweise = neu ? fristenFuer(m, heute, {
+      monatCent: lohn && m.wage_cent ? lohnSum : 0,
+      abwesenheiten,
+    }) : [];
+    const rest = abw ? resturlaubHinweis(
+      urlaubskonto(m, abwesenheiten, Number(heute.slice(0, 4))), heute) : null;
+    if (rest) hinweise.push(rest);
+
     inhalt = `
+    ${hinweise.length ? `<div class="card">
+      <h2>Woran zu denken ist <em>${hinweise.length}</em></h2>
+      <div class="body">
+        ${hinweise.map(h => `<div class="msg ${h.stufe === 'warn' ? 'warn' : ''}"
+             style="margin-bottom:.7rem"><b>${esc(h.kurz)}.</b> ${esc(h.text)}</div>`).join('')}
+      </div>
+    </div>` : ''}
+
     <div class="card">
       <h2>Belehrung nach § 43 IfSG</h2>
       <div class="body">
@@ -486,7 +669,14 @@ function karteSeite({ url, user, m, reiter, neu, lohn, heute, monat,
           <input type="hidden" name="id" value="${esc(m.id)}">
           <div class="grid">
             ${feld('belehrung_am', 'Zuletzt belehrt am', m.belehrung_am, { typ: 'date' })}
+            ${abw ? feld('vertrag_am', 'Arbeitsvertrag vom', m.vertrag_am, { typ: 'date' }) : ''}
+            ${abw ? feld('titel_bis', 'Arbeitserlaubnis gültig bis', m.titel_bis, { typ: 'date' }) : ''}
           </div>
+          ${abw ? `<p class="hint" style="margin:.2rem 0 0">Beim Arbeitsvertrag steht hier nur das
+             Datum — das Nachweisgesetz verlangt die wesentlichen Bedingungen schriftlich,
+             spätestens am ersten Arbeitstag. Das Papier gehört in den Ordner.
+             Die Arbeitserlaubnis nur ausfüllen, wenn eine befristete vorliegt; dann warnt die
+             Übersicht rechtzeitig vor dem Ablauf.</p>` : ''}
           <div class="f" style="margin-top:1rem">
             <label for="notiz">Notiz <span class="meta">nur für den Chef sichtbar</span></label>
             <textarea id="notiz" name="notiz" rows="4" maxlength="600"
@@ -508,11 +698,12 @@ function karteSeite({ url, user, m, reiter, neu, lohn, heute, monat,
     <div class="card">
       <h2>Was hier bewusst fehlt</h2>
       <div class="body meta">
-        <p style="margin:0 0 .6rem"><b>Keine Krankmeldungen, keine Diagnosen.</b>
-           Gesundheitsdaten sind nach Art. 9 DSGVO besonders geschützt und müssen getrennt
-           von der übrigen Personalakte aufbewahrt werden. Diese Trennung kann das Panel
-           nicht leisten — also gehören sie hier nicht hinein, sondern in einen verschlossenen
-           Ordner.</p>
+        <p style="margin:0 0 .6rem"><b>Kein Krankheitsgrund, keine Diagnose, kein Attest als
+           Datei.</b> Dass jemand krank ist und wie lange, steht unter „Urlaub &amp; Ausfall" —
+           das muss der Betrieb wissen und darf er festhalten. <em>Woran</em> jemand erkrankt
+           ist, geht den Arbeitgeber nichts an: Gesundheitsdaten sind nach Art. 9 DSGVO
+           besonders geschützt. Deshalb gibt es dafür kein Feld, auch nicht im Anlassfeld.
+           Die Bescheinigung selbst gehört in den Ordner, hier steht nur, ob sie da ist.</p>
         <p style="margin:0"><b>Keine Bankverbindung, keine Steuer-ID, keine
            Sozialversicherungsnummer.</b> Die Abrechnung macht der Steuerberater. Jedes Feld,
            das nicht gespeichert wird, muss auch nicht geschützt werden.</p>
@@ -598,17 +789,37 @@ export async function onRequestGet({ request, env, data }) {
       } catch { /* egal */ }
     }
 
+    let abwesenheiten = [];
+    try {
+      abwesenheiten = (await db.prepare(
+        `SELECT * FROM absences WHERE staff_id=? ORDER BY von DESC`).bind(m.id).all()).results || [];
+    } catch { /* Migration 0025 fehlt — der Reiter sagt es dann selbst */ }
+
     return karteSeite({
-      url, user: data?.user, m, reiter, neu: team.neu, lohn: team.lohn, heute, monat,
+      url, user: data?.user, m, reiter, neu: team.neu, lohn: team.lohn, abw: team.abw,
+      heute, monat,
       meine: schichten.filter(x => x.staff_id === m.id),
-      letzte, trinkgeldCent, laeuft: laeuft[m.id] || null,
+      letzte, trinkgeldCent, laeuft: laeuft[m.id] || null, abwesenheiten,
     });
   }
+
+  /* Wer ist heute nicht da, und was wartet auf eine Entscheidung? */
+  let heuteFrei = {}, antraege = [];
+  try {
+    const f = (await db.prepare(
+      `SELECT staff_id, art, von, bis FROM absences
+        WHERE status='genehmigt' AND von <= ? AND bis >= ?`).bind(heute, heute).all()).results || [];
+    heuteFrei = Object.fromEntries(f.map(a => [a.staff_id, a]));
+    antraege = (await db.prepare(
+      `SELECT id, staff_id, von, bis, tage FROM absences
+        WHERE status='beantragt' ORDER BY von`).all()).results || [];
+  } catch { /* Migration 0025 fehlt */ }
 
   const chefPinGesetzt = !!await gespeicherterPin(db);
   return listeSeite({
     url, user: data?.user, leute: team.leute, hinweis: team.hinweis,
     offen, laeuft, schichten, heute, chefPinGesetzt, lohn: team.lohn,
+    heuteFrei, antraege,
   });
 }
 
@@ -784,17 +995,105 @@ export async function onRequestPost({ request, env, data }) {
 
     /* --- Reiter „Nachweise & Notizen" --- */
     if (d.do === 'nachweis') {
-      if (String(d.belehrung_am || '').trim() && !datumAus(d.belehrung_am)) {
-        return fehler('Bitte ein gültiges Datum für die Belehrung angeben.');
+      for (const [k, l] of [['belehrung_am', 'die Belehrung'], ['vertrag_am', 'den Arbeitsvertrag'],
+                            ['titel_bis', 'die Arbeitserlaubnis']]) {
+        if (String(d[k] || '').trim() && !datumAus(d[k])) {
+          return fehler(`Bitte ein gültiges Datum für ${l} angeben.`);
+        }
       }
       const notiz = String(d.notiz ?? '').replace(/\r/g, '').slice(0, 600).trim() || null;
       try {
-        await db.prepare(`UPDATE staff SET belehrung_am=?, notiz=? WHERE id=?`)
-          .bind(datumAus(d.belehrung_am), notiz, id).run();
+        await db.prepare(`UPDATE staff SET belehrung_am=?, notiz=?, vertrag_am=?, titel_bis=? WHERE id=?`)
+          .bind(datumAus(d.belehrung_am), notiz, datumAus(d.vertrag_am), datumAus(d.titel_bis), id).run();
       } catch {
-        return fehler('Die Felder fehlen noch in der Datenbank — bitte Migration 0020 einspielen.');
+        /* Migration 0025 fehlt — wenigstens das Alte sichern, statt gar nichts. */
+        try {
+          await db.prepare(`UPDATE staff SET belehrung_am=?, notiz=? WHERE id=?`)
+            .bind(datumAus(d.belehrung_am), notiz, id).run();
+          return zurueck('nachweis', 'Gespeichert — Vertrag und Arbeitserlaubnis fehlen noch in der Datenbank.');
+        } catch {
+          return fehler('Die Felder fehlen noch in der Datenbank — bitte Migration 0020 einspielen.');
+        }
       }
       return zurueck('nachweis', 'Gespeichert.');
+    }
+
+    /* --- Urlaub und Ausfall ------------------------------------------ */
+    if (d.do === 'abw_konto') {
+      const zahl = (v, max) => {
+        const s = String(v ?? '').trim();
+        if (!s) return null;
+        const n = parseInt(s, 10);
+        return Number.isFinite(n) ? Math.min(max, Math.max(0, n)) : null;
+      };
+      try {
+        await db.prepare(`UPDATE staff SET urlaub_tage=?, urlaub_rest_vj=? WHERE id=?`)
+          .bind(zahl(d.urlaub_tage, 60), zahl(d.urlaub_rest_vj, 60), id).run();
+      } catch { return fehler('Bitte Migration 0025_abwesenheiten.sql einspielen.'); }
+      return zurueck('frei', 'Urlaubskonto gespeichert.');
+    }
+
+    if (d.do === 'abw_neu') {
+      const art = clean(d.art, 16);
+      if (!istArt(art)) return fehler('Unbekannte Art der Abwesenheit.');
+      const von = datumAus(d.von), bis = datumAus(d.bis);
+      if (!von || !bis) return fehler('Bitte Beginn und Ende angeben.');
+      if (bis < von) return fehler('Das Ende liegt vor dem Beginn.');
+      /* Eine Grenze gegen Vertipper: „bis 2036" ist kein Urlaub, sondern eine
+         verrutschte Jahreszahl — und würde die Jahresübersicht zerlegen. */
+      if (werktage(von, bis) > 200) return fehler('Der Zeitraum ist unrealistisch lang — bitte prüfen.');
+
+      const eigen = String(d.tage ?? '').trim();
+      const tage = eigen ? Math.min(200, Math.max(0, parseInt(eigen, 10) || 0)) : werktage(von, bis);
+
+      /* Ein Anlassfeld ist kein Diagnosefeld. Der Hinweis steht auf der Seite;
+         hier wird die Länge begrenzt, damit niemand einen Arztbericht hineinschreibt. */
+      const notiz = clean(d.notiz, 80) || null;
+
+      try {
+        const doppelt = await db.prepare(
+          `SELECT id FROM absences WHERE staff_id=? AND status IN ('genehmigt','beantragt')
+             AND von <= ? AND bis >= ? LIMIT 1`).bind(id, bis, von).first();
+        if (doppelt) return fehler('In diesem Zeitraum steht schon eine Abwesenheit. Bitte erst die alte stornieren.');
+
+        await db.prepare(
+          `INSERT INTO absences (id,staff_id,art,von,bis,tage,status,notiz,au_bis,au_da,quelle,
+                                 entschieden_von,entschieden_am,created_at)
+           VALUES (?,?,?,?,?,?, 'genehmigt', ?, NULL, 0, 'chef', ?, ?, ?)`
+        ).bind(crypto.randomUUID(), id, art, von, bis, tage, notiz,
+               data?.user?.name || 'Chef', new Date().toISOString(), new Date().toISOString()).run();
+      } catch { return fehler('Bitte Migration 0025_abwesenheiten.sql einspielen.'); }
+
+      const nachsatz = art === 'krank'
+        ? ` Die Arbeitsunfähigkeitsbescheinigung ist ab dem ${(auFrist(von) || '').slice(8)}.`
+          + `${(auFrist(von) || '').slice(5, 7)}. fällig (§ 5 EntgFG).`
+        : '';
+      return zurueck('frei', `${artLabel(art)} vom ${zeitraum(von, bis)} eingetragen.${nachsatz}`);
+    }
+
+    if (d.do === 'abw_status') {
+      const aid = clean(d.aid, 40);
+      const st = clean(d.status, 16);
+      if (!['genehmigt', 'abgelehnt', 'storniert'].includes(st)) return fehler('Unbekannter Stand.');
+      try {
+        await db.prepare(
+          `UPDATE absences SET status=?, entschieden_von=?, entschieden_am=?, updated_at=?
+            WHERE id=? AND staff_id=?`
+        ).bind(st, data?.user?.name || 'Chef', new Date().toISOString(),
+               new Date().toISOString(), aid, id).run();
+      } catch { return fehler('Das hat nicht geklappt.'); }
+      return zurueck('frei', st === 'genehmigt' ? 'Genehmigt.'
+        : st === 'abgelehnt' ? 'Abgelehnt. Der Eintrag bleibt stehen, damit man sieht, dass gefragt wurde.'
+        : 'Storniert.');
+    }
+
+    if (d.do === 'abw_au') {
+      const aid = clean(d.aid, 40);
+      try {
+        await db.prepare(`UPDATE absences SET au_da=1, updated_at=? WHERE id=? AND staff_id=?`)
+          .bind(new Date().toISOString(), aid, id).run();
+      } catch { return fehler('Das hat nicht geklappt.'); }
+      return zurueck('frei', 'Vermerkt: Bescheinigung liegt vor.');
     }
 
     /* --- Aus- und wieder eintreten --- */

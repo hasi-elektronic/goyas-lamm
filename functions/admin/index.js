@@ -28,7 +28,9 @@ import { layout, flash, table, dayHeading } from '../_lib/ui.js';
 import { mailReady } from '../_lib/mail.js';
 import { notesFor } from '../_lib/gaeste.js';
 import { darfSeite } from '../_lib/auth.js';
-import { tagKurz } from '../_lib/zeit.js';
+import { tagKurz, summe, lohnCent } from '../_lib/zeit.js';
+import { fristenFuer, resturlaubHinweis } from '../_lib/personalfristen.js';
+import { urlaubskonto, artLabel } from '../_lib/abwesenheit.js';
 
 /** Eine Zahl holen. Fehlt die Tabelle, ist das Ergebnis `null`, nicht ein Fehler. */
 async function zahl(db, sql, ...args) {
@@ -126,16 +128,26 @@ export async function onRequestGet({ request, env, data }) {
     const geplant = await zahl(db,
       `SELECT COUNT(*) n FROM shift_plan
         WHERE work_date = ? AND art = 'schicht' AND published = 1`, now.date);
+    /* Wer heute genehmigt fehlt — Urlaub, krank, was auch immer. Ohne diese
+       Zeile fragt sich der Chef abends, warum nur zwei Leute gestempelt haben. */
+    const frei = await liste(db,
+      `SELECT s.name, a.art FROM absences a JOIN staff s ON s.id = a.staff_id
+        WHERE a.status = 'genehmigt' AND a.von <= ? AND a.bis >= ? ORDER BY s.name`,
+      now.date, now.date);
     const namen = imDienst
       .map(r => `${r.name} (seit ${r.start_at}${inPause.has(r.id) ? ', in Pause' : ''})`)
       .join(' · ');
+    const freiText = frei.length
+      ? `nicht da: ${frei.map(r => `${r.name} (${artLabel(r.art)})`).join(', ')}`
+      : '';
     const pausierend = imDienst.filter(r => inPause.has(r.id)).length;
     kacheln.push(kachel({
       titel: 'Team heute',
       wert: imDienst.length
         ? `${imDienst.length} im Dienst${pausierend ? ` · ${pausierend} in Pause` : ''}`
         : '<span class="leer">niemand eingestempelt</span>',
-      zusatz: esc(namen || (geplant ? `${geplant} für heute eingeplant` : 'für heute nichts eingeplant')),
+      zusatz: esc([namen || (geplant ? `${geplant} für heute eingeplant` : 'für heute nichts eingeplant'),
+                   freiText].filter(Boolean).join(' — ')),
       href: '/admin/dienstplan',
     }));
   }
@@ -215,6 +227,46 @@ export async function onRequestGet({ request, env, data }) {
     }
   }
 
+  /* --- Personal: Fristen, die sonst niemand sieht -------------------- */
+  /* Die Angaben liegen alle auf den Personalkarten. Nur schaut da niemand
+     hin, solange nichts weh tut — und dann ist die Belehrung acht Monate
+     abgelaufen. Hier stehen sie einmal gebündelt. */
+  let personalHinweise = [];
+  if (darf('/admin/personal')) {
+    const leute = await liste(db,
+      `SELECT * FROM staff WHERE active = 1 ORDER BY sort, name`);
+    if (leute.length) {
+      const abwAlle = await liste(db, `SELECT * FROM absences`);
+      const schichten = await liste(db,
+        `SELECT staff_id,work_date,start_at,end_at,break_min FROM shifts WHERE work_date LIKE ?`,
+        monat + '%');
+      const jahr = Number(now.date.slice(0, 4));
+      for (const p of leute) {
+        const meine = abwAlle.filter(a => a.staff_id === p.id);
+        const minuten = summe(schichten.filter(s => s.staff_id === p.id)).gerundet;
+        const punkte = fristenFuer(p, now.date, {
+          monatCent: p.wage_cent ? lohnCent(minuten, p.wage_cent) : 0,
+          abwesenheiten: meine,
+        });
+        const rest = resturlaubHinweis(urlaubskonto(p, meine, jahr), now.date);
+        if (rest) punkte.push(rest);
+        for (const h of punkte) personalHinweise.push({ ...h, name: p.name, id: p.id });
+      }
+    }
+  }
+  const dringend = personalHinweise.filter(h => h.stufe === 'warn');
+
+  if (darf('/admin/personal') && personalHinweise.length) {
+    kacheln.push(kachel({
+      titel: 'Personal · Fristen',
+      wert: dringend.length ? `${dringend.length} dringend` : `${personalHinweise.length} Hinweise`,
+      zusatz: esc([...new Set((dringend.length ? dringend : personalHinweise).map(h => h.kurz))]
+        .slice(0, 3).join(' · ')),
+      href: '/admin/personal',
+      stand: dringend.length ? 'warn' : '',
+    }));
+  }
+
   /* --- Warteliste --------------------------------------------------- */
   if (darf('/admin/warteliste')) {
     const offen = await zahl(db,
@@ -268,6 +320,18 @@ export async function onRequestGet({ request, env, data }) {
     ${kacheln.length ? `
     <h2 class="abschnitt">Betrieb heute</h2>
     <div class="mods">${kacheln.join('')}</div>` : ''}
+
+    ${dringend.length ? `
+    <details class="card"${dringend.length <= 4 ? ' open' : ''}>
+      <summary>Personal — was jetzt ansteht <em>${dringend.length}</em></summary>
+      <div class="body">
+        ${dringend.slice(0, 12).map(h => `<div class="msg warn" style="margin-bottom:.7rem">
+          <a href="/admin/personal?id=${encodeURIComponent(h.id)}&t=nachweis"
+             style="font-weight:700">${esc(h.name)}</a> — <b>${esc(h.kurz)}.</b>
+          ${esc(h.text)}</div>`).join('')}
+        ${dringend.length > 12 ? `<p class="hint" style="margin:0">und ${dringend.length - 12} weitere.</p>` : ''}
+      </div>
+    </details>` : ''}
 
     <div class="row" style="margin-bottom:1.4rem">
       ${[['/admin/neu', '+ Neue Reservierung', ''],
