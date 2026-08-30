@@ -28,6 +28,7 @@ import { layout, flash, table, dayHeading } from '../_lib/ui.js';
 import { mailReady } from '../_lib/mail.js';
 import { notesFor } from '../_lib/gaeste.js';
 import { darfSeite } from '../_lib/auth.js';
+import { tagKurz } from '../_lib/zeit.js';
 
 /** Eine Zahl holen. Fehlt die Tabelle, ist das Ergebnis `null`, nicht ein Fehler. */
 async function zahl(db, sql, ...args) {
@@ -138,9 +139,11 @@ export async function onRequestGet({ request, env, data }) {
     if (imMonat !== null) {
       kacheln.push(kachel({
         titel: 'Wareneingang',
-        wert: abweich ? `${abweich} mit Abweichung` : `${imMonat} Lieferungen`,
+        wert: abweich
+          ? `${abweich} mit Abweichung`
+          : `${imMonat} ${imMonat === 1 ? 'Lieferung' : 'Lieferungen'}`,
         zusatz: letzte
-          ? `diesen Monat ${imMonat} · zuletzt ${esc(formatDateDE(letzte.day))}`
+          ? `${abweich ? `von ${imMonat} diesen Monat · ` : 'diesen Monat · '}zuletzt ${esc(tagKurz(letzte.day))}`
           : 'diesen Monat noch nichts erfasst',
         href: '/admin/ware',
         stand: abweich ? 'warn' : '',
@@ -179,7 +182,7 @@ export async function onRequestGet({ request, env, data }) {
         titel: 'Artikel & Inventur',
         wert: `${aktiv} Artikel`,
         zusatz: letzteZaehlung
-          ? `letzte Zählung ${esc(formatDateDE(letzteZaehlung.day))}`
+          ? `letzte Zählung ${esc(tagKurz(letzteZaehlung.day))}`
           : 'noch nie gezählt',
         href: '/admin/lager',
         stand: letzteZaehlung ? '' : 'warn',

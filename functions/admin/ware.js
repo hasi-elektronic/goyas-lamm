@@ -267,7 +267,8 @@ async function formular({ request, env, data }, id) {
       <div class="f"><label>Preis je Einheit</label>
         <input name="ep" inputmode="decimal" maxlength="12" data-ep
                value="${p?.ep_cent ? esc(euro(p.ep_cent)) : ''}" placeholder="optional"></div>
-      <div class="zsum" data-zsum aria-label="Wert dieser Zeile">—</div>
+      <div class="f zsumf"><label>Wert</label>
+        <div class="zsum" data-zsum>—</div></div>
       <div class="f"><label>MHD</label>
         <input name="mhd" type="date" value="${esc(p?.mhd || '')}"></div>
       <div class="f"><label>Charge</label>

@@ -95,8 +95,9 @@ export const WARE_CSS = `
   min-width:3.6rem;padding:0 .5rem;background:var(--cream);border:1px solid var(--sand);
   border-radius:var(--r);font-size:.8rem;font-weight:700;color:var(--ink);white-space:nowrap}
 .prow .eh.leer{color:var(--muted);font-weight:400}
-.prow .zsum{font-size:.82rem;font-weight:700;font-variant-numeric:tabular-nums;
-  color:var(--sand);white-space:nowrap;align-self:center;padding-bottom:.1rem}
+.prow .zsumf{min-width:4.6rem}
+.prow .zsum{font-size:.9rem;font-weight:700;font-variant-numeric:tabular-nums;
+  color:var(--muted);white-space:nowrap;text-align:right;padding:.55rem 0}
 .prow .zsum.hat{color:var(--ink)}
 
 /* Lieferungszeile in der Liste */
@@ -107,7 +108,9 @@ td.temp{font-variant-numeric:tabular-nums;white-space:nowrap}
   .prow{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.45rem .5rem;
     padding:.8rem 0;position:relative}
   .prow .f.artikel{grid-column:1 / -1}
-  .prow .zsum{grid-column:1 / -1;text-align:right;padding-top:.15rem}
+  .prow .zsumf{grid-column:1 / -1;display:flex;justify-content:space-between;align-items:baseline}
+  .prow .zsumf label{margin:0}
+  .prow .zsum{padding:0}
   .prow .weg{position:absolute;top:.55rem;right:0;height:auto;padding:.25rem .55rem;font-size:.85rem}
   .lkacheln{grid-template-columns:repeat(auto-fill,minmax(46%,1fr))}
   .ampel .pkt{width:22px;height:22px}
