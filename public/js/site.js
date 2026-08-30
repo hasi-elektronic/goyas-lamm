@@ -36,7 +36,6 @@
     var gWrap=document.getElementById('guestChips'),
         gHint=document.getElementById('guestHint'),
         dInp =document.getElementById('resDate'),
-        dQuick=document.getElementById('dateQuick'),
         dHint=document.getElementById('dateHint'),
         tWrap=document.getElementById('timeChips'),
         tHint=document.getElementById('timeHint'),
@@ -85,22 +84,12 @@
 
     function monatKey(y,m){ return y+'-'+String(m+1).padStart(2,'0'); }
 
-    function quick(label,d){
-      var b=document.createElement('button');
-      b.type='button'; b.className='chip'; b.textContent=label;
-      b.dataset.iso=iso(d); b.setAttribute('aria-pressed','false');
-      b.addEventListener('click',function(){ waehle(b.dataset.iso); });
-      dQuick.appendChild(b);
-    }
-    (function(){
-      var t=new Date(), tm=new Date(); tm.setDate(tm.getDate()+1);
-      if(t.getDay()!==3) quick('Heute',t);
-      if(tm.getDay()!==3) quick('Morgen',tm);
-      var fr=new Date(); do{fr.setDate(fr.getDate()+1);}while(fr.getDay()!==5);
-      quick('Freitag',fr);
-      var sa=new Date(); do{sa.setDate(sa.getDate()+1);}while(sa.getDay()!==6);
-      quick('Samstag',sa);
-    })();
+    /* Bis zum 30.08.2026 standen hier vier Schnellwahl-Knöpfe: Heute, Morgen,
+       Freitag, Samstag. Sie sind raus. „Freitag" ohne Datum beantwortet die
+       Frage „welcher Freitag?" nicht, und direkt darunter steht ein Kalender,
+       der jeden Tag mit Datum, Wochentag und Belegung zeigt. Zwei Wege zum
+       selben Ziel, von denen einer ungenau ist, kosten Vertrauen — und genau
+       das ist an dieser Stelle das Einzige, was zählt. */
 
     /* Der Kalender kennt drei Zustände je Tag: frei, ausgebucht, geschlossen.
        Sie kommen vom Server, damit Ruhetage, Urlaub und volle Abende gleich
@@ -166,9 +155,6 @@
       document.getElementById('resDate').value=v;
       var p=v.split('-');
       kalStand.y=+p[0]; kalStand.m=+p[1]-1;
-      [].forEach.call(dQuick.children,function(c){
-        c.setAttribute('aria-pressed', c.dataset.iso===state.date ? 'true' : 'false');
-      });
       dHint.textContent=labelDE(v); dHint.className='res-hint';
       ladeMonat();
       loadSlots();

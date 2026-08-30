@@ -355,6 +355,10 @@ header.solid .burger span{background:var(--ink)}
 .kal-legende .l.voll{background:#fff;border:1px solid var(--sand);position:relative}
 .kal-legende .l.voll::after{content:"";position:absolute;left:1px;right:1px;top:50%;height:1px;background:#b9b2a4}
 .kal-legende .l.zu{background:var(--cream);border:1px solid var(--cream)}
+/* Seit die Schnellwahl-Knöpfe weg sind, ist der Kalender der einzige Weg zum
+   Datum. Dann muss die Legende auch erklären, was der goldene Rahmen bedeutet. */
+.kal-legende .l.heute{background:#fff;border:1px solid var(--sand);
+  box-shadow:inset 0 0 0 2px var(--gold)}
 .kal-laedt{opacity:.45;pointer-events:none}
 /* Schmale Handys: sieben Spalten passen nur mit kleineren Abständen hinein */
 @media (max-width:480px){

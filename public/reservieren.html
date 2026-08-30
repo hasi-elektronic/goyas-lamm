@@ -111,7 +111,6 @@ if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 
           <div class="res-step">
             <span class="res-lab" id="lblDate">An welchem Tag?</span>
-            <div class="chips" id="dateQuick"></div>
             <div class="kal" role="group" aria-labelledby="lblDate">
               <div class="kal-kopf">
                 <button type="button" class="kal-pfeil" id="kalZurueck" aria-label="Vorheriger Monat">&#8592;</button>
@@ -123,6 +122,7 @@ if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
               </div>
               <div class="kal-tage" id="kalTage"></div>
               <p class="kal-legende">
+                <span class="l heute"></span> heute
                 <span class="l frei"></span> frei
                 <span class="l voll"></span> ausgebucht
                 <span class="l zu"></span> Ruhetag oder geschlossen
