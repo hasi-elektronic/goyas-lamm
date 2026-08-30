@@ -374,5 +374,19 @@
   var d=new Date().getDay();
   [].forEach.call(document.querySelectorAll('.hours tr[data-d="'+d+'"]'),
     function(r){ r.classList.add('today'); });
+
+  /* Dasselbe in der kurzen Liste neben dem Reservierungsformular. Dort fasst
+     eine Zeile mehrere Tage zusammen ("Donnerstag – Samstag"), deshalb steht in
+     data-d eine Liste. Die Zeile bekommt zusätzlich eine sichtbare Marke —
+     wer reserviert, soll auf einen Blick sehen, dass die Seite den richtigen
+     Tag kennt. */
+  [].forEach.call(document.querySelectorAll('.mini li[data-d]'), function(li){
+    if (li.getAttribute('data-d').split(' ').indexOf(String(d)) < 0) return;
+    li.classList.add('heute');
+    var marke = document.createElement('em');
+    marke.className = 'heute-marke';
+    marke.textContent = 'heute';
+    li.firstElementChild.appendChild(marke);
+  });
   document.getElementById('yr').textContent=new Date().getFullYear();
 })();

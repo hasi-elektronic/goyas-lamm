@@ -81,11 +81,15 @@ if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
           Reservieren Sie direkt hier — rund um die Uhr, in unter einer Minute.
           Sie erhalten die Bestätigung sofort per E-Mail.
         </p>
+        <!-- data-d: die Wochentage der Zeile (0 = Sonntag). Das Skript setzt damit
+             die Marke „heute" — ohne sie war die einzige hervorgehobene Zeile der
+             graue Mittwoch, und daneben stand „An welchem Tag?". Das las sich, als
+             hielte die Seite jeden Tag für Mittwoch. -->
         <ul class="mini">
-          <li><span>Montag &amp; Dienstag</span><span>17 – 22 Uhr</span></li>
-          <li class="zu"><span>Mittwoch</span><span>Ruhetag</span></li>
-          <li><span>Donnerstag – Samstag</span><span>17 – 22 Uhr</span></li>
-          <li><span>Sonntag</span><span>12 – 20 Uhr</span></li>
+          <li data-d="1 2"><span>Montag &amp; Dienstag</span><span>17 – 22 Uhr</span></li>
+          <li class="zu" data-d="3"><span>Mittwoch</span><span>Ruhetag</span></li>
+          <li data-d="4 5 6"><span>Donnerstag – Samstag</span><span>17 – 22 Uhr</span></li>
+          <li data-d="0"><span>Sonntag</span><span>12 – 20 Uhr</span></li>
         </ul>
         <p class="res-hint" style="margin-bottom:1.2rem">
           Ab 11 Personen, für Feiern und Gesellschaften rufen Sie uns bitte an —

@@ -311,6 +311,16 @@ header.solid .burger span{background:var(--ink)}
 .res-side .mini li{display:flex;justify-content:space-between;gap:1rem;padding:.5rem 0;border-bottom:1px solid var(--sand)}
 .res-side .mini li span:last-child{font-weight:500;font-variant-numeric:tabular-nums}
 .res-side .mini li.zu span:last-child{color:var(--muted);font-weight:400}
+/* Der heutige Tag in der kurzen Öffnungszeiten-Liste. */
+.res-side .mini li.heute span{color:var(--wine)}
+.res-side .mini li.heute span:last-child{font-weight:700}
+.res-side .mini li.zu.heute span:last-child{font-weight:600}
+.heute-marke{
+  display:inline-block;margin-left:.55rem;font-style:normal;font-size:.58rem;
+  letter-spacing:.16em;text-transform:uppercase;font-weight:700;
+  color:#fff;background:var(--wine);padding:.16rem .42rem;border-radius:2px;
+  vertical-align:.1em
+}
 
 /* Formular */
 .res-form{display:block}
