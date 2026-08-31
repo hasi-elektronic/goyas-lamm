@@ -267,6 +267,44 @@ tr.cancelled .trow input,tr.cancelled .trow select{background:var(--cream)}
 .pill.ns{border-color:var(--wine);color:#fff;background:var(--wine)}
 tr.noshow td.nm a{text-decoration:line-through;text-decoration-color:var(--wine)}
 
+/* ---------- Schwebender Plus-Knopf (nur Schreibtisch) ----------
+   Unterhalb von 900px übernimmt der Plus-Knopf in der unteren Leiste; beide
+   gleichzeitig wären zwei Knöpfe für dieselbe Sache. */
+details.fab{display:none}
+@media(min-width:901px){
+  details.fab{display:block;position:fixed;right:1.6rem;bottom:1.6rem;z-index:45}
+  details.fab > summary{
+    list-style:none;cursor:pointer;width:56px;height:56px;border-radius:50%;
+    background:var(--wine);color:#fff;display:grid;place-items:center;
+    box-shadow:0 10px 24px -8px rgba(20,18,15,.55);
+    transition:transform .16s ease,background .16s ease}
+  details.fab > summary::-webkit-details-marker{display:none}
+  details.fab > summary:hover{background:var(--wine-d)}
+  details.fab > summary svg{width:26px;height:26px;stroke:currentColor;fill:none;
+    stroke-width:2;stroke-linecap:round}
+  details.fab[open] > summary{transform:rotate(45deg)}
+  /* Nach oben auf, am Knopf rechtsbündig — unten ist kein Platz mehr. */
+  details.fab .fabliste{
+    position:absolute;right:0;bottom:68px;width:300px;
+    background:var(--paper);border:1px solid var(--sand);
+    box-shadow:0 18px 40px -18px rgba(20,18,15,.55)}
+  details.fab .fabliste .grp{
+    padding:.8rem 1rem .35rem;font-size:.68rem;letter-spacing:.16em;
+    text-transform:uppercase;font-weight:700;color:var(--muted)}
+  details.fab .fabliste a{
+    display:flex;align-items:center;gap:.8rem;padding:.7rem 1rem;text-decoration:none;
+    color:var(--ink);border-top:1px solid var(--sand)}
+  details.fab .fabliste a:hover{background:var(--cream)}
+  details.fab .fabliste a svg{width:19px;height:19px;stroke:currentColor;fill:none;
+    stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;
+    color:var(--wine);flex:0 0 auto}
+  details.fab .fabliste a b{font-weight:600;font-size:.92rem;min-width:0}
+  details.fab .fabliste a b span{display:block;font-weight:400;font-size:.76rem;
+    line-height:1.35;color:var(--muted);margin-top:.05rem}
+}
+/* Auf Papier hat ein Bedienknopf nichts verloren. */
+@media print{details.fab{display:none!important}}
+
 /* Untere Leiste (nur Handy) */
 .bnav{display:none}
 .sheet-bg{display:none}
@@ -633,6 +671,30 @@ const plusKnopf = (anlegen) => `<details class="neu">
   </div>
 </details>`;
 
+/**
+ * Derselbe Knopf für den Schreibtisch — unten rechts, schwebend.
+ *
+ * Am Handy sitzt das Schnellanlegen in der unteren Leiste. Die ist am
+ * Schreibtisch ausgeblendet, und damit fehlte dort der kurze Weg: „Neue
+ * Reservierung" lag hinter zwei Klicks im Klappmenü, „Rechnung schreiben"
+ * hinter dreien.
+ *
+ * Bewusst dieselbe Liste (`ANLEGEN`) und dieselbe Rechteprüfung wie am Handy —
+ * zwei Listen mit denselben Einträgen laufen sonst binnen eines Monats
+ * auseinander.
+ *
+ * Das Blatt klappt nach **oben** auf, weil der Knopf unten sitzt; es ist rechts
+ * am Knopf ausgerichtet und schiebt nichts weg, weil es schwebt.
+ */
+const plusSchwebend = (anlegen) => `<details class="fab">
+  <summary aria-label="Neu anlegen" title="Neu anlegen">${svg('plus')}</summary>
+  <div class="fabliste">
+    <div class="grp">Neu anlegen</div>
+    ${anlegen.map(a => `<a href="${a.ziel}">${svg(a.ic)}<b>${esc(a.titel)}
+      <span>${esc(a.hilfe)}</span></b></a>`).join('')}
+  </div>
+</details>`;
+
 /** Eine Zeile im Klappmenü am Schreibtisch: Beschriftung plus Erklärung. */
 const tabZeile = ([h, t, , , hilfe], active) =>
   `<a href="${h}" class="${active === h ? 'on' : ''}">${esc(t)}${
@@ -714,6 +776,7 @@ ${rolle === 'demo' ? `<div class="demobar">Demo-Zugang · nur ansehen ·
     </div></details>`).join('')}
 </div></nav>
 <main>${body}</main>
+${anlegen.length ? plusSchwebend(anlegen) : ''}
 
 <nav class="bnav" style="grid-template-columns:repeat(${felder},minmax(0,1fr))">
   ${unten.map((pfad, i) => {
@@ -748,7 +811,8 @@ ${fanfareMarkup()}
    Ohne JavaScript bleibt es beim alten Verhalten: Antippen öffnet, Antippen
    schließt. Nichts ist dadurch unerreichbar. */
 (function(){
-  var alle = [].slice.call(document.querySelectorAll('nav.tabs details, nav.bnav details'));
+  var alle = [].slice.call(
+    document.querySelectorAll('nav.tabs details, nav.bnav details, details.fab'));
   if (!alle.length) return;
 
   function zu(ausser){
