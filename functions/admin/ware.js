@@ -330,7 +330,7 @@ async function formular({ request, env, data }, id) {
       </div>
 
       <div class="card">
-        <h2>Beleg <em>Lieferschein oder Rechnung abfotografieren</em></h2>
+        <h2>Beleg <em>abfotografieren — wird gleich ausgelesen</em></h2>
         <div class="body">
           <div class="foto" id="fotoBox">
             ${lieferung?.beleg_key
@@ -582,6 +582,10 @@ const SKRIPT = `
             datei.value='';
             stand.textContent='Beleg gesichert. Das Papier bitte trotzdem aufheben.';
             if(lesenZ) lesenZ.hidden=false;
+            /* Direkt weiter ins Auslesen. Vorher wartete hier ein zweiter Tipp
+               auf „Beleg auslesen" — den hat schlicht niemand gefunden, und
+               ein Knopf, den man nicht findet, ist keine Funktion. */
+            starteLesen();
           } else {
             stand.textContent='Hochladen hat nicht geklappt — das Foto wird beim Speichern mitgeschickt.';
           }
@@ -592,15 +596,30 @@ const SKRIPT = `
     });
   });
 
-  if(lesen) lesen.addEventListener('click',function(){
-    if(!key.value) return;
-    lesen.disabled=true; lesen.textContent='Wird gelesen …';
+  /* Das Auslesen selbst — einmal geschrieben, zweimal ausgelöst: von allein
+     nach dem Hochladen, und von Hand über den Knopf (für einen Beleg, der
+     schon hing, oder für einen zweiten Versuch nach einem schärferen Foto). */
+  var liestGerade=false;
+  function starteLesen(){
+    if(liestGerade || !key || !key.value) return;
+    liestGerade=true;
+    if(lesen){ lesen.disabled=true; lesen.textContent='Wird gelesen …'; }
+    /* Ehrlich ansagen, dass es dauert. Das Modell braucht ein paar Sekunden,
+       und ohne Ansage tippt der Nächste in der Zwischenzeit von Hand los. */
+    stand.textContent='Beleg wird gelesen — das dauert ein paar Sekunden.';
     fetch('/admin/ware/lesen?k='+encodeURIComponent(key.value))
       .then(function(r){ return r.json() })
       .then(function(j){ uebernehmen(j||{}) })
-      .catch(function(){ stand.textContent='Auslesen hat nicht geklappt.' })
-      .then(function(){ lesen.disabled=false; lesen.textContent='Beleg auslesen'; });
-  });
+      .catch(function(){
+        stand.textContent='Auslesen hat nicht geklappt. Bitte von Hand eintragen — '
+          + 'der Beleg ist gesichert.';
+      })
+      .then(function(){
+        liestGerade=false;
+        if(lesen){ lesen.disabled=false; lesen.textContent='Noch einmal auslesen'; }
+      });
+  }
+  if(lesen) lesen.addEventListener('click',starteLesen);
 
   function uebernehmen(v){
     var geaendert=[];
