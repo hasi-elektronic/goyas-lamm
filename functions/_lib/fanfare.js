@@ -6,7 +6,12 @@
  * Spaß machen, aber es hat einen nüchternen Zweck — kein Tisch soll untergehen.
  *
  * Gebaut mit Rücksicht auf den Service:
- *  - schließt sich nach acht Sekunden von selbst, ein Tippen reicht auch
+ *  - **bleibt stehen, bis jemand „Gesehen" tippt** — und folgt dem Benutzer dabei
+ *    über jede Seite des Panels (Wunsch von Gökhan, 31.08.2026). Vorher schloss
+ *    sie sich nach acht Sekunden von selbst; wer gerade nicht hinsah, erfuhr von
+ *    der Buchung nichts.
+ *  - der Schleier hebt sich trotzdem nach ein paar Sekunden, sonst ließe sich
+ *    unter der wartenden Karte nicht weiterarbeiten
  *  - hält den Rest der Seite bedienbar (nur die Karte selbst nimmt Klicks an)
  *  - Ton ist je Gerät abschaltbar und startet nie ungefragt laut
  *  - `prefers-reduced-motion` schaltet Konfetti und Gehüpfe ab, die Meldung bleibt
@@ -23,6 +28,12 @@ export const FANFARE_CSS = `
 .fanfare .dunkel{position:absolute;inset:0;background:rgba(20,18,15,.55);
   backdrop-filter:blur(2px);opacity:0;animation:fdunkel .3s ease forwards}
 @keyframes fdunkel{to{opacity:1}}
+/* Die Meldung bleibt jetzt stehen, bis jemand sie bestätigt. Ein dauerhaft
+   abgedunkelter Bildschirm wäre dabei unbrauchbar — man könnte im Panel nicht
+   weiterarbeiten, während die Karte wartet. Deshalb hebt sich der Schleier nach
+   ein paar Sekunden von selbst; die Karte bleibt, bis jemand „Gesehen" tippt. */
+.fanfare.ruhig .dunkel{animation:fhell .9s ease forwards}
+@keyframes fhell{from{opacity:1}to{opacity:0}}
 
 .fanfare .karte{position:relative;pointer-events:auto;width:min(100% - .4rem,430px);
   background:linear-gradient(165deg,#1d1a16,#14120F 58%);color:var(--cream);
@@ -71,9 +82,6 @@ export const FANFARE_CSS = `
 .fanfare .knopf:hover{filter:brightness(1.08)}
 .fanfare .zeigen{display:block;margin-top:.55rem;color:rgba(244,247,234,.6);
   font-size:.74rem;text-decoration:underline}
-.fanfare .rest{position:absolute;left:0;bottom:0;height:3px;background:var(--gold);
-  width:100%;transform-origin:left;animation:frest 8s linear forwards}
-@keyframes frest{to{transform:scaleX(0)}}
 .fanfare .noch{position:absolute;top:.7rem;right:.9rem;font-size:.68rem;
   letter-spacing:.12em;text-transform:uppercase;color:rgba(244,247,234,.5)}
 
@@ -82,7 +90,6 @@ export const FANFARE_CSS = `
 .fanfare.wl .spruch,.fanfare.wl .zahl b{color:#E0A94B}
 .fanfare.wl .zahl{background:rgba(224,169,75,.12);border-color:rgba(224,169,75,.4)}
 .fanfare.wl .knopf{background:#E0A94B}
-.fanfare.wl .rest{background:#E0A94B}
 
 /* Konfetti */
 .fanfare .konf{position:absolute;inset:0;overflow:hidden}
@@ -112,7 +119,10 @@ export const FANFARE_CSS = `
 @media (prefers-reduced-motion:reduce){
   .fanfare .karte,.fanfare .tier,.fanfare .karte::after{animation:none}
   .fanfare .konf{display:none}
-  .fanfare .rest{animation-duration:8s}
+  /* Der Schleier muss sich auch hier heben, sonst bliebe der Bildschirm dunkel —
+   das ist kein Schmuck, sondern Bedienbarkeit. Nur ohne Überblendung. */
+  .fanfare .dunkel{animation:none;opacity:1}
+  .fanfare.ruhig .dunkel{animation:none;opacity:0}
 }
 `;
 
@@ -138,7 +148,9 @@ export const tonSchalter = () => `
 export const fanfareMarkup = () => `
 <div class="fanfare" id="fanfare" role="alertdialog" aria-live="assertive" aria-modal="false"
      aria-labelledby="fanTitel" hidden>
-  <div class="dunkel" data-zu></div>
+  <!-- Ohne data-zu: ein Streifschuss auf den Hintergrund darf eine Reservierung
+       nicht wegwischen. Geschlossen wird nur über „Gesehen" (oder Escape). -->
+  <div class="dunkel"></div>
   <div class="konf" id="fanKonf" aria-hidden="true"></div>
   <div class="karte">
     <span class="noch" id="fanNoch" hidden></span>
@@ -151,7 +163,6 @@ export const fanfareMarkup = () => `
     <p class="notiz" id="fanNotiz" hidden></p>
     <button class="knopf" type="button" data-zu>Gesehen</button>
     <a class="zeigen" id="fanLink" href="/admin">In der Übersicht ansehen</a>
-    <div class="rest" id="fanRest"></div>
   </div>
 </div>
 
@@ -246,14 +257,48 @@ export const fanfareMarkup = () => `
     return WT[dt.getUTCDay()] + '., ' + (+t[2]) + '.' + (+t[1]) + '.';
   }
 
-  /* ---------- Warteschlange: immer nur eine Meldung auf einmal ---------- */
-  var schlange = [], laeuft = false, uhr = null;
+  /* ---------- Offene Meldungen ----------
+     Wunsch von Gökhan: „20 saniye sonra kaybolmasın, birisi gördüm diyene kadar
+     kalsın ve her sayfada görünsün." Also: keine Selbstauflösung mehr, und ein
+     Seitenwechsel darf eine ungesehene Reservierung nicht verschlucken.
 
+     Vorher lief das so: angezeigt → in „gesehen" vermerkt → nie wieder. Wer
+     währenddessen auf eine andere Seite ging, hat die Meldung verloren, und der
+     Melder liefert sie nicht noch einmal (sein „seit"-Zeiger ist weiter).
+
+     Deshalb zwei Listen, beide je Gerät:
+       „gesehen" — verhindert, dass der Melder dieselbe Buchung doppelt einreiht
+       „offen"   — was noch niemand bestätigt hat; überlebt den Seitenwechsel
+     Bestätigt wird ausschließlich über „Gesehen" (oder Escape). Erst dann fliegt
+     der Eintrag aus „offen". */
+  var OFFEN_KEY = 'goya.offen';
+  function offenListe(){
+    try { return JSON.parse(localStorage.getItem(OFFEN_KEY) || '[]') || []; } catch (e) { return []; }
+  }
+  function offenSchreiben(l){
+    /* Gedeckelt: wer einen Abend lang nichts bestätigt, soll am nächsten Morgen
+       nicht zwanzig Karten wegtippen müssen. Die Reservierungen selbst stehen
+       ohnehin vollständig unter „Heute". */
+    try { localStorage.setItem(OFFEN_KEY, JSON.stringify(l.slice(-12))); } catch (e) {}
+  }
+  function offenDazu(m){ var l = offenListe(); l.push(m); offenSchreiben(l); }
+  function offenWeg(id){
+    if (!id) return;
+    offenSchreiben(offenListe().filter(function(x){ return x.id !== id; }));
+  }
+
+  /* ---------- Warteschlange: immer nur eine Meldung auf einmal ---------- */
+  var schlange = [], laeuft = false, aktuell = null, ruheUhr = null;
+
+  /** „Gesehen" — der einzige Weg hinaus. */
   function schliessen(){
-    box.classList.remove('an'); box.hidden = true;
-    clearTimeout(uhr); laeuft = false;
+    box.classList.remove('an'); box.classList.remove('ruhig');
+    box.hidden = true;
+    clearTimeout(ruheUhr); laeuft = false;
+    if (aktuell) offenWeg(aktuell.id);
+    aktuell = null;
     var k = document.getElementById('fanKonf'); if (k) k.innerHTML = '';
-    if (schlange.length) setTimeout(naechste, 420);
+    if (schlange.length) setTimeout(function(){ naechste(true); }, 420);
   }
   box.addEventListener('click', function(e){
     if (e.target.closest('[data-zu]')) schliessen();
@@ -262,9 +307,16 @@ export const fanfareMarkup = () => `
     if (e.key === 'Escape' && laeuft) schliessen();
   });
 
-  function naechste(){
+  /**
+   * @param {boolean} frisch true = gerade hereingekommen (Ton und Konfetti),
+   *   false = nach einem Seitenwechsel wiederhergestellt. Eine wiederhergestellte
+   *   Meldung soll auffallen, aber nicht bei jedem Seitenaufruf erneut fanfaren —
+   *   das wäre nach dem dritten Klick unerträglich.
+   */
+  function naechste(frisch){
     if (laeuft || !schlange.length) return;
     var m = schlange.shift();
+    aktuell = m;
     laeuft = true;
 
     var wl = m.art === 'warteliste';
@@ -293,13 +345,13 @@ export const fanfareMarkup = () => `
     lnk.href = wl ? '/admin/warteliste' : '/admin/tag?d=' + m.datum;
     lnk.textContent = wl ? 'Auf der Warteliste ansehen' : 'Diesen Tag ansehen';
 
-    // Fortschrittsbalken neu starten
-    var rest = document.getElementById('fanRest');
-    rest.style.animation = 'none'; void rest.offsetWidth; rest.style.animation = '';
+    if (frisch) { konfetti(); spiel(); }
 
-    konfetti();
-    spiel();
-    uhr = setTimeout(schliessen, 8000);
+    /* Kein Selbstschluss mehr. Nur der Schleier hebt sich, damit man unter der
+       Karte weiterarbeiten kann, während sie auf ihre Bestätigung wartet. */
+    box.classList.remove('ruhig');
+    clearTimeout(ruheUhr);
+    ruheUhr = setTimeout(function(){ box.classList.add('ruhig'); }, frisch ? 6000 : 1500);
   }
 
   /* ---------- Was dieses Gerät schon gesehen hat ----------
@@ -335,14 +387,18 @@ export const fanfareMarkup = () => `
         var alt = gesehenListe(), frisch = [];
         for (var i = 0; i < (d.neu || []).length; i++) {
           var m = d.neu[i];
-          if (m.id && alt.indexOf(m.id) > -1) continue;   // auf diesem Gerät schon gezeigt
+          if (m.id && alt.indexOf(m.id) > -1) continue;   // auf diesem Gerät schon eingereiht
           if (m.id) merken(m.id);
+          /* Sofort festhalten, nicht erst beim Anzeigen: Wer in genau diesem
+             Moment auf eine andere Seite tippt, soll die Meldung drüben
+             wiederfinden. */
+          offenDazu(m);
           frisch.push(m);
         }
         if (frisch.length) {
           schlange = schlange.concat(frisch);
           if (schlange.length > 6) schlange = schlange.slice(-6);
-          naechste();
+          naechste(true);
         }
       })
       .catch(function(){ /* WLAN weg — beim nächsten Mal wieder */ })
@@ -358,6 +414,15 @@ export const fanfareMarkup = () => `
     if (document.visibilityState === 'visible') fragen();
   });
 
+  /* Erst das Unbestätigte von der vorigen Seite zeigen, dann nach Neuem fragen.
+     Das ist der Teil, der „auf jeder Seite" bedeutet: die Karte folgt dem
+     Benutzer durchs Panel, bis er sie bestätigt. */
+  var wieder = offenListe();
+  if (wieder.length) {
+    schlange = wieder.slice();
+    setTimeout(function(){ naechste(false); }, 250);
+  }
+
   fragen();   // nimmt beim Laden die letzten 20 Minuten mit, aber nichts doppelt
   takt();
 
@@ -368,7 +433,9 @@ export const fanfareMarkup = () => `
       name: 'Familie Müller',
       datum: new Date(Date.now() + 864e5).toISOString().slice(0,10),
       zeit: '19:00', gaeste: 4, notiz: 'Kinderstuhl, bitte am Fenster' });
-    naechste();
+    /* Ohne id und ohne Eintrag in „offen": eine Probe soll den Seitenwechsel
+       ausdrücklich NICHT überleben, sonst räumt man sie hinterher weg. */
+    naechste(true);
   };
   document.addEventListener('click', function(e){
     var k = e.target.closest && e.target.closest('[data-probe]');
