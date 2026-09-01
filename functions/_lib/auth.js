@@ -196,7 +196,22 @@ export const ROLLEN = {
   },
 };
 
-/** Seiten, die eine Rolle NICHT öffnen darf. */
+/**
+ * Seiten, die eine Rolle NICHT öffnen darf.
+ *
+ * ⚠️ **Der Vergleich ist ein Präfix-Vergleich auf Pfadgrenzen** (`darfSeite`
+ * unten): `/admin/tische` sperrt `/admin/tische/x`, aber **nicht**
+ * `/admin/tischplan`. Genau das ist am 01.09.2026 passiert — der Speicher-
+ * Endpunkt des Tischplans hieß `/admin/tischplan` und stand damit für Service
+ * offen, obwohl die zugehörige Seite `/admin/tische` für Service gesperrt ist.
+ * Ein POST von Hand hätte Tische umbenennen, verschieben und ihre Platzzahl
+ * ändern können — und damit die Kapazität des Hauses.
+ *
+ * **Regel für neue Routen:** Wer eine Seite ergänzt, die zu einer gesperrten
+ * gehört, aber nicht unter deren Pfad liegt (typisch: ein eigener
+ * POST-Endpunkt), trägt sie hier zusätzlich ein. Ein Name, der nur *ähnlich*
+ * aussieht, wird nicht mitgesperrt.
+ */
 const GESPERRT = {
   chef: [],
   /* Service nimmt Ware an und pflegt dafür auch die Stammdaten — aber die
@@ -206,7 +221,8 @@ const GESPERRT = {
      im Menü stand — eine Zeile, hinter der für Service und Demo nur eine
      PIN-Abfrage wartet. Wer Löhne und Trinkgeldanteile nicht sehen darf,
      braucht den Punkt auch nicht angeboten zu bekommen. */
-  service: ['/admin/karte', '/admin/gericht', '/admin/tische', '/admin/zeiten', '/admin/personal',
+  service: ['/admin/karte', '/admin/gericht', '/admin/tische', '/admin/tischplan',
+            '/admin/zeiten', '/admin/personal',
             '/admin/arbeitszeit', '/admin/zeitzettel', '/admin/stempel', '/admin/benutzer',
             '/admin/preise', '/admin/inventur', '/admin/trinkgeld', '/admin/rechnung',
             '/admin/privat',
