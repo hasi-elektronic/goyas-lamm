@@ -5,6 +5,8 @@
  */
 import { clean, esc, jsq, seatsPerSlot, capacityFor, nowBerlin } from '../_lib/core.js';
 import { layout, flash, redirect } from '../_lib/ui.js';
+import { TISCHPLAN_CSS, tischplanCard } from '../_lib/tischplan.js';
+import { darfSchreiben } from '../_lib/auth.js';
 
 const AREAS = ['Gastraum', 'Nebenzimmer', 'Terrasse', 'Bar'];
 
@@ -13,12 +15,22 @@ const num = (v, min, max) => {
   return Number.isFinite(n) && n >= min && n <= max ? n : null;
 };
 
+/* Liefert { rows, plan }. plan=false, wenn die Spalten aus 0028_tischplan.sql noch
+   fehlen — dann läuft die Liste wie bisher und der Plan zeigt einen Hinweis. */
 async function loadTables(db) {
-  if (!db) return [];
-  const r = await db.prepare(
-    `SELECT id, name, seats, area, active, sort FROM tables
-      ORDER BY active DESC, sort, name`).all();
-  return r.results || [];
+  if (!db) return { rows: [], plan: false };
+  try {
+    const r = await db.prepare(
+      `SELECT id, name, seats, area, active, sort, pos_x, pos_y, w, h FROM tables
+        ORDER BY active DESC, sort, name`).all();
+    return { rows: r.results || [], plan: true };
+  } catch (e) {
+    if (!/no such column/i.test(String(e?.message || ''))) throw e;
+    const r = await db.prepare(
+      `SELECT id, name, seats, area, active, sort FROM tables
+        ORDER BY active DESC, sort, name`).all();
+    return { rows: r.results || [], plan: false };
+  }
 }
 
 export async function onRequestGet({ request, env, data }) {
@@ -26,8 +38,9 @@ export async function onRequestGet({ request, env, data }) {
   const db = env.DB;
 
   let rows = [];
+  let plan = false;
   let fehler = '';
-  try { rows = await loadTables(db); }
+  try { ({ rows, plan } = await loadTables(db)); }
   catch { fehler = 'Die Tabelle „tables" fehlt noch. Bitte die Migration 0003_tables.sql einspielen.'; }
 
   const aktiv   = rows.filter(t => t.active);
@@ -90,6 +103,11 @@ export async function onRequestGet({ request, env, data }) {
       <div class="stat"><b>${groesst || '—'}</b><span>größter Tisch</span></div>
       <div class="stat"><b>${cap.seats}</b><span>Plätze je Zeitfenster</span></div>
     </div>
+
+    ${plan
+      ? tischplanCard(rows, AREAS, { schreiben: darfSchreiben(data?.user?.role) })
+      : (rows.length ? `<div class="msg warn">Der Tischplan braucht noch die Migration
+           <code>0028_tischplan.sql</code>. Bis dahin funktioniert die Liste wie bisher.</div>` : '')}
 
     <div class="card">
       <h2>Tisch anlegen</h2>
@@ -156,7 +174,8 @@ export async function onRequestGet({ request, env, data }) {
       </div>
     </div>`;
 
-  return layout({ user: data?.user, title: 'Tische', active: '/admin/tische', body });
+  return layout({ user: data?.user, title: 'Tische', active: '/admin/tische',
+                  body: `<style>${TISCHPLAN_CSS}</style>${body}` });
 }
 
 export async function onRequestPost({ request, env }) {
