@@ -143,6 +143,15 @@ tbody tr:hover{background:var(--cream)}
 td.t{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 td.g{font-weight:700;color:var(--wine);white-space:nowrap}
 td.act{text-align:right;white-space:nowrap}
+th.r,td.r{text-align:right;font-variant-numeric:tabular-nums}
+/* Statuskasten auf der Sicherungsseite. Die Farbe sitzt links am Rand statt
+   auf der Fläche: der Kasten ändert sich beim Sichern mehrfach hintereinander,
+   und ein Block, der dabei die Farbe wechselt, flackert. */
+.hinweis{background:var(--cream);border-left:3px solid var(--sand);
+  padding:.7rem .9rem;font-size:.88rem;color:var(--muted)}
+.hinweis.gut{border-left-color:var(--ok);color:var(--ink)}
+.hinweis.warn{border-left-color:var(--warn);color:var(--ink)}
+.card.warn > h2{color:var(--warn)}
 tr.cancelled{opacity:.5}
 .gastnote{color:var(--warn);font-size:.82rem}
 tr.cancelled td.t,tr.cancelled td.nm{text-decoration:line-through}
@@ -472,6 +481,9 @@ const IC = {
   muenze: '<circle cx="12" cy="12" r="8.5"/><path d="M14.5 9.3a3 3 0 0 0-2.5-1.1c-1.5 0-2.4.8-2.4 1.8 0 2.4 5 1.2 5 3.7 0 1.1-1 1.9-2.6 1.9a3.2 3.2 0 0 1-2.6-1.2"/><path d="M12 6.6v10.8"/>',
   sanduhr:'<path d="M7 3h10M7 21h10"/><path d="M17 3v3.5L12 12l5 5.5V21"/><path d="M7 3v3.5L12 12l-5 5.5V21"/>',
   schluessel:'<circle cx="8" cy="15" r="3.5"/><path d="m10.5 12.5 7-7"/><path d="m14.5 8.5 2 2"/><path d="m16.5 6.5 2 2"/>',
+  /* Tresor: Kasten mit Rad. Eine Festplatte oder ein Wolkensymbol wäre falsch —
+     die Sicherung geht in Gökhans Ordner, nicht in irgendeine Cloud. */
+  tresor: '<rect x="3" y="4" width="18" height="16" rx="1.5"/><circle cx="12" cy="12" r="3.5"/><path d="M12 8.5V6.5M12 17.5v-2M15.5 12h2M6.5 12h2"/>',
   leute:  '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><path d="M16 5.6a3.2 3.2 0 0 1 0 5.8"/><path d="M17.5 14.9c1.9.6 3 2.4 3 4.6"/>',
   kiste:  '<path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/>',
   regal:  '<rect x="3.5" y="4" width="17" height="16" rx="1.5"/><path d="M3.5 9.5h17M3.5 15h17"/>',
@@ -560,6 +572,8 @@ const NAV = [
    'Ruhetage, Urlaub, Feiertage'],
   ['/admin/benutzer',  'Benutzer & Rechte', 'schluessel','Zugang',
    'Wer sich anmelden darf und was er sieht'],
+  ['/admin/sicherung', 'Sicherung & Export', 'tresor',   'Sicherung',
+   'Kopie aller Daten, auch für Excel'],
 ];
 
 /**
@@ -626,7 +640,8 @@ const GRUPPEN = [
     trenner: ['/admin/rechnung', '/admin/privat'] },
   { titel: 'Team', kinder: ['/admin/personal', '/admin/dienstplan', '/admin/arbeitszeit', '/admin/zeitzettel',
                             '/admin/trinkgeld', '/admin/stempel'] },
-  { titel: 'Einstellungen', kinder: ['/admin/tische', '/admin/zeiten', '/admin/benutzer'] },
+  { titel: 'Einstellungen', kinder: ['/admin/tische', '/admin/zeiten', '/admin/benutzer',
+                                     '/admin/sicherung'] },
 ];
 
 const eintrag = pfad => NAV.find(n => n[0] === pfad);

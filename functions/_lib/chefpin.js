@@ -41,6 +41,11 @@ export const PIN_PFADE = [
      hat einen Grund, sie zu öffnen — auch kein anderer Chef-Zugang, der aus
      Versehen offen stehen bleibt. */
   '/admin/privat',
+  /* Die Sicherung enthält alles, was oben einzeln geschützt ist, in einer
+     Datei zum Mitnehmen — sie ist damit die empfindlichste Adresse im Panel.
+     Sie hier zu vergessen hieße, alle anderen Sperren mit einem Klick zu
+     umgehen. */
+  '/admin/sicherung',
 ];
 
 export const brauchtPin = pfad =>

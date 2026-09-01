@@ -209,7 +209,11 @@ const GESPERRT = {
   service: ['/admin/karte', '/admin/gericht', '/admin/tische', '/admin/zeiten', '/admin/personal',
             '/admin/arbeitszeit', '/admin/zeitzettel', '/admin/stempel', '/admin/benutzer',
             '/admin/preise', '/admin/inventur', '/admin/trinkgeld', '/admin/rechnung',
-            '/admin/privat'],
+            '/admin/privat',
+            /* Die Sicherung ist die ganze Datenbank in einer Datei — Löhne,
+               Gästedaten, Privatkasse. Wer die einzelnen Seiten nicht sehen
+               darf, darf sie erst recht nicht am Stück herunterladen. */
+            '/admin/sicherung'],
   demo: ['/admin/karte', '/admin/gericht', '/admin/suche', '/admin/zettel', '/admin/neu', '/admin/r', '/admin/warteliste',
          '/admin/personal', '/admin/arbeitszeit', '/admin/zeitzettel', '/admin/stempel',
          '/admin/benutzer', '/admin/preise', '/admin/inventur', '/admin/trinkgeld',
@@ -220,7 +224,8 @@ const GESPERRT = {
          '/admin/hygiene', '/admin/hygieneblatt', '/admin/rechnung',
          /* Das private Haushaltsbuch des Inhabers hat in einer Vorführung
             nichts verloren. */
-         '/admin/privat'],
+         '/admin/privat',
+         '/admin/sicherung'],
 };
 
 export const darfSeite = (role, pfad) =>

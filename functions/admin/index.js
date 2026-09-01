@@ -30,6 +30,7 @@ import { notesFor } from '../_lib/gaeste.js';
 import { darfSeite } from '../_lib/auth.js';
 import { tagKurz, summe, lohnCent } from '../_lib/zeit.js';
 import { fristenFuer, resturlaubHinweis } from '../_lib/personalfristen.js';
+import { letzterStand, standText, tageSeit, WARNUNG_AB_TAGEN } from '../_lib/sicherung.js';
 import { urlaubskonto, artLabel } from '../_lib/abwesenheit.js';
 
 /** Eine Zahl holen. Fehlt die Tabelle, ist das Ergebnis `null`, nicht ein Fehler. */
@@ -295,6 +296,29 @@ export async function onRequestGet({ request, env, data }) {
     Es fehlt die Einrichtung von <b>Cloudflare Email Sending</b>
     (Absenderdomain onboarden und <code>CF_EMAIL_TOKEN</code> hinterlegen).</div>`;
 
+  /*
+   * Erinnerung an die Sicherung.
+   *
+   * Steht hier und nicht im Seitenrahmen: Das Küchentablet ist für die
+   * Stempeluhr dauerhaft als Chef angemeldet — ein Hinweis im Rahmen stünde
+   * dort den ganzen Abend, und die Küche kann ohnehin nichts tun. Die
+   * Übersicht macht dagegen genau der auf, der sichern kann.
+   *
+   * Nur eine Zeile, kein Knopf: Der eigentliche Vorgang braucht die Chef-PIN,
+   * und ein Knopf, der nur zur PIN-Abfrage führt, verspricht zu viel.
+   */
+  let sicherungWarn = '';
+  if (darfSeite(data?.user?.role || 'chef', '/admin/sicherung')) {
+    const stand = await letzterStand(db);
+    const tage = stand ? tageSeit(stand.zeit) : null;
+    if (tage === null || tage >= WARNUNG_AB_TAGEN) {
+      sicherungWarn = `<div class="msg warn">
+        <b>Letzte Sicherung: ${esc(standText(stand))}.</b>
+        Unter <a href="/admin/sicherung">Sicherung &amp; Export</a> gibt es die Kopie
+        aller Daten — als Datei zum Wegsichern oder als Excel-Mappe zum Ansehen.</div>`;
+    }
+  }
+
   const upcoming = Object.keys(byDay).length
     ? Object.entries(byDay).slice(0, 8).map(([day, rs]) =>
         `<div class="card">${dayHeading(day, sum(rs), rs.length)}${table(rs, { notes, user: data?.user })}</div>`).join('')
@@ -307,6 +331,7 @@ export async function onRequestGet({ request, env, data }) {
     ${flash(url)}
     ${tischWarn}
     ${mailWarn}
+    ${sicherungWarn}
 
     <h2 class="abschnitt">Reservierungen</h2>
     <div class="stats">
