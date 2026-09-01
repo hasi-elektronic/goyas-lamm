@@ -73,9 +73,16 @@ nav.tabs details.tmehr .tliste a.on{color:var(--wine)}
 nav.tabs details.tmehr .tliste a span{display:block;font-size:.76rem;font-weight:400;
   line-height:1.35;color:var(--muted);margin-top:.1rem}
 nav.tabs details.tmehr .tliste a:hover span{color:var(--muted)}
-/* Zwischen 901px und der vollen Breite passen die acht Oberpunkte nicht mehr
-   in eine Zeile und brechen um. Statt umzubrechen rücken sie enger zusammen —
-   ein Laptop mit 1024px ist keine Ausnahme, sondern der Normalfall. */
+/* Abschnittswechsel innerhalb einer Gruppe: dieselbe Linie wie zwischen zwei
+   Zeilen, nur dicker und in der Seitenfarbe. Sie trennt im Punkt „Einkauf &
+   Rechnungen" den Einkauf von den Rechnungen und die Rechnungen von der
+   Privatkasse — die drei waren bis zum 01.09.2026 eigene Oberpunkte. */
+nav.tabs details.tmehr .tliste a.tr{border-top:5px solid var(--cream)}
+/* Zwischen 901px und der vollen Breite wurde es mit acht Oberpunkten eng, sie
+   brachen um. Seit der Zusammenlegung sind es sechs, aber „Einkauf &
+   Rechnungen" ist der längste Reiter, den es je gab — die Enger-Regel bleibt
+   deshalb stehen. Ein Laptop mit 1024px ist keine Ausnahme, sondern der
+   Normalfall. */
 @media(min-width:901px) and (max-width:1179px){
   nav.tabs a,nav.tabs details.tmehr summary{padding:.85rem .5rem;letter-spacing:.07em;font-size:.7rem}
 }
@@ -394,6 +401,9 @@ details.fab{display:none}
   .bnav .sheet .blk{background:var(--paper);border-bottom:1px solid var(--sand)}
   .bnav .sheet .blk + .blk{border-top:7px solid var(--cream)}
   .bnav .sheet .blk > a:last-child{border-bottom:0}
+  /* Abschnittswechsel innerhalb eines Blocks — schmaler als der Spalt zwischen
+     zwei Blöcken, damit man sieht: gehört noch dazu, ist aber etwas anderes. */
+  .bnav .sheet .blk > a.tr{border-top:4px solid var(--cream)}
 
   /* Das Blatt am Plus-Knopf ist kurz — die Überschrift ist eine Ansage, keine
      Rubrik, deshalb dunkel und nicht grau. */
@@ -587,21 +597,35 @@ const GRUPPEN = [
                                       '/admin/neu', '/admin/suche', '/admin/zettel',
                                       '/admin/auswertung'] },
   { titel: 'Speisekarte', kinder: ['/admin/karte', '/admin/aufsteller'] },
-  /* Hieß „Warenwirtschaft". Ein Fachwort aus dem Handel — im Haus sagt niemand
-     so. „Einkauf & Lager" benennt die beiden Dinge, die dahinter liegen. */
-  { titel: 'Einkauf & Lager', kinder: ['/admin/ware', '/admin/hygiene', '/admin/lager', '/admin/inventur',
-                                       '/admin/preise', '/admin/warenblatt'] },
+  /* Hieß „Warenwirtschaft", dann „Einkauf & Lager". Seit dem 01.09.2026 liegen
+     hier auch Rechnungen und Privatkasse: Hamdi wollte die drei Reiter zu einem
+     zusammenlegen („hepsi tek menüde olsun ... kafa karisikligi olmayacak").
+
+     Vorher standen sie einzeln nebeneinander, und genau das war die Verwirrung:
+     zwischen TEAM und EINSTELLUNGEN hingen zwei Reiter ohne Klappmenü, die nach
+     nichts aussahen, wozu sie gehören. Sieben Oberpunkte, von denen zwei je
+     eine einzige Seite hinter sich hatten.
+
+     Was hier zusammenkommt, ist alles, was Geld und Ware betrifft — im Haus
+     nennt niemand das anders. Die drei Abschnitte bleiben im Klappmenü sichtbar
+     getrennt (`trenner` zieht vor der Zeile eine Linie):
+
+       Einkauf   Wareneingang bis Kontrollblatt
+       Geld      Rechnungen für Feiern und Firmenessen
+       Privat    Privatkasse
+
+     **Nur das Menü ist zusammengelegt, die Daten nicht.** Die Privatkasse
+     bleibt aus jeder betrieblichen Auswertung heraus, taucht nicht auf der
+     Übersicht auf und hängt weiter hinter der Chef-PIN. Wer diesen Punkt
+     später anfasst: das Menü darf man umbauen, die Trennung der Zahlen nicht. */
+  { titel: 'Einkauf & Rechnungen',
+    kinder: ['/admin/ware', '/admin/hygiene', '/admin/lager', '/admin/inventur',
+             '/admin/preise', '/admin/warenblatt',
+             '/admin/rechnung',
+             '/admin/privat'],
+    trenner: ['/admin/rechnung', '/admin/privat'] },
   { titel: 'Team', kinder: ['/admin/personal', '/admin/dienstplan', '/admin/arbeitszeit', '/admin/zeitzettel',
                             '/admin/trinkgeld', '/admin/stempel'] },
-  /* Rechnungen für Feiern stehen für sich: sie gehören weder zu den
-     Reservierungen (das ist der Tischplan) noch zum Einkauf. Am Schreibtisch
-     ist das ein Reiter ohne Klappmenü, am Handy ein eigener Block mit eigener
-     Überschrift — siehe den Kommentar zu `blockAus()`. */
-  { titel: 'Rechnungen', pfad: '/admin/rechnung' },
-  /* Die Privatkasse steht bewusst allein und ganz am Ende — sie gehört nicht
-     zum Betrieb, sondern dem Inhaber. Sie in eine Betriebsgruppe zu hängen
-     wäre der erste Schritt dahin, beides zu verwechseln. */
-  { titel: 'Privat', pfad: '/admin/privat' },
   { titel: 'Einstellungen', kinder: ['/admin/tische', '/admin/zeiten', '/admin/benutzer'] },
 ];
 
@@ -613,6 +637,7 @@ function gruppenFuer(rolle) {
     .map(g => ({
       titel: g.titel,
       pfad: g.pfad,
+      trenner: g.trenner,
       eintraege: (g.kinder || []).map(eintrag).filter(Boolean)
         .filter(([h]) => darfSeite(rolle, h)),
     }))
@@ -695,30 +720,43 @@ const plusSchwebend = (anlegen) => `<details class="fab">
   </div>
 </details>`;
 
+/**
+ * Klassen einer Menüzeile: „on" für die aktuelle Seite, „tr" für die erste
+ * Zeile eines Abschnitts innerhalb einer Gruppe (siehe `trenner`).
+ */
+const zeilKlasse = (g, h, active) =>
+  [active === h ? 'on' : '', (g?.trenner || []).includes(h) ? 'tr' : '']
+    .filter(Boolean).join(' ');
+
 /** Eine Zeile im Klappmenü am Schreibtisch: Beschriftung plus Erklärung. */
-const tabZeile = ([h, t, , , hilfe], active) =>
-  `<a href="${h}" class="${active === h ? 'on' : ''}">${esc(t)}${
+const tabZeile = ([h, t, , , hilfe], active, g) =>
+  `<a href="${h}" class="${zeilKlasse(g, h, active)}">${esc(t)}${
     hilfe ? `<span>${esc(hilfe)}</span>` : ''}</a>`;
 
 /** Eine Zeile im Handy-Blatt: Symbol, Beschriftung, Erklärung. */
-const blattZeile = ([h, t, ic, , hilfe], active) =>
-  `<a href="${h}" class="${active === h ? 'on' : ''}">${svg(ic)}<b>${esc(t)}${
+const blattZeile = ([h, t, ic, , hilfe], active, g) =>
+  `<a href="${h}" class="${zeilKlasse(g, h, active)}">${svg(ic)}<b>${esc(t)}${
     hilfe ? `<span>${esc(hilfe)}</span>` : ''}</b></a>`;
 
 /**
  * Ein Block im Handy-Blatt.
  *
  * **Der Fehler, den das behebt** (gemeldet von Gökhan, 31.08.2026: „Rechnungen
- * neden Personal bölümünde?"): Gruppen mit eigenem Pfad — Rechnungen, Privat —
- * wurden hier als nackter Link ausgegeben, ohne Überschrift. Sie standen damit
- * direkt unter den Einträgen der vorherigen Gruppe und sahen aus wie deren
- * letzte Punkte. „Rechnungen" hing optisch unter TEAM.
+ * neden Personal bölümünde?"): Gruppen mit eigenem Pfad wurden hier als nackter
+ * Link ausgegeben, ohne Überschrift. Sie standen damit direkt unter den
+ * Einträgen der vorherigen Gruppe und sahen aus wie deren letzte Punkte.
+ * „Rechnungen" hing optisch unter TEAM.
  *
  * Jetzt bekommt **jede** Gruppe ihren Block mit Überschrift, und die Blöcke
  * sind durch einen dicken Trenner in der Seitenfarbe getrennt. Nur die
  * Übersicht bleibt ohne Überschrift: sie steht ganz oben, hat nichts über sich,
  * mit dem sie zu verwechseln wäre, und „ÜBERSICHT / Übersicht" wäre dasselbe
  * Wort zweimal.
+ *
+ * Seit dem 01.09.2026 ist die Übersicht die einzige Gruppe ohne `kinder` —
+ * Rechnungen und Privat sind in „Einkauf & Rechnungen" gewandert. Der Zweig
+ * für Ein-Seiten-Gruppen bleibt trotzdem: die nächste Gruppe dieser Art kommt
+ * bestimmt, und ohne ihn käme der Fehler mit ihr zurück.
  */
 function blockAus(g, active) {
   if (g.pfad) {
@@ -726,8 +764,11 @@ function blockAus(g, active) {
     const kopf = g.pfad === '/admin' ? '' : `<div class="grp">${esc(g.titel)}</div>`;
     return `<div class="blk">${kopf}${blattZeile(e, active)}</div>`;
   }
+  /* Die Trennlinie nie an der ersten Zeile: sie soll Abschnitte scheiden, nicht
+     den Blockkopf vom Block. Fällt der Einkaufsteil für eine Rolle weg, steht
+     „Rechnungen" oben — dann ohne Linie. */
   return `<div class="blk"><div class="grp">${esc(g.titel)}</div>
-    ${g.eintraege.map(e => blattZeile(e, active)).join('')}</div>`;
+    ${g.eintraege.map((e, i) => blattZeile(e, active, i ? g : null)).join('')}</div>`;
 }
 
 export function layout({ title, active, body, status = 200, user = null }) {
@@ -772,7 +813,7 @@ ${rolle === 'demo' ? `<div class="demobar">Demo-Zugang · nur ansehen ·
     : `<details class="tmehr" name="hauptnav">
     <summary class="${g.eintraege.some(([h]) => h === active) ? 'on' : ''}">${esc(g.titel)}</summary>
     <div class="tliste">
-      ${g.eintraege.map(e => tabZeile(e, active)).join('')}
+      ${g.eintraege.map((e, i) => tabZeile(e, active, i ? g : null)).join('')}
     </div></details>`).join('')}
 </div></nav>
 <main>${body}</main>
