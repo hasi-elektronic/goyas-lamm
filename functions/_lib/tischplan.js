@@ -88,8 +88,9 @@ export function tischplanCard(rows, areas, { schreiben = true } = {}) {
     active: t.active ? 1 : 0,
     x: t.pos_x == null ? null : Number(t.pos_x),
     y: t.pos_y == null ? null : Number(t.pos_y),
-    /* Noch nie im Plan: Größe nach Plätzen vorbelegen (Zehner breit, Sechser etwas breiter) */
-    w: t.pos_x == null ? (Number(t.seats) >= 8 ? 4 : Number(t.seats) >= 5 ? 3 : 2)
+    /* Noch nie im Plan: länglich vorbelegen — die Breite wächst mit den Plätzen
+       (2 Felder je 4 Personen, ab 6 Plätzen wird der Tisch ein Riegel), Höhe bleibt 2 */
+    w: t.pos_x == null ? Math.min(PLAN_MAX, Math.max(2, Math.ceil(Number(t.seats) / 2)))
                        : Math.min(PLAN_MAX, Math.max(1, Number(t.w) || 2)),
     h: t.pos_x == null ? 2 : Math.min(PLAN_MAX, Math.max(1, Number(t.h) || 2)),
   }));
@@ -289,14 +290,27 @@ export function tischplanCard(rows, areas, { schreiben = true } = {}) {
         var was=b.dataset.tp;
         if(was==='zu'){ sel=null; edit.hidden=true; render(); return; }
         if(was==='drehen'){ formAendern(function(){ var w=sel.w; sel.w=sel.h; sel.h=w; }); return; }
-        if(was==='groesser'){ formAendern(function(){ sel.w++; sel.h++; }); return; }
-        if(was==='kleiner'){ formAendern(function(){ sel.w--; sel.h--; }); return; }
+        /* Wächst nur in die Länge — quer liegende Tische werden breiter,
+           hochkant gedrehte höher. Quadratisch wird nichts mehr. */
+        if(was==='groesser'){ formAendern(function(){ if(sel.h>sel.w) sel.h++; else sel.w++; }); return; }
+        if(was==='kleiner'){ formAendern(function(){ if(sel.h>sel.w) sel.h--; else sel.w--; }); return; }
         if(was==='speichern'){
           var name=nn.value.trim(), seats=parseInt(ns.value,10), a=na.value;
           if(!name){ zeige('Bitte einen Namen angeben.','err'); return; }
           if(!(seats>=1&&seats<=60)){ zeige('Plätze bitte zwischen 1 und 60.','err'); return; }
           if(T.some(function(o){ return o!==sel&&o.name===name; })){ zeige('„'+name+'" gibt es schon.','err'); return; }
+          var seatsAlt=sel.seats;
           sel.name=name; sel.seats=seats;
+          /* Mehr oder weniger Plätze: der Tisch passt seine Länge an (Höhe bleibt),
+             hochkant gedrehte behalten die Ausrichtung. Passt es nicht, bleibt die alte Form. */
+          if(seats!==seatsAlt){
+            var hochkant=sel.h>sel.w, lang=Math.min(MAX,Math.max(2,Math.ceil(seats/2)));
+            var w0=sel.w,h0=sel.h;
+            sel.w=hochkant?2:lang; sel.h=hochkant?lang:2;
+            if(sel.x+sel.w>COLS) sel.x=Math.max(0,COLS-sel.w);
+            if(sel.y+sel.h>ROWS) sel.y=Math.max(0,ROWS-sel.h);
+            if(ueberlappt(sel,sel.x,sel.y,sel.w,sel.h,sel.area)){ sel.w=w0; sel.h=h0; }
+          }
           if(a!==sel.area){ sel.area=a; sel.x=null; sel.y=null; autoPlace(); area=a; }
           /* Plätze ändern Kennzahlen und Kapazität — danach die Seite neu laden */
           speichern([sel],function(){ location.reload(); });
