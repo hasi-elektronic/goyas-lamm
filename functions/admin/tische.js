@@ -21,11 +21,18 @@ async function loadTables(db) {
   if (!db) return { rows: [], plan: false };
   try {
     const r = await db.prepare(
-      `SELECT id, name, seats, area, active, sort, pos_x, pos_y, w, h FROM tables
+      `SELECT id, name, seats, area, active, sort, pos_x, pos_y, w, h, rund FROM tables
         ORDER BY active DESC, sort, name`).all();
     return { rows: r.results || [], plan: true };
   } catch (e) {
     if (!/no such column/i.test(String(e?.message || ''))) throw e;
+    /* rund (0029) fehlt, aber der Plan (0028) ist da? Dann ohne rund weitermachen. */
+    try {
+      const r = await db.prepare(
+        `SELECT id, name, seats, area, active, sort, pos_x, pos_y, w, h FROM tables
+          ORDER BY active DESC, sort, name`).all();
+      return { rows: r.results || [], plan: true };
+    } catch { /* weiter zum alten Stand */ }
     const r = await db.prepare(
       `SELECT id, name, seats, area, active, sort FROM tables
         ORDER BY active DESC, sort, name`).all();

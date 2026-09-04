@@ -43,6 +43,7 @@ export const TISCHPLAN_CSS = `
 .tp-t.s4{background:#EEF3EC;border-color:#2E6B4F}
 .tp-t.s6{background:#FBF5E8;border-color:var(--gold)}
 .tp-t.s8{background:#F8EEF0;border-color:var(--wine)}
+.tp-t.rund{border-radius:50%}
 .tp-t.aus{opacity:.45;border-style:dashed}
 .tp-t.on{outline:3px solid var(--gold);outline-offset:1px;z-index:3}
 .tp-t.drag{cursor:grabbing;z-index:5;box-shadow:0 8px 20px rgba(20,18,15,.25);opacity:.92}
@@ -85,14 +86,18 @@ const jsonInline = v => JSON.stringify(v)
 export function tischplanCard(rows, areas, { schreiben = true } = {}) {
   const tables = rows.map(t => ({
     id: t.id, name: t.name, seats: Number(t.seats) || 0, area: t.area || areas[0],
-    active: t.active ? 1 : 0,
+    active: t.active ? 1 : 0, rund: t.rund ? 1 : 0,
     x: t.pos_x == null ? null : Number(t.pos_x),
     y: t.pos_y == null ? null : Number(t.pos_y),
     /* Noch nie im Plan: länglich vorbelegen — die Breite wächst mit den Plätzen
        (2 Felder je 4 Personen, ab 6 Plätzen wird der Tisch ein Riegel), Höhe bleibt 2 */
-    w: t.pos_x == null ? Math.min(PLAN_MAX, Math.max(2, Math.ceil(Number(t.seats) / 2)))
-                       : Math.min(PLAN_MAX, Math.max(1, Number(t.w) || 2)),
-    h: t.pos_x == null ? 2 : Math.min(PLAN_MAX, Math.max(1, Number(t.h) || 2)),
+    w: t.pos_x == null
+      ? (t.rund ? Math.min(PLAN_MAX, Math.max(2, Math.ceil(Number(t.seats) / 3)))
+                : Math.min(PLAN_MAX, Math.max(2, Math.ceil(Number(t.seats) / 2))))
+      : Math.min(PLAN_MAX, Math.max(1, Number(t.w) || 2)),
+    h: t.pos_x == null
+      ? (t.rund ? Math.min(PLAN_MAX, Math.max(2, Math.ceil(Number(t.seats) / 3))) : 2)
+      : Math.min(PLAN_MAX, Math.max(1, Number(t.h) || 2)),
   }));
 
   return `
@@ -125,7 +130,8 @@ export function tischplanCard(rows, areas, { schreiben = true } = {}) {
             </select></div>
           <div class="f"><label>Form</label>
             <div class="tp-form-btn">
-              <button class="btn sm ghost" type="button" data-tp="drehen" title="Breite und Höhe tauschen">Drehen</button>
+              <button class="btn sm ghost" type="button" data-tp="rundeckig" id="tp-rund">Rund</button>
+              <button class="btn sm ghost" type="button" data-tp="drehen" id="tp-drehen" title="Breite und Höhe tauschen">Drehen</button>
               <button class="btn sm ghost" type="button" data-tp="groesser">Größer</button>
               <button class="btn sm ghost" type="button" data-tp="kleiner">Kleiner</button>
             </div></div>
@@ -186,7 +192,7 @@ export function tischplanCard(rows, areas, { schreiben = true } = {}) {
 
       function klasse(t){
         var s=t.seats<=2?'s2':t.seats<=4?'s4':t.seats<=7?'s6':'s8';
-        return 'tp-t '+s+(t.active?'':' aus')+(sel===t?' on':'');
+        return 'tp-t '+s+(t.rund?' rund':'')+(t.active?'':' aus')+(sel===t?' on':'');
       }
       function pos(el,t){
         el.style.left=(t.x/COLS*100)+'%'; el.style.top=(t.y/ROWS*100)+'%';
@@ -219,7 +225,7 @@ export function tischplanCard(rows, areas, { schreiben = true } = {}) {
       function speichern(items, dann){
         if(!SCHREIBEN){ zeige('Nur zum Anschauen — dieser Zugang kann nichts ändern.','err'); return; }
         var body=items.map(function(t){ return {id:t.id,x:t.x,y:t.y,w:t.w,h:t.h,
-          name:t.name,seats:t.seats,area:t.area}; });
+          name:t.name,seats:t.seats,area:t.area,rund:t.rund}; });
         zeige('Speichert …');
         fetch('/admin/tischplan',{method:'POST',credentials:'same-origin',
           headers:{'content-type':'application/json'},body:JSON.stringify({tables:body})})
@@ -271,9 +277,12 @@ export function tischplanCard(rows, areas, { schreiben = true } = {}) {
 
       /* Bearbeiten */
       var nn=document.getElementById('tp-nn'), ns=document.getElementById('tp-ns'), na=document.getElementById('tp-na');
+      var bRund=document.getElementById('tp-rund'), bDrehen=document.getElementById('tp-drehen');
       function waehle(t){
         sel=t; render();
         nn.value=t.name; ns.value=t.seats; na.value=t.area;
+        bRund.textContent=t.rund?'Eckig':'Rund';
+        bDrehen.disabled=!!t.rund; bDrehen.style.opacity=t.rund?'.4':'';
         edit.hidden=false;
         if(window.innerWidth<720) edit.scrollIntoView({block:'nearest',behavior:'smooth'});
       }
@@ -289,11 +298,22 @@ export function tischplanCard(rows, areas, { schreiben = true } = {}) {
         var b=e.target.closest('button[data-tp]'); if(!b||!sel) return;
         var was=b.dataset.tp;
         if(was==='zu'){ sel=null; edit.hidden=true; render(); return; }
-        if(was==='drehen'){ formAendern(function(){ var w=sel.w; sel.w=sel.h; sel.h=w; }); return; }
+        if(was==='rundeckig'){
+          formAendern(function(){
+            sel.rund=sel.rund?0:1;
+            if(sel.rund){ var d=Math.max(sel.w,sel.h); sel.w=d; sel.h=d; }
+            else { sel.h=Math.min(sel.h,2); }
+          });
+          bRund.textContent=sel&&sel.rund?'Eckig':'Rund';
+          if(sel){ bDrehen.disabled=!!sel.rund; bDrehen.style.opacity=sel.rund?'.4':''; }
+          return;
+        }
+        if(was==='drehen'){ if(sel.rund) return; formAendern(function(){ var w=sel.w; sel.w=sel.h; sel.h=w; }); return; }
         /* Wächst nur in die Länge — quer liegende Tische werden breiter,
            hochkant gedrehte höher. Quadratisch wird nichts mehr. */
-        if(was==='groesser'){ formAendern(function(){ if(sel.h>sel.w) sel.h++; else sel.w++; }); return; }
-        if(was==='kleiner'){ formAendern(function(){ if(sel.h>sel.w) sel.h--; else sel.w--; }); return; }
+        /* Runde Tische wachsen als Kreis (beide Seiten), eckige nur in die Länge. */
+        if(was==='groesser'){ formAendern(function(){ if(sel.rund){ sel.w++; sel.h++; } else if(sel.h>sel.w) sel.h++; else sel.w++; }); return; }
+        if(was==='kleiner'){ formAendern(function(){ if(sel.rund){ sel.w--; sel.h--; } else if(sel.h>sel.w) sel.h--; else sel.w--; }); return; }
         if(was==='speichern'){
           var name=nn.value.trim(), seats=parseInt(ns.value,10), a=na.value;
           if(!name){ zeige('Bitte einen Namen angeben.','err'); return; }
@@ -306,7 +326,8 @@ export function tischplanCard(rows, areas, { schreiben = true } = {}) {
           if(seats!==seatsAlt){
             var hochkant=sel.h>sel.w, lang=Math.min(MAX,Math.max(2,Math.ceil(seats/2)));
             var w0=sel.w,h0=sel.h;
-            sel.w=hochkant?2:lang; sel.h=hochkant?lang:2;
+            if(sel.rund){ var d=Math.min(MAX,Math.max(2,Math.ceil(seats/3))); sel.w=d; sel.h=d; }
+            else { sel.w=hochkant?2:lang; sel.h=hochkant?lang:2; }
             if(sel.x+sel.w>COLS) sel.x=Math.max(0,COLS-sel.w);
             if(sel.y+sel.h>ROWS) sel.y=Math.max(0,ROWS-sel.h);
             if(ueberlappt(sel,sel.x,sel.y,sel.w,sel.h,sel.area)){ sel.w=w0; sel.h=h0; }

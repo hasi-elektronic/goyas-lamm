@@ -50,6 +50,7 @@ export async function onRequestPost({ request, env }) {
     if (x !== null && x + w > PLAN_COLS) return json({ ok: false, error: 'Der Tisch ragt über den Plan hinaus.' }, 400);
     if (y !== null && y + h > PLAN_ROWS) return json({ ok: false, error: 'Der Tisch ragt über den Plan hinaus.' }, 400);
 
+    const rund  = it.rund ? 1 : 0;
     const name  = clean(it.name, 40);
     const seats = int(it.seats, 1, 60);
     const area  = AREAS.includes(clean(it.area, 24)) ? clean(it.area, 24) : null;
@@ -61,8 +62,8 @@ export async function onRequestPost({ request, env }) {
     namen.set(id, name);
 
     stmts.push(db.prepare(
-      `UPDATE tables SET pos_x=?, pos_y=?, w=?, h=?, name=?, seats=?, area=? WHERE id=?`
-    ).bind(x, y, w, h, name, seats, area, id));
+      `UPDATE tables SET pos_x=?, pos_y=?, w=?, h=?, name=?, seats=?, area=?, rund=? WHERE id=?`
+    ).bind(x, y, w, h, name, seats, area, rund, id));
   }
 
   try {
@@ -70,7 +71,7 @@ export async function onRequestPost({ request, env }) {
   } catch (e) {
     const msg = String(e?.message || '');
     if (/no such column/i.test(msg)) {
-      return json({ ok: false, error: 'Die Migration 0028_tischplan.sql fehlt noch.' }, 500);
+      return json({ ok: false, error: 'Eine Tischplan-Migration fehlt noch (0028/0029).' }, 500);
     }
     return json({ ok: false, error: 'Das hat nicht geklappt. Bitte noch einmal versuchen.' }, 500);
   }
